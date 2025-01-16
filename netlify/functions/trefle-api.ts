@@ -1,4 +1,10 @@
 import { Handler, HandlerEvent, HandlerResponse } from '@netlify/functions';
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file in development
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config();
+}
 
 const TREFLE_API_URL = 'https://trefle.io/api/v1';
 const TREFLE_API_TOKEN = process.env.TREFLE_API_TOKEN;
@@ -9,14 +15,15 @@ export const handler: Handler = async (event: HandlerEvent): Promise<HandlerResp
     path: event.path,
     method: event.httpMethod,
     queryParams: event.queryStringParameters,
-    headers: event.headers
+    headers: event.headers,
+    hasToken: Boolean(TREFLE_API_TOKEN)
   });
 
   try {
     // Check for API token
     if (!TREFLE_API_TOKEN) {
       console.error('❌ [Trefle API] Error: TREFLE_API_TOKEN is not configured');
-      throw new Error('TREFLE_API_TOKEN is not configured');
+      throw new Error('TREFLE_API_TOKEN is not configured. Please set it in your environment variables.');
     }
 
     // Only allow GET requests
