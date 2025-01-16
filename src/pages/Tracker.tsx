@@ -17,7 +17,6 @@ import {
   useToast,
   Image,
   Progress,
-  HStack,
   Badge,
 } from '@chakra-ui/react'
 import { useState, useRef, useCallback } from 'react'

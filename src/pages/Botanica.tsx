@@ -20,13 +20,10 @@ import {
   TabPanels,
   Tab,
   TabPanel,
-  Image,
   AspectRatio,
-  Link,
-  Divider,
 } from '@chakra-ui/react'
 import { useState, useRef } from 'react'
-import { FaSearch, FaCamera } from 'react-icons/fa'
+import { FaCamera } from 'react-icons/fa'
 import { analyzePlantImage } from '../services/gptService'
 import { storage } from '../config/firebase'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
@@ -51,56 +48,37 @@ export const Botanica = () => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedImage, setSelectedImage] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string>('')
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [plantInfo, setPlantInfo] = useState<PlantInfo | null>(null)
   const [videos, setVideos] = useState<VideoInfo[]>([])
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      setSelectedImage(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string)
+      try {
+        // Upload image to Firebase Storage
+        const imageRef = ref(storage, `temp/${currentUser?.uid}/${Date.now()}_${file.name}`)
+        const uploadResult = await uploadBytes(imageRef, file)
+        const imageUrl = await getDownloadURL(uploadResult.ref)
+
+        // Analyze the plant
+        const analysis = await analyzePlantImage(imageUrl)
+        setPlantInfo(analysis)
+
+        // TODO: Fetch related videos
+        const mockVideos: VideoInfo[] = [
+          {
+            title: 'How to Care for Your Plant',
+            videoId: 'example1',
+            thumbnail: 'https://img.youtube.com/vi/example1/0.jpg',
+            category: 'tutorial'
+          },
+        ]
+        setVideos(mockVideos)
+
+        onOpen()
+      } catch (error) {
+        console.error('Error analyzing image:', error)
       }
-      reader.readAsDataURL(file)
-      handleImageAnalysis(file)
-    }
-  }
-
-  const handleImageAnalysis = async (file: File) => {
-    try {
-      setIsAnalyzing(true)
-      
-      // Upload image to Firebase Storage
-      const imageRef = ref(storage, `temp/${currentUser?.uid}/${Date.now()}_${file.name}`)
-      const uploadResult = await uploadBytes(imageRef, file)
-      const imageUrl = await getDownloadURL(uploadResult.ref)
-
-      // Analyze the plant
-      const analysis = await analyzePlantImage(imageUrl)
-      setPlantInfo(analysis)
-
-      // TODO: Fetch related videos
-      // This would be implemented in a separate Netlify function
-      const mockVideos: VideoInfo[] = [
-        {
-          title: 'How to Care for Your Plant',
-          videoId: 'example1',
-          thumbnail: 'https://img.youtube.com/vi/example1/0.jpg',
-          category: 'tutorial'
-        },
-        // Add more mock videos
-      ]
-      setVideos(mockVideos)
-
-      onOpen()
-    } catch (error) {
-      console.error('Error analyzing image:', error)
-    } finally {
-      setIsAnalyzing(false)
     }
   }
 
@@ -192,7 +170,6 @@ export const Botanica = () => {
                   <TabPanel>
                     <VStack align="stretch" spacing={4}>
                       <Text>Additional resources and articles will be displayed here.</Text>
-                      {/* TODO: Add scraped content */}
                     </VStack>
                   </TabPanel>
                 </TabPanels>
