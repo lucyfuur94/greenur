@@ -22,6 +22,8 @@ export const handler: Handler = async (event: HandlerEvent): Promise<HandlerResp
 
     // Get the path and query parameters from the request
     const path = event.path.replace('/.netlify/functions/trefle-api', '');
+    console.log('[Trefle API] Original path:', event.path);
+    console.log('[Trefle API] Processed path:', path);
     
     // Convert query parameters to URLSearchParams
     const params = new URLSearchParams();
@@ -31,8 +33,16 @@ export const handler: Handler = async (event: HandlerEvent): Promise<HandlerResp
       });
     }
 
+    // Map our endpoints to Trefle endpoints
+    let trefleEndpoint = path;
+    if (path === '/search') {
+      trefleEndpoint = '/plants/search';
+    } else if (path.startsWith('/plant/')) {
+      trefleEndpoint = '/plants/' + path.split('/plant/')[1];
+    }
+
     // Build the Trefle API URL
-    const url = `${TREFLE_API_URL}${path}${params.toString() ? '?' + params.toString() : ''}`;
+    const url = `${TREFLE_API_URL}${trefleEndpoint}${params.toString() ? '?' + params.toString() : ''}`;
     console.log('[Trefle API] Requesting:', url);
 
     // Make the request to Trefle API
@@ -44,6 +54,10 @@ export const handler: Handler = async (event: HandlerEvent): Promise<HandlerResp
       }
     });
 
+    // Log response details for debugging
+    console.log('[Trefle API] Response status:', response.status);
+    console.log('[Trefle API] Response headers:', Object.fromEntries(response.headers.entries()));
+
     // Check if response is JSON
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
@@ -53,7 +67,6 @@ export const handler: Handler = async (event: HandlerEvent): Promise<HandlerResp
     }
 
     const data = await response.json();
-    console.log('[Trefle API] Response status:', response.status);
 
     if (!response.ok) {
       console.error('[Trefle API] Error response:', data);

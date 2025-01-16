@@ -91,10 +91,18 @@ export const searchPlants = async (searchTerm: string): Promise<PlantSearchResul
     console.log(`[Plant Service] Searching for: ${searchTerm}`);
     
     const response = await fetch(
-      `/.netlify/functions/trefle-api/plants/search?q=${encodeURIComponent(searchTerm)}`
+      `/.netlify/functions/trefle-api/search?q=${encodeURIComponent(searchTerm)}`
     );
 
+    // Log the response for debugging
     if (!response.ok) {
+      const text = await response.text();
+      console.error('[Plant Service] Error response:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        body: text
+      });
       throw new Error('Failed to search plants');
     }
 
