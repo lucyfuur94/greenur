@@ -3,211 +3,222 @@ import {
   Container,
   Input,
   InputGroup,
-  InputRightElement,
   VStack,
   Text,
   Grid,
   GridItem,
-  Button,
-  Image,
-  useToast,
-  Heading,
   Card,
   CardBody,
-  Skeleton,
+  Image,
+  Button,
+  useToast,
+  Spinner,
   HStack,
 } from '@chakra-ui/react'
 import { useState, useEffect } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { searchPlants } from '../services/wikiService'
-import { FaSearch, FaExclamationTriangle } from 'react-icons/fa'
+import { FaArrowLeft } from 'react-icons/fa'
 
 interface SearchResult {
   id: string
   name: string
   type: string
-  difficulty: 'easy' | 'medium' | 'hard'
-  tags: string[]
-  image?: string
+  scientificName: string
+  image: string
+  hindiName?: string
 }
 
 export const BotanicaSearch = () => {
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const toast = useToast()
-  
+
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '')
   const [results, setResults] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (searchQuery) {
-      performSearch()
-    }
-  }, [searchQuery])
+    let currentController: AbortController | null = null;
+    const delayDebounceFn = setTimeout(() => {
+      // Cancel previous request
+      if (currentController) {
+        currentController.abort();
+      }
+      
+      // Create new controller for this request
+      if (searchQuery.trim()) {
+        currentController = new AbortController();
+        handleSearch(currentController.signal);
+      } else {
+        setResults([]);
+        setError(null);
+      }
+    }, 300); // Same debounce time as home page
 
-  const performSearch = async () => {
-    setIsLoading(true)
-    setError(null)
+    return () => {
+      clearTimeout(delayDebounceFn);
+      if (currentController) {
+        currentController.abort();
+      }
+    };
+  }, [searchQuery]);
+
+  const handleSearch = async (signal: AbortSignal) => {
+    if (!searchQuery.trim()) return;
+    
+    setError(null);
+    setIsLoading(true);
+    setResults([]); // Clear previous results while searching
+
+    // Check minimum length requirement
+    if (searchQuery.trim().length < 2) {
+      setError('Please enter at least 2 characters to search');
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      const searchResults = await searchPlants(searchQuery)
-      setResults(searchResults.map(r => ({
+      const searchResults = await searchPlants(searchQuery.trim());
+      
+      // Convert to our format - we know these fields exist from the SPARQL query
+      const processedResults = searchResults.map(r => ({
         id: r.wikiDataId,
-        name: r.name,
+        name: r.name.replace(/\b\w/g, c => c.toUpperCase()),
         type: r.type,
-        difficulty: 'medium',
-        tags: [],
-        image: r.image
-      })))
+        scientificName: r.scientificName,
+        image: r.image,
+        hindiName: r.hindiName
+      })) as SearchResult[];
+
+      setResults(processedResults);
+      
+      if (processedResults.length === 0 && !signal.aborted) {
+        setError('No plants found matching your search');
+      }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to search plants'
-      console.error('Error searching plants:', error)
-      setError(errorMessage)
+      if (signal.aborted) return;
+      
+      const errorMessage = error instanceof Error ? error.message : 'Failed to search plants';
+      console.error('Error searching plants:', error);
+      setError(errorMessage);
       toast({
         title: 'Error',
         description: errorMessage,
         status: 'error',
         duration: 5000,
-      })
+      });
     } finally {
-      setIsLoading(false)
+      if (!signal.aborted) {
+        setIsLoading(false);
+      }
     }
-  }
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (searchQuery.trim()) {
-      setSearchParams({ q: searchQuery })
-      performSearch()
-    }
-  }
+  };
 
   return (
     <Container maxW="container.xl" py={8}>
       <VStack spacing={8} align="stretch">
-        {/* Search Bar */}
+        <Button
+          leftIcon={<FaArrowLeft />}
+          variant="ghost"
+          onClick={() => navigate('/botanica')}
+          alignSelf="flex-start"
+        >
+          Back to Search
+        </Button>
+
         <Box>
-          <form onSubmit={handleSearch}>
-            <InputGroup size="lg">
-              <Input
-                placeholder="Search plants by name..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                isDisabled={isLoading}
-              />
-              <InputRightElement width="4.5rem">
-                <Button
-                  h="1.75rem"
-                  size="sm"
-                  type="submit"
-                  isLoading={isLoading}
-                >
-                  <FaSearch />
-                </Button>
-              </InputRightElement>
-            </InputGroup>
-          </form>
+          <InputGroup size="lg">
+            <Input
+              placeholder="Search plants by name..."
+              value={searchQuery}
+              onChange={(e) => {
+                const newValue = e.target.value;
+                setSearchQuery(newValue);
+                if (!newValue.trim()) {
+                  setResults([]);
+                  setError(null);
+                }
+              }}
+              fontSize="lg"
+              py={6}
+              boxShadow="sm"
+              _focus={{
+                boxShadow: 'md',
+              }}
+            />
+          </InputGroup>
         </Box>
 
-        {/* Error Message */}
-        {error && (
-          <Box
-            p={4}
-            bg="red.50"
-            color="red.600"
-            borderRadius="md"
-            display="flex"
-            alignItems="center"
-            gap={2}
-          >
-            <FaExclamationTriangle />
-            <Text>{error}</Text>
-          </Box>
-        )}
-
-        {/* Search Results */}
         {isLoading ? (
+          <VStack py={8} spacing={4}>
+            <Spinner />
+            <Text>Searching for "{searchQuery}"...</Text>
+          </VStack>
+        ) : error ? (
+          <Text color="gray.600" textAlign="center" py={8}>{error}</Text>
+        ) : (
           <Grid templateColumns="repeat(auto-fill, minmax(300px, 1fr))" gap={6}>
-            {[...Array(6)].map((_, i) => (
-              <GridItem key={i}>
-                <Card>
-                  <CardBody>
-                    <VStack spacing={4} align="stretch">
-                      <Skeleton height="200px" />
-                      <Skeleton height="24px" width="70%" />
-                      <Skeleton height="20px" width="40%" />
-                    </VStack>
-                  </CardBody>
-                </Card>
-              </GridItem>
-            ))}
-          </Grid>
-        ) : results.length > 0 ? (
-          <Grid templateColumns="repeat(auto-fill, minmax(300px, 1fr))" gap={6}>
-            {results.map((result) => (
-              <GridItem key={result.id}>
+            {results.map((plant) => (
+              <GridItem key={plant.id}>
                 <Card
                   cursor="pointer"
-                  onClick={() => navigate(`/botanica/plant/${result.id}`)}
-                  sx={{
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      boxShadow: 'md'
-                    },
-                    transition: 'all 0.2s'
-                  }}
+                  onClick={() => navigate(`/botanica/plant/${plant.id}`)}
+                  _hover={{ transform: 'translateY(-2px)', shadow: 'md' }}
+                  transition="all 0.2s"
                 >
                   <CardBody>
                     <VStack spacing={4} align="stretch">
                       <Box
                         height="200px"
-                        bg="gray.100"
                         borderRadius="md"
                         overflow="hidden"
+                        bg="gray.100"
                       >
-                        {result.image ? (
-                          <Image
-                            src={result.image}
-                            alt={result.name}
-                            objectFit="cover"
-                            width="100%"
-                            height="100%"
-                          />
-                        ) : (
-                          <Box
-                            width="100%"
-                            height="100%"
-                            bg="gray.100"
-                            display="flex"
-                            alignItems="center"
-                            justifyContent="center"
-                          >
-                            <Text color="gray.500">No image available</Text>
-                          </Box>
-                        )}
+                        <Image
+                          src={plant.image}
+                          alt={plant.name}
+                          width="100%"
+                          height="100%"
+                          objectFit="cover"
+                          fallback={
+                            <Box
+                              width="100%"
+                              height="100%"
+                              display="flex"
+                              alignItems="center"
+                              justifyContent="center"
+                            >
+                              <Text color="gray.500">No image available</Text>
+                            </Box>
+                          }
+                        />
                       </Box>
-                      <Heading size="md">{result.name}</Heading>
-                      <HStack spacing={2}>
-                        <Text color="gray.600">Type: {result.type}</Text>
-                        <Text color="gray.600">•</Text>
-                        <Text color="gray.600">Difficulty: {result.difficulty}</Text>
-                      </HStack>
+                      <Box>
+                        <Text fontSize="xl" fontWeight="semibold">
+                          {plant.name}
+                        </Text>
+                        <HStack spacing={2} mt={1}>
+                          <Text fontSize="sm" color="gray.600">{plant.type}</Text>
+                          <Text fontSize="sm" color="gray.600">•</Text>
+                          <Text fontSize="sm" color="gray.600" fontStyle="italic">{plant.scientificName}</Text>
+                          {plant.hindiName && (
+                            <>
+                              <Text fontSize="sm" color="gray.600">•</Text>
+                              <Text fontSize="sm" color="gray.600">{plant.hindiName}</Text>
+                            </>
+                          )}
+                        </HStack>
+                      </Box>
                     </VStack>
                   </CardBody>
                 </Card>
               </GridItem>
             ))}
           </Grid>
-        ) : searchQuery && !isLoading && (
-          <Box textAlign="center" py={10}>
-            <Text fontSize="lg" color="gray.600">
-              No plants found matching "{searchQuery}"
-            </Text>
-          </Box>
         )}
       </VStack>
     </Container>
-  )
-} 
+  );
+}; 
