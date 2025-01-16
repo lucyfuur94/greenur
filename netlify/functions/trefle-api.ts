@@ -4,28 +4,47 @@ const TREFLE_API_URL = 'https://trefle.io/api/v1';
 const TREFLE_API_TOKEN = process.env.TREFLE_API_TOKEN;
 
 export const handler: Handler = async (event: HandlerEvent): Promise<HandlerResponse> => {
-  // Only allow GET requests
-  if (event.httpMethod !== 'GET') {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: 'Method Not Allowed' }),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    };
-  }
+  // Log every request at the start
+  console.log('🌿 [Trefle API] Request received:', {
+    path: event.path,
+    method: event.httpMethod,
+    queryParams: event.queryStringParameters,
+    headers: event.headers
+  });
 
   try {
+    // Check for API token
     if (!TREFLE_API_TOKEN) {
+      console.error('❌ [Trefle API] Error: TREFLE_API_TOKEN is not configured');
       throw new Error('TREFLE_API_TOKEN is not configured');
     }
 
-    // Get the path and query parameters from the request
-    const path = event.path.replace('/.netlify/functions/trefle-api', '');
-    console.log('[Trefle API] Original path:', event.path);
-    console.log('[Trefle API] Processed path:', path);
-    
-    // Convert query parameters to URLSearchParams
+    // Only allow GET requests
+    if (event.httpMethod !== 'GET') {
+      console.warn('⚠️ [Trefle API] Warning: Method not allowed:', event.httpMethod);
+      return {
+        statusCode: 405,
+        body: JSON.stringify({ error: 'Method Not Allowed' }),
+        headers: { 'Content-Type': 'application/json' }
+      };
+    }
+
+    // Get the path and query parameters
+    const path = event.path.split('/trefle-api')[1] || '';
+    console.log('🔍 [Trefle API] Processing path:', path);
+
+    // Map endpoints
+    let trefleEndpoint = '';
+    if (path === '/search') {
+      trefleEndpoint = '/api/v1/plants/search';
+    } else if (path.startsWith('/plant/')) {
+      trefleEndpoint = '/api/v1/plants/' + path.split('/plant/')[1];
+    } else {
+      console.error('❌ [Trefle API] Error: Invalid endpoint:', path);
+      throw new Error(`Invalid endpoint: ${path}`);
+    }
+
+    // Build query parameters
     const params = new URLSearchParams();
     if (event.queryStringParameters) {
       Object.entries(event.queryStringParameters).forEach(([key, value]) => {
@@ -33,47 +52,44 @@ export const handler: Handler = async (event: HandlerEvent): Promise<HandlerResp
       });
     }
 
-    // Map our endpoints to Trefle endpoints
-    let trefleEndpoint = path;
-    if (path === '/search') {
-      trefleEndpoint = '/plants/search';
-    } else if (path.startsWith('/plant/')) {
-      trefleEndpoint = '/plants/' + path.split('/plant/')[1];
-    }
+    // Build URL with token
+    const url = `https://trefle.io${trefleEndpoint}?token=${TREFLE_API_TOKEN}${params.toString() ? '&' + params.toString() : ''}`;
+    console.log('🌐 [Trefle API] Making request to:', url.replace(TREFLE_API_TOKEN, '[REDACTED]'));
 
-    // Build the Trefle API URL
-    const url = `${TREFLE_API_URL}${trefleEndpoint}${params.toString() ? '?' + params.toString() : ''}`;
-    console.log('[Trefle API] Requesting:', url);
-
-    // Make the request to Trefle API
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${TREFLE_API_TOKEN}`,
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      }
+    // Make request
+    console.time('🕒 [Trefle API] Request duration');
+    const response = await fetch(url);
+    console.timeEnd('🕒 [Trefle API] Request duration');
+    
+    // Log response details
+    console.log('📥 [Trefle API] Response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries())
     });
 
-    // Log response details for debugging
-    console.log('[Trefle API] Response status:', response.status);
-    console.log('[Trefle API] Response headers:', Object.fromEntries(response.headers.entries()));
-
-    // Check if response is JSON
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
+    // Handle error responses
+    if (!response.ok) {
       const text = await response.text();
-      console.error('[Trefle API] Non-JSON response:', text);
-      throw new Error('Invalid response from Trefle API');
+      console.error('❌ [Trefle API] Error response:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: text
+      });
+      return {
+        statusCode: response.status,
+        body: JSON.stringify({ error: text }),
+        headers: { 'Content-Type': 'application/json' }
+      };
     }
 
     const data = await response.json();
+    console.log('✅ [Trefle API] Success response:', {
+      dataType: typeof data,
+      hasData: Boolean(data),
+      meta: data.meta
+    });
 
-    if (!response.ok) {
-      console.error('[Trefle API] Error response:', data);
-      throw new Error(data.message || 'Failed to fetch data from Trefle API');
-    }
-
-    // Return the response
     return {
       statusCode: 200,
       body: JSON.stringify(data),
@@ -81,18 +97,21 @@ export const handler: Handler = async (event: HandlerEvent): Promise<HandlerResp
         'Content-Type': 'application/json',
         'Cache-Control': 'public, max-age=300'
       }
-    } as HandlerResponse;
+    };
 
   } catch (error) {
-    console.error('[Trefle API] Error:', error);
+    console.error('💥 [Trefle API] Fatal error:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
     return {
       statusCode: 500,
       body: JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Failed to fetch data from Trefle API'
+        error: error instanceof Error ? error.message : 'Internal server error'
       }),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    } as HandlerResponse;
+      headers: { 'Content-Type': 'application/json' }
+    };
   }
 }; 

@@ -66,6 +66,38 @@ export const Botanica = () => {
   const toast = useToast()
   const navigate = useNavigate()
   
+  // Add console error handler
+  useEffect(() => {
+    const originalConsoleError = console.error;
+    const errorLogs: string[] = [];
+
+    console.error = (...args) => {
+      // Log to our array
+      errorLogs.push(args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+      ).join(' '));
+      
+      // Still call original console.error
+      originalConsoleError.apply(console, args);
+      
+      // Show toast for new errors
+      if (errorLogs.length > 0) {
+        toast({
+          title: 'Console Error Detected',
+          description: `Check console for details. Latest error: ${errorLogs[errorLogs.length - 1].slice(0, 100)}...`,
+          status: 'warning',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    };
+
+    // Cleanup
+    return () => {
+      console.error = originalConsoleError;
+    };
+  }, [toast]);
+
   const [searchQuery, setSearchQuery] = useState('')
   const [suggestions, setSuggestions] = useState<PlantSuggestion[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -109,40 +141,55 @@ export const Botanica = () => {
     setIsSuggestionsLoading(true);
     setSuggestions([]); // Clear previous results while searching
 
+    // Check minimum length requirement
+    if (searchQuery.trim().length < 2) {
+      setError('Please enter at least 2 characters to search');
+      setIsSuggestionsLoading(false);
+      return;
+    }
+
     try {
       const results = await searchPlants(searchQuery.trim());
       
-      // Filter for results with all required fields
-      const validResults = results.filter(r => 
-        r.image && 
-        r.type && 
-        r.scientificName
-      );
-      
-      // Process unique results
-      const uniqueResults = new Map();
-      validResults.forEach(r => {
-        const normalizedName = r.name.toLowerCase();
-        if (!uniqueResults.has(normalizedName) || r.score < uniqueResults.get(normalizedName).score) {
-          uniqueResults.set(normalizedName, {
-            id: r.wikiDataId,
-            name: r.name.replace(/\b\w/g, c => c.toUpperCase()),  // Convert to proper case
-            type: r.type,
-            scientificName: r.scientificName,
-            difficulty: 'medium' as const,
-            tags: [],
-            image: r.image,
-            score: r.score,
-            hindiName: r.hindiName // Use Hindi name from WikiData
-          });
-        }
-      });
+      // Convert to suggestions format
+      const processedResults = results.map(r => ({
+        id: r.wikiDataId,
+        name: r.name.replace(/\b\w/g, c => c.toUpperCase()),  // Convert to proper case
+        type: r.type,
+        scientificName: r.scientificName,
+        difficulty: 'medium' as const,
+        tags: [],
+        image: r.image,
+        score: r.score,
+        hindiName: r.hindiName
+      }));
 
-      const processedResults = Array.from(uniqueResults.values());
-      setSuggestions(processedResults);
-      setShowSuggestions(processedResults.length > 0);
+      // Deduplicate results based on name, type, scientific name and hindi name
+      const uniqueResults = processedResults.reduce((acc, current) => {
+        const key = `${current.name}-${current.type}-${current.scientificName}-${current.hindiName}`;
+        const existing = acc.find(item => 
+          `${item.name}-${item.type}-${item.scientificName}-${item.hindiName}` === key
+        );
+        
+        if (!existing) {
+          acc.push(current);
+        } else {
+          // Keep the one with more complete data (has image, score, etc.)
+          const currentScore = (current.image ? 1 : 0) + (current.score || 0);
+          const existingScore = (existing.image ? 1 : 0) + (existing.score || 0);
+          
+          if (currentScore > existingScore) {
+            const index = acc.indexOf(existing);
+            acc[index] = current;
+          }
+        }
+        return acc;
+      }, [] as PlantSuggestion[]);
+
+      setSuggestions(uniqueResults);
+      setShowSuggestions(uniqueResults.length > 0);
       
-      if (processedResults.length === 0 && !signal.aborted) {
+      if (uniqueResults.length === 0 && !signal.aborted) {
         setError('No plants found matching your search');
       }
     } catch (error) {
@@ -304,6 +351,7 @@ export const Botanica = () => {
               <form onSubmit={(e) => {
                 e.preventDefault();
                 if (searchQuery.trim()) {
+                  setIsSuggestionsLoading(true);  // Set loading state before navigation
                   navigate(`/botanica/search?q=${encodeURIComponent(searchQuery)}`);
                 }
               }}>
@@ -341,6 +389,7 @@ export const Botanica = () => {
                       h="1.75rem"
                       size="sm"
                       onClick={() => fileInputRef.current?.click()}
+                      isLoading={isSuggestionsLoading}
                     >
                       <FaCamera />
                     </Button>
@@ -392,13 +441,16 @@ export const Botanica = () => {
                             <Text fontWeight="medium">{plant.name}</Text>
                             <VStack spacing={1} align="stretch">
                               <HStack spacing={2} mt={1}>
-                                <Text fontSize="sm" color="gray.600">Type: {plant.type}</Text>
+                                <Text fontSize="sm" color="gray.600">{plant.type}</Text>
                                 <Text fontSize="sm" color="gray.600">•</Text>
-                                <Text fontSize="sm" color="gray.600">Scientific Name: {plant.scientificName}</Text>
+                                <Text fontSize="sm" color="gray.600" fontStyle="italic">{plant.scientificName}</Text>
+                                {plant.hindiName && (
+                                  <>
+                                    <Text fontSize="sm" color="gray.600">•</Text>
+                                    <Text fontSize="sm" color="gray.600">{plant.hindiName}</Text>
+                                  </>
+                                )}
                               </HStack>
-                              {plant.hindiName && (
-                                <Text fontSize="sm" color="gray.600">Hindi: {plant.hindiName}</Text>
-                              )}
                             </VStack>
                           </Box>
                         </HStack>

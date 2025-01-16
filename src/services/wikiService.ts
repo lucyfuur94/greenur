@@ -88,36 +88,29 @@ export const searchPlants = async (searchTerm: string): Promise<PlantSearchResul
   try {
     if (searchTerm.length < 2) return [];
 
-    console.log(`[Plant Service] Searching for: ${searchTerm}`);
-    
     const response = await fetch(
       `/.netlify/functions/trefle-api/search?q=${encodeURIComponent(searchTerm)}`
     );
 
-    // Log the response for debugging
     if (!response.ok) {
-      const text = await response.text();
-      console.error('[Plant Service] Error response:', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries()),
-        body: text
-      });
-      throw new Error('Failed to search plants');
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to search plants');
     }
 
     const data = await response.json() as TrefleSearchResponse;
     console.log(`[Plant Service] Found ${data.meta.total} results`);
 
     // Map Trefle results to our format
-    return data.data.map((plant, index) => ({
-      name: plant.common_name || plant.scientific_name,
-      scientificName: plant.scientific_name,
-      type: plant.family_common_name || plant.family || 'Plant',
-      wikiDataId: plant.id.toString(),
-      score: 1 - (index * 0.1),
-      image: plant.image_url
-    }));
+    return data.data
+      .filter(plant => plant.image_url) // Only return plants with images
+      .map((plant, index) => ({
+        name: plant.common_name || plant.scientific_name,
+        scientificName: plant.scientific_name,
+        type: plant.family_common_name || plant.family || 'Plant',
+        wikiDataId: plant.id.toString(),
+        score: 1 - (index * 0.1),
+        image: plant.image_url
+      }));
 
   } catch (error) {
     console.error('[Plant Service] Error searching plants:', error);
