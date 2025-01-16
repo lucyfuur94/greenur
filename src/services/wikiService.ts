@@ -84,12 +84,17 @@ export interface PlantDetails {
   hindiName?: string;
 }
 
+// Get the base URL for the API
+const API_BASE = import.meta.env.PROD 
+  ? 'https://greenur.netlify.app/.netlify/functions/trefle-api'
+  : '/.netlify/functions/trefle-api';
+
 export const searchPlants = async (searchTerm: string): Promise<PlantSearchResult[]> => {
   try {
     if (searchTerm.length < 2) return [];
 
     const response = await fetch(
-      `/.netlify/functions/trefle-api/search?q=${encodeURIComponent(searchTerm)}`
+      `${API_BASE}/search?q=${encodeURIComponent(searchTerm)}`
     );
 
     if (!response.ok) {
@@ -121,7 +126,7 @@ export const searchPlants = async (searchTerm: string): Promise<PlantSearchResul
 export const getPlantDetails = async (plantId: string): Promise<PlantDetails> => {
   try {
     const response = await fetch(
-      `/.netlify/functions/trefle-api/plants/${plantId}`
+      `${API_BASE}/plant/${plantId}`
     );
 
     if (!response.ok) {
