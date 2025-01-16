@@ -1,4 +1,59 @@
-import Fuse from 'fuse.js';
+// Interfaces for Trefle API responses
+interface TreflePlant {
+  id: number;
+  common_name: string;
+  scientific_name: string;
+  family: string;
+  family_common_name: string;
+  image_url: string;
+  year: number;
+  bibliography: string;
+  author: string;
+  rank: string;
+  genus: string;
+}
+
+interface TrefleSearchResponse {
+  data: TreflePlant[];
+  links: {
+    self: string;
+    first: string;
+    next: string;
+    last: string;
+  };
+  meta: {
+    total: number;
+  };
+}
+
+interface TreflePlantDetails extends TreflePlant {
+  main_species: {
+    growth: {
+      light: number;
+      atmospheric_humidity: number;
+      minimum_temperature: { deg_c: number };
+      maximum_temperature: { deg_c: number };
+      soil_nutriments: number;
+      soil_humidity: number;
+    };
+    specifications: {
+      growth_habit: string;
+      growth_form: string;
+      growth_rate: string;
+      average_height: { cm: number };
+    };
+    distribution: {
+      native: string[];
+    };
+  };
+  images: {
+    flower: { image_url: string }[];
+    leaf: { image_url: string }[];
+    habit: { image_url: string }[];
+    fruit: { image_url: string }[];
+    bark: { image_url: string }[];
+  };
+}
 
 export interface PlantSearchResult {
   name: string;
@@ -29,173 +84,92 @@ export interface PlantDetails {
   hindiName?: string;
 }
 
-interface WikiDataResult {
-  item: { value: string };
-  itemLabel: { value: string };
-  scientificName?: { value: string };
-  typeLabel: { value: string };
-  image?: { value: string };
-  hindiLabel?: { value: string };
-}
-
-// SPARQL query to search plants by name
-const buildSearchQuery = (searchTerm: string) => `
-  SELECT DISTINCT ?item ?itemLabel ?scientificName ?typeLabel ?image ?hindiLabel WHERE {
-    {
-      ?item wdt:P31/wdt:P279* wd:Q756 .  # instance of plant or subclass of plant
-      {
-        ?item rdfs:label ?label .
-        FILTER(CONTAINS(LCASE(STR(?label)), LCASE("${searchTerm}")))
-        FILTER(LANG(?label) = "en")
-      } UNION {
-        ?item wdt:P225 ?scientificName .
-        FILTER(CONTAINS(LCASE(STR(?scientificName)), LCASE("${searchTerm}")))
-      }
-    }
-    OPTIONAL { ?item wdt:P31 ?type }
-    OPTIONAL { ?item wdt:P18 ?image }  # Add image property
-    OPTIONAL { ?item rdfs:label ?hindiLabel . FILTER(LANG(?hindiLabel) = "hi") }
-    SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-  }
-  LIMIT 50
-`;
-
-// SPARQL query to get detailed plant information
-const buildDetailsQuery = (wikiDataId: string) => `
-  SELECT ?item ?itemLabel ?scientificName ?familyLabel ?description ?nativeToLabel ?growthHabitLabel ?hindiLabel WHERE {
-    BIND(wd:${wikiDataId} AS ?item)
-    OPTIONAL { ?item wdt:P225 ?scientificName . }
-    OPTIONAL { ?item wdt:P171 ?family . }
-    OPTIONAL { ?item schema:description ?description FILTER(LANG(?description) = "en") . }
-    OPTIONAL { ?item wdt:P183 ?nativeTo . }
-    OPTIONAL { ?item wdt:P3485 ?growthHabit . }
-    OPTIONAL { ?item rdfs:label ?hindiLabel . FILTER(LANG(?hindiLabel) = "hi") }
-    SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
-  }
-`;
-
 export const searchPlants = async (searchTerm: string): Promise<PlantSearchResult[]> => {
   try {
-    const url = new URL('https://query.wikidata.org/sparql');
-    url.searchParams.append('query', buildSearchQuery(searchTerm));
-    url.searchParams.append('format', 'json');
+    if (searchTerm.length < 2) return [];
+
+    console.log(`[Plant Service] Searching for: ${searchTerm}`);
     
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'Greenur Plant App (https://greenur.app)'
-      }
-    });
+    const response = await fetch(
+      `/.netlify/functions/trefle-api/plants/search?q=${encodeURIComponent(searchTerm)}`
+    );
 
     if (!response.ok) {
-      const errorText = await response.text();
-      if (response.status === 429) {
-        throw new Error('Rate limit exceeded. Please try again later.');
-      }
-      throw new Error(`Failed to search plants: ${errorText}`);
+      throw new Error('Failed to search plants');
     }
 
-    const data = await response.json();
-    const results = data.results.bindings as WikiDataResult[];
+    const data = await response.json() as TrefleSearchResponse;
+    console.log(`[Plant Service] Found ${data.meta.total} results`);
 
-    if (!results.length) {
-      return [];
-    }
+    // Map Trefle results to our format
+    return data.data.map((plant, index) => ({
+      name: plant.common_name || plant.scientific_name,
+      scientificName: plant.scientific_name,
+      type: plant.family_common_name || plant.family || 'Plant',
+      wikiDataId: plant.id.toString(),
+      score: 1 - (index * 0.1),
+      image: plant.image_url
+    }));
 
-    // Use Fuse.js for better fuzzy matching
-    const fuse = new Fuse(results, {
-      keys: ['itemLabel.value', 'scientificName.value'],
-      threshold: 0.4,
-      includeScore: true,
-      shouldSort: true
-    });
-
-    const searchResults = fuse.search(searchTerm);
-    return searchResults.map(result => {
-      const wikiDataId = result.item.item.value.split('/').pop();
-      if (!wikiDataId) throw new Error('Invalid WikiData ID');
-      
-      return {
-        name: result.item.itemLabel.value,
-        scientificName: result.item.scientificName?.value || '',
-        type: result.item.typeLabel?.value || 'Plant',
-        wikiDataId,
-        score: result.score || 1,
-        image: result.item.image?.value || '',
-        hindiName: result.item.hindiLabel?.value
-      };
-    });
   } catch (error) {
-    console.error('Error searching plants:', error);
+    console.error('[Plant Service] Error searching plants:', error);
     throw error;
   }
 };
 
-export const getPlantDetails = async (wikiDataId: string): Promise<PlantDetails> => {
+export const getPlantDetails = async (plantId: string): Promise<PlantDetails> => {
   try {
-    // Fetch from Wikidata
-    const url = new URL('https://query.wikidata.org/sparql');
-    url.searchParams.append('query', buildDetailsQuery(wikiDataId));
-    url.searchParams.append('format', 'json');
-    
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'Greenur Plant App (https://greenur.app)'
-      }
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      if (response.status === 429) {
-        throw new Error('Rate limit exceeded. Please try again later.');
-      }
-      throw new Error(`Failed to fetch plant details: ${errorText}`);
-    }
-
-    const data = await response.json();
-    const result = data.results.bindings[0];
-
-    if (!result) {
-      throw new Error('Plant details not found');
-    }
-
-    // Also fetch Wikipedia summary for richer description
-    const wikipediaResponse = await fetch(
-      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(result.itemLabel.value)}`
+    const response = await fetch(
+      `/.netlify/functions/trefle-api/plants/${plantId}`
     );
 
-    if (!wikipediaResponse.ok) {
-      if (wikipediaResponse.status === 429) {
-        throw new Error('Wikipedia rate limit exceeded. Please try again later.');
-      }
-      throw new Error('Failed to fetch Wikipedia data');
+    if (!response.ok) {
+      throw new Error('Failed to fetch plant details');
     }
 
-    const wikipediaData = await wikipediaResponse.json();
+    const data = await response.json() as { data: TreflePlantDetails };
+    const plant = data.data;
+    const species = plant.main_species;
+
+    // Convert light level to descriptive text
+    const getLightText = (light: number) => {
+      if (light >= 8) return 'Full sun';
+      if (light >= 6) return 'Partial sun';
+      if (light >= 4) return 'Partial shade';
+      return 'Full shade';
+    };
+
+    // Collect all available images
+    const allImages = [
+      plant.image_url,
+      ...(plant.images?.flower?.map(i => i.image_url) || []),
+      ...(plant.images?.leaf?.map(i => i.image_url) || []),
+      ...(plant.images?.habit?.map(i => i.image_url) || []),
+      ...(plant.images?.fruit?.map(i => i.image_url) || []),
+      ...(plant.images?.bark?.map(i => i.image_url) || [])
+    ].filter(Boolean);
 
     return {
-      name: result.itemLabel.value,
-      scientificName: result.scientificName?.value || '',
-      family: result.familyLabel?.value || '',
-      description: wikipediaData.extract || result.description?.value || 'No description available',
-      type: result.typeLabel?.value || 'Plant',
-      nativeTo: result.nativeToLabel ? [result.nativeToLabel.value] : [],
-      growthHabit: result.growthHabitLabel?.value || '',
+      name: plant.common_name || plant.scientific_name,
+      scientificName: plant.scientific_name,
+      family: plant.family,
+      description: `${plant.scientific_name} is a ${species?.specifications?.growth_form || ''} plant from the ${plant.family} family.`,
+      type: plant.family_common_name || plant.family,
+      nativeTo: species?.distribution?.native || [],
+      growthHabit: species?.specifications?.growth_habit || '',
       careInstructions: {
-        light: '',
-        water: '',
-        soil: '',
-        temperature: '',
-        humidity: ''
+        light: getLightText(species?.growth?.light || 0),
+        water: `Soil humidity: ${species?.growth?.soil_humidity || 'Unknown'}`,
+        soil: `Nutriment requirements: ${species?.growth?.soil_nutriments || 'Unknown'}`,
+        temperature: species?.growth?.minimum_temperature?.deg_c !== undefined ? 
+          `${species.growth.minimum_temperature.deg_c}°C to ${species.growth.maximum_temperature?.deg_c || '?'}°C` : 
+          'Temperature requirements unknown',
+        humidity: `Atmospheric humidity: ${species?.growth?.atmospheric_humidity || 'Unknown'}`
       },
-      images: wikipediaData.originalimage ? [wikipediaData.originalimage.source] : [],
-      hindiName: result.hindiLabel?.value
+      images: allImages
     };
   } catch (error) {
-    console.error('Error fetching plant details:', error);
+    console.error('[Plant Service] Error fetching plant details:', error);
     throw error;
   }
 }; 
