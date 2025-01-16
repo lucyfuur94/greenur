@@ -89,7 +89,7 @@ export const handler: Handler = async (event, context) => {
 
     // Call GPT-4 Vision API
     const response = await openai.chat.completions.create({
-      model: "gpt-4-vision-preview",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",

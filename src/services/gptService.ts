@@ -7,7 +7,7 @@ export interface PlantAnalysis {
   carePlan: string
 }
 
-export const analyzePlantImage = async (imageUrl: string): Promise<PlantAnalysis> => {
+export const analyzePlantImage = async (image: File | string): Promise<PlantAnalysis> => {
   try {
     // Get the current user's ID token
     const token = await auth.currentUser?.getIdToken()
@@ -15,14 +15,24 @@ export const analyzePlantImage = async (imageUrl: string): Promise<PlantAnalysis
       throw new Error('Not authenticated')
     }
 
+    // Create form data or use URL
+    let body: FormData | string
+    if (image instanceof File) {
+      const formData = new FormData()
+      formData.append('image', image)
+      body = formData
+    } else {
+      body = JSON.stringify({ imageUrl: image })
+    }
+
     // Call the Netlify function
     const response = await fetch('/.netlify/functions/analyze-plant', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
+        ...(typeof image === 'string' && { 'Content-Type': 'application/json' })
       },
-      body: JSON.stringify({ imageUrl }),
+      body
     })
 
     if (!response.ok) {

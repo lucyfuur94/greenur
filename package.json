@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "seed:build": "tsc src/scripts/seed.ts src/scripts/seedPlants.ts src/scripts/firebase.ts --outDir dist/scripts --module ES2020 --moduleResolution node --esModuleInterop --target ES2020",
+    "seed": "npm run seed:build && node dist/scripts/seed.js"
   },
   "dependencies": {
     "@chakra-ui/icons": "^2.2.4",
@@ -18,9 +20,12 @@
     "@emotion/styled": "^11.11.0",
     "@netlify/functions": "^3.0.0",
     "@types/node-fetch": "^2.6.12",
+    "dotenv": "^16.4.7",
     "firebase": "^11.1.0",
     "firebase-admin": "^13.0.2",
     "framer-motion": "^11.0.8",
+    "fuse.js": "^7.0.0",
+    "inshorts-news-api": "^2.0.0",
     "node-fetch": "^2.7.0",
     "openai": "^4.78.1",
     "react": "^18.3.1",
@@ -40,6 +45,7 @@
     "eslint-plugin-react-refresh": "^0.4.16",
     "globals": "^15.14.0",
     "netlify-cli": "^18.0.1",
+    "ts-node": "^10.9.2",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.18.2",
     "vite": "^6.0.5"

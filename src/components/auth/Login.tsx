@@ -18,14 +18,16 @@ import { auth } from '../../config/firebase';
 import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
+import { getAuth } from 'firebase/auth';
 
 export const Login = () => {
   const navigate = useNavigate();
   const toast = useToast();
-  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isSignUp] = useState(false);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +43,7 @@ export const Login = () => {
         status: 'success',
         duration: 3000,
       });
-      navigate('/tracker');
+      navigate('/botanica');
     } catch (error) {
       toast({
         title: 'Error',
@@ -57,13 +59,19 @@ export const Login = () => {
   const handleGoogleSignIn = async () => {
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const auth = getAuth();
+      auth.useDeviceLanguage();
+      await signInWithPopup(auth, provider, {
+        popupWidth: 500,
+        popupHeight: 600
+      });
+      
       toast({
         title: 'Welcome to Greenur!',
         status: 'success',
         duration: 3000,
       });
-      navigate('/tracker');
+      navigate('/botanica');
     } catch (error) {
       toast({
         title: 'Error signing in',
@@ -84,11 +92,13 @@ export const Login = () => {
             mb={6}
             color="brand.500"
           >
-            Enter<br />
-            the Future<br />
-            of Plant Care,<br />
-            today
+            Welcome Back<br />
+            to Your<br />
+            Green Space
           </Heading>
+          <Text fontSize="xl" color="gray.600">
+            Sign in to continue your plant care journey.
+          </Text>
         </Box>
 
         <Box
@@ -102,9 +112,9 @@ export const Login = () => {
         >
           <VStack spacing={6} align="stretch">
             <Box>
-              <Heading size="lg" mb={2}>Get Started</Heading>
+              <Heading size="lg" mb={2}>Sign In</Heading>
               <Text color="gray.600">
-                Welcome to Greenur - Let's create your account
+                New to Greenur? <Link as={RouterLink} to="/signup" color="brand.500">Create an account</Link>
               </Text>
             </Box>
 
@@ -139,38 +149,23 @@ export const Login = () => {
                   width="full"
                   isLoading={loading}
                 >
-                  {isSignUp ? 'Sign up' : 'Sign in'}
+                  Sign In
                 </Button>
               </VStack>
             </form>
 
-            <Flex align="center" my={4}>
-              <Divider />
-              <Text px={4} color="gray.500">or</Text>
-              <Divider />
-            </Flex>
+            <Divider />
 
             <Button
-              w="full"
-              size="lg"
-              variant="outline"
               leftIcon={<FcGoogle />}
               onClick={handleGoogleSignIn}
-              colorScheme="gray"
+              size="lg"
+              width="full"
+              variant="outline"
+              isLoading={loading}
             >
               Continue with Google
             </Button>
-
-            <Text textAlign="center">
-              {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
-              <Link
-                color="brand.500"
-                onClick={() => setIsSignUp(!isSignUp)}
-                _hover={{ textDecoration: 'none', color: 'brand.600' }}
-              >
-                {isSignUp ? 'Sign in' : 'Sign up'}
-              </Link>
-            </Text>
           </VStack>
         </Box>
       </Flex>

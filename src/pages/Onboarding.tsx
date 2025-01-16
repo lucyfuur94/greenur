@@ -13,12 +13,18 @@ import {
   RadioGroup,
   Stack,
   useToast,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalBody,
+  Spinner,
 } from '@chakra-ui/react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { doc, setDoc } from 'firebase/firestore'
 import { db } from '../config/firebase'
+import { FaMapMarkerAlt } from 'react-icons/fa'
 
 interface UserPreferences {
   name: string
@@ -26,6 +32,13 @@ interface UserPreferences {
   interests: string[]
   gardenType: 'indoor' | 'outdoor' | 'both'
   notifications: boolean
+  location?: {
+    latitude: number
+    longitude: number
+    city?: string
+    country?: string
+    timezone: string
+  }
 }
 
 export const Onboarding = () => {
@@ -40,8 +53,10 @@ export const Onboarding = () => {
     gardenType: 'indoor',
     notifications: true,
   })
+  const [isCompleting, setIsCompleting] = useState(false)
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false)
 
-  const totalSteps = 4
+  const totalSteps = 5
   const progress = (step / totalSteps) * 100
 
   const handleNext = () => {
@@ -57,15 +72,41 @@ export const Onboarding = () => {
   }
 
   const handleComplete = async () => {
-    try {
-      if (!currentUser) return
+    if (!currentUser) {
+      toast({
+        title: 'Authentication Error',
+        description: 'Please sign in to continue.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      })
+      return
+    }
 
-      // Save user preferences to Firestore
-      await setDoc(doc(db, 'users', currentUser.uid), {
-        preferences,
+    setIsCompleting(true)
+
+    try {
+      // Create user document reference
+      const userRef = doc(db, 'users', currentUser.uid)
+
+      // Prepare user data
+      const userData = {
+        id: currentUser.uid,
+        email: currentUser.email,
+        preferences: {
+          ...preferences,
+          updatedAt: new Date().toISOString()
+        },
         onboardingCompleted: true,
-        updatedAt: new Date(),
-      }, { merge: true })
+        createdAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+      }
+
+      // Save to Firestore with merge option
+      await setDoc(userRef, userData, { merge: true })
+
+      // Artificial delay for better UX
+      await new Promise(resolve => setTimeout(resolve, 1500))
 
       toast({
         title: 'Welcome to Greenur!',
@@ -78,13 +119,68 @@ export const Onboarding = () => {
       navigate('/botanica')
     } catch (error) {
       console.error('Error saving preferences:', error)
+      
+      let errorMessage = 'Failed to save your preferences.'
+      if (error instanceof Error) {
+        errorMessage += ` Error: ${error.message}`
+      }
+      
       toast({
         title: 'Error',
-        description: 'Failed to save your preferences. Please try again.',
+        description: errorMessage,
         status: 'error',
         duration: 5000,
         isClosable: true,
       })
+    } finally {
+      setIsCompleting(false)
+    }
+  }
+
+  const detectLocation = async () => {
+    setIsLoadingLocation(true)
+    try {
+      // Get user's coordinates
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject)
+      })
+
+      // Get timezone
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+
+      // Reverse geocode to get city and country
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${position.coords.latitude}&lon=${position.coords.longitude}&format=json`
+      )
+      const data = await response.json()
+
+      setPreferences(prev => ({
+        ...prev,
+        location: {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          city: data.address?.city || data.address?.town || data.address?.village,
+          country: data.address?.country,
+          timezone
+        }
+      }))
+
+      toast({
+        title: 'Location detected',
+        description: "We'll use this to provide better plant care recommendations.",
+        status: 'success',
+        duration: 3000
+      })
+    } catch (error) {
+      console.error('Error detecting location:', error)
+      toast({
+        title: 'Location detection failed',
+        description: 'Please check your browser settings and try again.',
+        status: 'error',
+        duration: 5000
+      })
+    } finally {
+      setIsLoadingLocation(false)
     }
   }
 
@@ -205,8 +301,38 @@ export const Onboarding = () => {
             </VStack>
           )}
 
-          {/* Step 4: Notifications */}
+          {/* Step 4: Location */}
           {step === 4 && (
+            <VStack spacing={6} align="stretch">
+              <Box>
+                <Heading size="lg" color="brand.500" mb={4}>
+                  Your Location
+                </Heading>
+                <Text fontSize="lg" color="gray.600">
+                  We'll use your location to provide weather-based plant care recommendations.
+                </Text>
+              </Box>
+              <Button
+                size="lg"
+                colorScheme="brand"
+                onClick={detectLocation}
+                isLoading={isLoadingLocation}
+                leftIcon={<FaMapMarkerAlt />}
+              >
+                Detect My Location
+              </Button>
+              {preferences.location && (
+                <Box p={4} bg="gray.50" borderRadius="md">
+                  <Text><strong>City:</strong> {preferences.location.city || 'Unknown'}</Text>
+                  <Text><strong>Country:</strong> {preferences.location.country || 'Unknown'}</Text>
+                  <Text><strong>Timezone:</strong> {preferences.location.timezone}</Text>
+                </Box>
+              )}
+            </VStack>
+          )}
+
+          {/* Step 5: Notifications */}
+          {step === 5 && (
             <VStack spacing={6} align="stretch">
               <Box>
                 <Heading size="lg" color="brand.500" mb={4}>
@@ -260,6 +386,21 @@ export const Onboarding = () => {
               {step === totalSteps ? 'Get Started' : 'Next'}
             </Button>
           </Stack>
+
+          {/* Loading Modal */}
+          <Modal isOpen={isCompleting} onClose={() => {}} isCentered closeOnOverlayClick={false}>
+            <ModalOverlay />
+            <ModalContent bg="transparent" boxShadow="none">
+              <ModalBody>
+                <VStack spacing={6} color="white">
+                  <Spinner size="xl" color="brand.500" thickness="4px" />
+                  <Text fontSize="lg" fontWeight="medium" color="brand.500">
+                    Setting up your personalized experience...
+                  </Text>
+                </VStack>
+              </ModalBody>
+            </ModalContent>
+          </Modal>
         </VStack>
       </Container>
     </Box>

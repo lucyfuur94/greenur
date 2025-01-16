@@ -1,4 +1,4 @@
-import { Box, Flex, Link, Container, useColorModeValue, Menu, MenuButton, MenuList, MenuItem, Avatar, Button, IconButton, Drawer, DrawerBody, DrawerHeader, DrawerOverlay, DrawerContent, DrawerCloseButton, useDisclosure, HStack } from '@chakra-ui/react'
+import { Box, Flex, Link, useColorModeValue, Menu, MenuButton, MenuList, MenuItem, Avatar, Button, IconButton, Drawer, DrawerBody, DrawerHeader, DrawerOverlay, DrawerContent, DrawerCloseButton, useDisclosure, HStack } from '@chakra-ui/react'
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom'
 import { auth } from '../../config/firebase'
 import { useAuth } from '../../contexts/AuthContext'
@@ -24,8 +24,8 @@ const Navigation = () => {
 
   return (
     <Box bg={bg} borderBottom="1px" borderColor={borderColor} position="fixed" w="100%" zIndex={1}>
-      <Container maxW="container.xl">
-        <Flex h={16} alignItems="center">
+      <Box px={4} maxW="100%">
+        <Flex h={16} alignItems="center" justifyContent="space-between">
           <HStack spacing={8} flex={1}>
             <Link 
               as={RouterLink} 
@@ -38,45 +38,47 @@ const Navigation = () => {
               Greenur
             </Link>
 
-            <Link
-              as={RouterLink}
-              to="/botanica"
-              color={isActive('/botanica') ? 'brand.500' : undefined}
-              fontWeight={isActive('/botanica') ? 'bold' : 'normal'}
-              fontSize="md"
-            >
-              Botanica
-            </Link>
-            
-            <Link
-              as={RouterLink}
-              to="/tracker"
-              color={isActive('/tracker') ? 'brand.500' : undefined}
-              fontWeight={isActive('/tracker') ? 'bold' : 'normal'}
-              fontSize="md"
-            >
-              Tracker
-            </Link>
+            <HStack spacing={4}>
+              <Link
+                as={RouterLink}
+                to="/botanica"
+                color={isActive('/botanica') ? 'brand.500' : undefined}
+                fontWeight={isActive('/botanica') ? 'bold' : 'normal'}
+                fontSize="md"
+              >
+                Botanica
+              </Link>
+              
+              <Link
+                as={RouterLink}
+                to="/tracker"
+                color={isActive('/tracker') ? 'brand.500' : undefined}
+                fontWeight={isActive('/tracker') ? 'bold' : 'normal'}
+                fontSize="md"
+              >
+                Tracker
+              </Link>
 
-            <Link
-              as={RouterLink}
-              to="/connect"
-              color={isActive('/connect') ? 'brand.500' : undefined}
-              fontWeight={isActive('/connect') ? 'bold' : 'normal'}
-              fontSize="md"
-            >
-              Connect
-            </Link>
+              <Link
+                as={RouterLink}
+                to="/connect"
+                color={isActive('/connect') ? 'brand.500' : undefined}
+                fontWeight={isActive('/connect') ? 'bold' : 'normal'}
+                fontSize="md"
+              >
+                Connect
+              </Link>
 
-            <Link
-              as={RouterLink}
-              to="/marketplace"
-              color={isActive('/marketplace') ? 'brand.500' : undefined}
-              fontWeight={isActive('/marketplace') ? 'bold' : 'normal'}
-              fontSize="md"
-            >
-              Marketplace
-            </Link>
+              <Link
+                as={RouterLink}
+                to="/marketplace"
+                color={isActive('/marketplace') ? 'brand.500' : undefined}
+                fontWeight={isActive('/marketplace') ? 'bold' : 'normal'}
+                fontSize="md"
+              >
+                Marketplace
+              </Link>
+            </HStack>
           </HStack>
           
           {currentUser && (
@@ -87,7 +89,6 @@ const Navigation = () => {
                 variant="link"
                 cursor="pointer"
                 minW={10}
-                ml={4}
               >
                 <Avatar 
                   size="sm" 
@@ -105,7 +106,7 @@ const Navigation = () => {
             </Menu>
           )}
         </Flex>
-      </Container>
+      </Box>
     </Box>
   )
 }
@@ -155,9 +156,9 @@ export const Layout = ({ children }: LayoutProps) => {
     <Box>
       <Navigation />
       <Box pt={16}>
-        <Container maxW="container.xl" py={8}>
+        <Box px={4} py={8} maxW="100%">
           {children}
-        </Container>
+        </Box>
       </Box>
       <Assistant />
     </Box>
