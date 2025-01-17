@@ -401,202 +401,88 @@ export const Botanica = () => {
 
   return (
     <Container 
-      maxW={{ base: 'full', md: 'container.xl' }} 
-      px={{ base: 2, md: 6 }}
-      centerContent
+      maxW="container.xl" 
+      className="responsive-container"
+      px={{ base: 2, md: 4 }}
     >
-      <VStack 
-        spacing={{ base: 4, md: 6 }} 
-        width="full" 
-        alignItems="stretch"
-      >
-        {/* Mobile-Friendly Hero Image */}
-        <Box 
-          width="full" 
-          height={{ base: '200px', md: '300px' }} 
-          overflow="hidden" 
-          borderRadius="md"
-        >
-          <Image 
-            src="https://img.freepik.com/premium-vector/single-one-line-drawing-plants-herbs-concept-continuous-line-draw-design-graphic-vector-illustration_638785-2231.jpg"
-            alt="Line art plant illustration"
-            width="full"
-            height="full"
-            objectFit="cover"
-            objectPosition="center"
-          />
+      <VStack spacing={4} width="100%">
+        <Box width="100%" position="relative">
+          <InputGroup>
+            <Input
+              placeholder="Search plants..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="prevent-overflow"
+              width="100%"
+              pr="4.5rem"
+            />
+            <InputRightElement width="4.5rem">
+              <Button 
+                h="1.75rem" 
+                size="sm" 
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <FaCamera />
+              </Button>
+            </InputRightElement>
+          </InputGroup>
         </Box>
 
-        {/* Mobile-Optimized Title */}
-        <Text 
-          fontSize={{ base: 'xl', md: '2xl' }} 
-          fontWeight="medium" 
-          textAlign="center" 
-          color="gray.700" 
-          whiteSpace="normal"
-          px={2}
-        >
-          Discover and learn about plants from around the world
-        </Text>
-
-        {/* Search Input with Camera */}
-        <Box position="relative" width="full">
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            if (searchQuery.trim()) {
-              navigate(`/botanica/search?q=${encodeURIComponent(searchQuery.trim())}`);
-            }
-          }}>
-            <InputGroup 
-              size={{ base: 'md', md: 'lg' }}
-              width="full"
-            >
-              <Input 
-                placeholder="Search plants by name..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                fontSize={{ base: 'sm', md: 'md' }}
-                height={{ base: '48px', md: 'auto' }}
-                borderColor="green.300"
-                _focus={{ 
-                  borderColor: 'green.500', 
-                  boxShadow: 'outline' 
-                }}
-              />
-              <InputRightElement 
-                width={{ base: '3rem', md: '4rem' }}
-                height="full"
+        {showSuggestions && (
+          <Box 
+            width="100%" 
+            maxHeight="300px" 
+            overflowY="auto" 
+            className="responsive-container"
+          >
+            {isSuggestionsLoading ? (
+              <Spinner />
+            ) : (
+              <Grid 
+                templateColumns={{
+                  base: "repeat(2, 1fr)", 
+                  md: "repeat(3, 1fr)", 
+                  lg: "repeat(4, 1fr)"
+                }} 
+                gap={4}
+                width="100%"
               >
-                <Button 
-                  variant="ghost" 
-                  onClick={() => fileInputRef.current?.click()}
-                  p={0}
-                  size={{ base: 'sm', md: 'md' }}
-                  color="green.500"
-                  _hover={{ color: 'green.600' }}
-                >
-                  <FaCamera 
-                    size={{ base: 16, md: 24 }} 
-                  />
-                </Button>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleImageSelect}
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                />
-              </InputRightElement>
-            </InputGroup>
-          </form>
-        </Box>
-
-        {/* Responsive Plant Suggestions */}
-        <Grid 
-          templateColumns={{ 
-            base: 'repeat(2, 1fr)', 
-            md: 'repeat(3, 1fr)', 
-            lg: 'repeat(4, 1fr)' 
-          }}
-          gap={{ base: 2, md: 4 }}
-          width="full"
-        >
-          {suggestions.map((plant) => (
-            <GridItem key={plant.id}>
-              <Card 
-                variant="outline" 
-                size={{ base: 'sm', md: 'md' }}
-                height="full"
-                cursor="pointer"
-                _hover={{ 
-                  transform: 'scale(1.02)', 
-                  transition: 'transform 0.2s ease-in-out',
-                  boxShadow: 'md'
-                }}
-                onClick={() => navigate(`/botanica/plant/${plant.id}`)}
-              >
-                <CardBody 
-                  display="flex" 
-                  flexDirection="column" 
-                  alignItems="center"
-                  p={{ base: 2, md: 4 }}
-                >
-                  <Box 
-                    width="full" 
-                    height={{ base: '120px', md: '180px' }} 
-                    borderRadius="md" 
-                    overflow="hidden"
-                  >
-                    <Image 
-                      src={plant.image || '/default-plant.png'}
-                      alt={plant.name}
-                      width="full"
-                      height="full"
-                      objectFit="cover"
-                      objectPosition="center"
-                      fallback={
-                        <Box 
-                          width="full" 
-                          height="full" 
-                          bg="gray.100" 
-                          display="flex" 
-                          alignItems="center" 
-                          justifyContent="center"
-                        >
-                          <Text color="gray.500" fontSize="sm">No Image</Text>
-                        </Box>
-                      }
-                    />
-                  </Box>
-                  <VStack 
-                    spacing={1} 
-                    mt={2} 
-                    width="full" 
-                    alignItems="center"
-                  >
-                    <Text 
-                      fontSize={{ base: 'xs', md: 'sm' }} 
-                      fontWeight="medium" 
-                      textAlign="center"
-                      noOfLines={2}
+                {suggestions.map((plant) => (
+                  <GridItem key={plant.id}>
+                    <Card 
+                      variant="outline" 
+                      width="100%" 
+                      className="prevent-overflow"
                     >
-                      {plant.name}
-                    </Text>
-                    {plant.scientificName && (
-                      <Text 
-                        fontSize={{ base: 'x-small', md: 'xs' }} 
-                        color="gray.500" 
-                        fontStyle="italic"
-                        textAlign="center"
-                        noOfLines={1}
-                      >
-                        {plant.scientificName}
-                      </Text>
-                    )}
-                    <HStack 
-                      spacing={1} 
-                      mt={1} 
-                      width="full" 
-                      justifyContent="center"
-                    >
-                      {plant.tags.slice(0, 2).map((tag) => (
-                        <Badge 
-                          key={tag} 
-                          colorScheme="green" 
-                          size="sm" 
-                          variant="subtle"
-                          fontSize={{ base: 'x-small', md: 'xs' }}
+                      <CardBody>
+                        {plant.image && (
+                          <Image 
+                            src={plant.image} 
+                            alt={plant.name} 
+                            className="responsive-image-container"
+                          />
+                        )}
+                        <Text 
+                          fontWeight="bold" 
+                          className="multiline-ellipsis"
                         >
-                          {tag}
-                        </Badge>
-                      ))}
-                    </HStack>
-                  </VStack>
-                </CardBody>
-              </Card>
-            </GridItem>
-          ))}
-        </Grid>
+                          {plant.name}
+                        </Text>
+                        <Text 
+                          fontSize="sm" 
+                          color="gray.500"
+                          className="prevent-overflow"
+                        >
+                          {plant.scientificName || plant.type}
+                        </Text>
+                      </CardBody>
+                    </Card>
+                  </GridItem>
+                ))}
+              </Grid>
+            )}
+          </Box>
+        )}
       </VStack>
     </Container>
   )
