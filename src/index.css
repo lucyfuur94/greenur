@@ -3,15 +3,72 @@
     Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   line-height: 1.5;
   font-weight: 400;
+
+  /* Mobile-first font scaling */
+  font-size: 14px;
 }
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+  touch-action: manipulation;
 }
 
 body {
   min-height: 100vh;
   background-color: #f7fafc;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* Responsive typography */
+@media screen and (min-width: 768px) {
+  :root {
+    font-size: 16px;
+  }
+}
+
+/* Ensure images and media are responsive */
+img, video, iframe {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Touch-friendly interactions */
+button, a, input, select, textarea {
+  min-height: 44px;
+  min-width: 44px;
+  touch-action: manipulation;
+}
+
+/* Prevent text overflow */
+p, h1, h2, h3, h4, h5, h6 {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Scrollbar and selection styles */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::selection {
+  background-color: rgba(76, 175, 80, 0.2);
 }

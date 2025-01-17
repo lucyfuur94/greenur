@@ -1,19 +1,21 @@
 #root {
-  max-width: 1280px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 0.5rem;
   text-align: center;
 }
 
 .logo {
-  height: 6em;
-  padding: 1.5em;
+  height: 4em;
+  padding: 1em;
   will-change: filter;
   transition: filter 300ms;
 }
+
 .logo:hover {
   filter: drop-shadow(0 0 2em #646cffaa);
 }
+
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
@@ -34,32 +36,32 @@
 }
 
 .card {
-  padding: 2em;
+  padding: 1em;
 }
 
 .read-the-docs {
   color: #888;
 }
 
-/* Mobile-specific media queries */
-@media screen and (max-width: 768px) {
+/* Desktop-specific media queries */
+@media screen and (min-width: 768px) {
   #root {
-    max-width: 100%;
-    padding: 1rem;
+    max-width: 1280px;
+    padding: 2rem;
   }
 
   .logo {
-    height: 4em;
-    padding: 1em;
+    height: 6em;
+    padding: 1.5em;
   }
 
   .card {
-    padding: 1em;
+    padding: 2em;
   }
 
   /* Responsive typography */
   body {
-    font-size: 14px;
+    font-size: 16px;
   }
 }
 
@@ -76,4 +78,18 @@ button, .interactive-element {
   min-height: 44px;
   min-width: 44px;
   touch-action: manipulation;
+}
+
+/* Prevent text overflow and improve readability */
+.text-container {
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Responsive image handling */
+.responsive-image {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
 }
