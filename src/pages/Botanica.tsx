@@ -27,6 +27,10 @@ import {
   Badge,
   List,
   ListItem,
+  Grid,
+  GridItem,
+  Card,
+  CardBody,
 } from '@chakra-ui/react'
 import { useState, useRef, useEffect } from 'react'
 import { FaCamera } from 'react-icons/fa'
@@ -396,55 +400,59 @@ export const Botanica = () => {
   }, [plantInfo])
 
   return (
-    <Container
-      height="calc(100vh - 64px)"
-      display="flex"
-      flexDirection="column"
-      justifyContent="flex-start"
-      alignItems="center"
-      maxW="container.xl"
-      px={4}
-      pt={48}
+    <Container 
+      maxW={{ base: 'full', md: 'container.xl' }} 
+      px={{ base: 2, md: 6 }}
+      centerContent
     >
-      <VStack spacing={4} width="100%" maxW="600px">
+      <VStack 
+        spacing={{ base: 4, md: 6 }} 
+        width="full" 
+        alignItems="stretch"
+      >
         <Image 
           src="https://img.freepik.com/premium-vector/single-one-line-drawing-plants-herbs-concept-continuous-line-draw-design-graphic-vector-illustration_638785-2231.jpg"
           alt="Line art plant illustration"
-          width="900px"
+          width="full"
           height="auto"
           mb={1}
         />
-        <Text fontSize="2xl" fontWeight="medium" textAlign="center" color="gray.700" whiteSpace="nowrap">
+        <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="medium" textAlign="center" color="gray.700" whiteSpace="nowrap">
           Discover and learn about plants from around the world
         </Text>
 
-        <Box position="relative" mx="auto" width="100%" maxW="600px">
+        <Box position="relative" mx="auto" width="full">
           <form onSubmit={(e) => {
             e.preventDefault();
             if (searchQuery.trim()) {
               navigate(`/botanica/search?q=${encodeURIComponent(searchQuery)}`);
             }
           }}>
-            <InputGroup size="lg">
-              <Input
-                placeholder="Search plants by name..."
+            <InputGroup 
+              size={{ base: 'md', md: 'lg' }}
+              width="full"
+            >
+              <Input 
+                placeholder="Search plants by name..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                fontSize="lg"
-                py={6}
-                boxShadow="sm"
-                _focus={{
-                  boxShadow: 'md',
-                }}
+                fontSize={{ base: 'sm', md: 'md' }}
+                height={{ base: '48px', md: 'auto' }}
               />
-              <InputRightElement width="4.5rem" h="full">
-                <Button
-                  h="1.75rem"
-                  size="sm"
+              <InputRightElement 
+                width={{ base: '3rem', md: '4rem' }}
+                height="full"
+              >
+                <Button 
+                  variant="ghost" 
                   onClick={() => fileInputRef.current?.click()}
-                  isLoading={isSuggestionsLoading}
+                  p={0}
+                  size={{ base: 'sm', md: 'md' }}
                 >
-                  <FaCamera />
+                  <FaCamera 
+                    size={{ base: 16, md: 24 }} 
+                    color="green.500" 
+                  />
                 </Button>
                 <input
                   type="file"
@@ -492,19 +500,19 @@ export const Botanica = () => {
                       <Image
                         src={plant.image}
                         alt={plant.name}
-                        boxSize="50px"
+                        boxSize={{ base: '50px', md: '75px' }}
                         objectFit="cover"
                         borderRadius="md"
-                        fallback={<Box boxSize="50px" bg="gray.100" borderRadius="md" />}
+                        fallback={<Box boxSize={{ base: '50px', md: '75px' }} bg="gray.100" borderRadius="md" />}
                       />
                       <Box flex="1">
                         <Text fontWeight="medium">{plant.name}</Text>
                         <HStack spacing={2} mt={1}>
-                          <Text fontSize="sm" color="gray.600">{plant.type}</Text>
+                          <Text fontSize={{ base: 'xs', md: 'sm' }} color="gray.600">{plant.type}</Text>
                           {plant.scientificName && (
                             <>
-                              <Text fontSize="sm" color="gray.600">•</Text>
-                              <Text fontSize="sm" color="gray.600" fontStyle="italic">
+                              <Text fontSize={{ base: 'xs', md: 'sm' }} color="gray.600">•</Text>
+                              <Text fontSize={{ base: 'xs', md: 'sm' }} color="gray.600" fontStyle="italic">
                                 {plant.scientificName}
                               </Text>
                             </>
@@ -531,11 +539,21 @@ export const Botanica = () => {
           <ModalHeader>Plant Analysis</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
-            <Tabs>
-              <TabList>
+            <Tabs 
+              variant="soft-rounded" 
+              colorScheme="green" 
+              size={{ base: 'sm', md: 'md' }}
+              width="full"
+            >
+              <TabList 
+                overflowX="auto" 
+                width="full" 
+                flexWrap={{ base: 'nowrap', md: 'wrap' }}
+              >
                 <Tab>Analysis</Tab>
                 <Tab>Related Videos</Tab>
               </TabList>
+              
               <TabPanels>
                 <TabPanel>
                   <VStack spacing={4} align="stretch">

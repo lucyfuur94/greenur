@@ -86,7 +86,7 @@ const Navigation = () => {
             </HStack>
           </HStack>
           
-          {currentUser && (
+          {currentUser ? (
             <Menu>
               <MenuButton
                 as={Button}
@@ -109,6 +109,15 @@ const Navigation = () => {
                 <MenuItem onClick={handleSignOut}>Sign Out</MenuItem>
               </MenuList>
             </Menu>
+          ) : (
+            <HStack spacing={4}>
+              <Button as={RouterLink} to="/login" variant="ghost">
+                Login
+              </Button>
+              <Button as={RouterLink} to="/signup" colorScheme="brand">
+                Sign Up
+              </Button>
+            </HStack>
           )}
         </Flex>
       </Box>

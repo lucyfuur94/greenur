@@ -63,6 +63,28 @@ Greenur is a web application that helps you track and manage your plants' growth
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
+## Mobile Compatibility
+
+### Responsive Design
+- Implemented mobile-first CSS media queries
+- Touch-friendly interactive elements
+- Responsive typography and layout
+- Optimized for screens from 320px to 768px
+
+### Performance Optimization
+- Reduced asset sizes for mobile networks
+- Implemented lazy loading
+- Minimized render-blocking resources
+
+### Testing
+- Tested on major mobile browsers (Chrome, Safari, Firefox)
+- Responsive across device sizes (iPhone, Android, tablets)
+
+### Deployment
+- Netlify configuration optimized for mobile performance
+- Strict security headers implemented
+- Caching strategies for faster mobile loading
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

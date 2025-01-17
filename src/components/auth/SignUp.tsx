@@ -1,140 +1,128 @@
 import {
   Box,
   Button,
+  Container,
   FormControl,
   FormLabel,
   Input,
   VStack,
   Text,
+  Link,
   useToast,
-  PinInput,
-  PinInputField,
-  HStack,
-  Heading,
-  Container,
   Flex,
-} from '@chakra-ui/react'
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { auth } from '../../config/firebase'
-import {
-  createUserWithEmailAndPassword,
-  sendEmailVerification,
-  applyActionCode,
-} from 'firebase/auth'
+  Heading,
+  Divider,
+} from '@chakra-ui/react';
+import { FcGoogle } from 'react-icons/fc';
+import { auth, googleProvider } from '../../config/firebase';
+import { signInWithPopup, createUserWithEmailAndPassword } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 
 export const SignUp = () => {
-  const navigate = useNavigate()
-  const toast = useToast()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [verificationCode, setVerificationCode] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [showVerification, setShowVerification] = useState(false)
+  const navigate = useNavigate();
+  const toast = useToast();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (password !== confirmPassword) {
-      toast({
-        title: 'Error',
-        description: 'Passwords do not match',
-        status: 'error',
-        duration: 3000,
-      })
-      return
-    }
-
+  const handleEmailSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
     try {
-      setIsLoading(true)
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-      
-      // Send verification email
-      await sendEmailVerification(userCredential.user)
-      
-      setShowVerification(true)
+      await createUserWithEmailAndPassword(auth, email, password);
       toast({
-        title: 'Verification Email Sent',
-        description: 'Please check your email for the verification code',
-        status: 'success',
-        duration: 5000,
-      })
-    } catch (error: any) {
-      console.error('Error signing up:', error)
-      toast({
-        title: 'Error',
-        description: error.message,
-        status: 'error',
-        duration: 5000,
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleVerification = async () => {
-    if (verificationCode.length !== 6) return
-
-    try {
-      setIsLoading(true)
-      await applyActionCode(auth, verificationCode)
-      
-      toast({
-        title: 'Success',
-        description: 'Email verified successfully',
+        title: 'Account created!',
+        description: 'Welcome to Greenur',
         status: 'success',
         duration: 3000,
-      })
-
-      // Navigate to onboarding
-      navigate('/onboarding')
-    } catch (error: any) {
-      console.error('Error verifying email:', error)
+      });
+      navigate('/botanica');
+    } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Invalid verification code',
+        title: 'Error creating account',
+        description: 'Please try again',
         status: 'error',
-        duration: 5000,
-      })
+        duration: 3000,
+      });
     } finally {
-      setIsLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    try {
+      await signInWithPopup(auth, googleProvider);
+      toast({
+        title: 'Welcome to Greenur!',
+        status: 'success',
+        duration: 3000,
+      });
+      navigate('/botanica');
+    } catch (error) {
+      toast({
+        title: 'Error signing up',
+        description: 'Please try again',
+        status: 'error',
+        duration: 3000,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <Container maxW="container.xl" py={10}>
-      <Flex h="90vh" alignItems="center" justifyContent="space-between">
-        <Box flex="1" pr={20}>
+    <Container maxW="container.xl" py={{ base: 8, md: 10 }}>
+      <Flex 
+        minH={{ base: "auto", md: "90vh" }}
+        direction={{ base: "column", md: "row" }}
+        align="center" 
+        justify="space-between"
+        gap={{ base: 8, md: 0 }}
+      >
+        <Box flex="1" pr={{ base: 0, md: 20 }}>
           <Heading
-            fontSize="6xl"
+            fontSize={{ base: "4xl", md: "6xl" }}
             lineHeight="1.2"
-            mb={6}
+            mb={{ base: 4, md: 6 }}
             color="brand.500"
+            textAlign={{ base: "center", md: "left" }}
           >
             Join the<br />
-            Green Revolution<br />
-            with Greenur
+            Green<br />
+            Revolution
           </Heading>
-          <Text fontSize="xl" color="gray.600">
-            Create your account and start your plant care journey today.
+          <Text 
+            fontSize={{ base: "lg", md: "xl" }} 
+            color="gray.600"
+            textAlign={{ base: "center", md: "left" }}
+          >
+            Create an account to start your plant care journey.
           </Text>
         </Box>
 
         <Box
           w="full"
           maxW="md"
-          p={8}
+          p={{ base: 6, md: 8 }}
           borderWidth={1}
           borderRadius="xl"
           boxShadow="xl"
           bg="white"
+          mx={{ base: 4, md: 0 }}
         >
-          {!showVerification ? (
-            <form onSubmit={handleSignUp}>
-              <VStack spacing={6}>
-                <Heading size="lg">Create Account</Heading>
-                
+          <VStack spacing={6} align="stretch">
+            <Box>
+              <Heading size="lg" mb={2}>Create Account</Heading>
+              <Text color="gray.600">
+                Already have an account? <Link as={RouterLink} to="/login" color="brand.500">Sign in</Link>
+              </Text>
+            </Box>
+
+            <form onSubmit={handleEmailSignUp}>
+              <VStack spacing={4}>
                 <FormControl isRequired>
                   <FormLabel>Email</FormLabel>
                   <Input
@@ -157,67 +145,33 @@ export const SignUp = () => {
                   />
                 </FormControl>
 
-                <FormControl isRequired>
-                  <FormLabel>Confirm Password</FormLabel>
-                  <Input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••"
-                    size="lg"
-                  />
-                </FormControl>
-
                 <Button
                   type="submit"
                   colorScheme="brand"
                   size="lg"
                   width="full"
-                  isLoading={isLoading}
+                  isLoading={loading}
                 >
                   Sign Up
                 </Button>
               </VStack>
             </form>
-          ) : (
-            <VStack spacing={6}>
-              <Heading size="lg">Verify Email</Heading>
-              
-              <Text align="center">
-                We've sent a verification code to {email}.<br />
-                Please enter it below.
-              </Text>
 
-              <HStack justify="center">
-                <PinInput
-                  otp
-                  size="lg"
-                  value={verificationCode}
-                  onChange={setVerificationCode}
-                >
-                  <PinInputField />
-                  <PinInputField />
-                  <PinInputField />
-                  <PinInputField />
-                  <PinInputField />
-                  <PinInputField />
-                </PinInput>
-              </HStack>
+            <Divider />
 
-              <Button
-                colorScheme="brand"
-                size="lg"
-                width="full"
-                onClick={handleVerification}
-                isLoading={isLoading}
-                isDisabled={verificationCode.length !== 6}
-              >
-                Verify Email
-              </Button>
-            </VStack>
-          )}
+            <Button
+              leftIcon={<FcGoogle />}
+              onClick={handleGoogleSignIn}
+              size="lg"
+              width="full"
+              variant="outline"
+              isLoading={loading}
+            >
+              Continue with Google
+            </Button>
+          </VStack>
         </Box>
       </Flex>
     </Container>
-  )
-} 
+  );
+}; 

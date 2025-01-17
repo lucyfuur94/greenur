@@ -14,12 +14,11 @@ import {
   Divider,
 } from '@chakra-ui/react';
 import { FcGoogle } from 'react-icons/fc';
-import { auth } from '../../config/firebase';
-import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth, googleProvider } from '../../config/firebase';
+import { signInWithPopup, signInWithEmailAndPassword } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { getAuth } from 'firebase/auth';
 
 export const Login = () => {
   const navigate = useNavigate();
@@ -27,19 +26,14 @@ export const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isSignUp] = useState(false);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email, password);
-      } else {
-        await signInWithEmailAndPassword(auth, email, password);
-      }
+      await signInWithEmailAndPassword(auth, email, password);
       toast({
-        title: isSignUp ? 'Account created!' : 'Welcome back!',
+        title: 'Welcome back!',
         status: 'success',
         duration: 3000,
       });
@@ -57,15 +51,9 @@ export const Login = () => {
   };
 
   const handleGoogleSignIn = async () => {
+    setLoading(true);
     try {
-      const provider = new GoogleAuthProvider();
-      const auth = getAuth();
-      auth.useDeviceLanguage();
-      await signInWithPopup(auth, provider, {
-        popupWidth: 500,
-        popupHeight: 600
-      });
-      
+      await signInWithPopup(auth, googleProvider);
       toast({
         title: 'Welcome to Greenur!',
         status: 'success',
@@ -79,24 +67,37 @@ export const Login = () => {
         status: 'error',
         duration: 3000,
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <Container maxW="container.xl" py={10}>
-      <Flex h="90vh" alignItems="center" justifyContent="space-between">
-        <Box flex="1" pr={20}>
+    <Container maxW="container.xl" py={{ base: 8, md: 10 }}>
+      <Flex 
+        minH={{ base: "auto", md: "90vh" }}
+        direction={{ base: "column", md: "row" }}
+        align="center" 
+        justify="space-between"
+        gap={{ base: 8, md: 0 }}
+      >
+        <Box flex="1" pr={{ base: 0, md: 20 }}>
           <Heading
-            fontSize="6xl"
+            fontSize={{ base: "4xl", md: "6xl" }}
             lineHeight="1.2"
-            mb={6}
+            mb={{ base: 4, md: 6 }}
             color="brand.500"
+            textAlign={{ base: "center", md: "left" }}
           >
             Welcome Back<br />
             to Your<br />
             Green Space
           </Heading>
-          <Text fontSize="xl" color="gray.600">
+          <Text 
+            fontSize={{ base: "lg", md: "xl" }} 
+            color="gray.600"
+            textAlign={{ base: "center", md: "left" }}
+          >
             Sign in to continue your plant care journey.
           </Text>
         </Box>
@@ -104,11 +105,12 @@ export const Login = () => {
         <Box
           w="full"
           maxW="md"
-          p={8}
+          p={{ base: 6, md: 8 }}
           borderWidth={1}
           borderRadius="xl"
           boxShadow="xl"
           bg="white"
+          mx={{ base: 4, md: 0 }}
         >
           <VStack spacing={6} align="stretch">
             <Box>

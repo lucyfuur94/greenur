@@ -154,40 +154,46 @@ export const BotanicaSearch = () => {
   };
 
   return (
-    <Container maxW="60%" py={8}>
-      <VStack spacing={8} align="stretch">
+    <Container 
+      maxW={{ base: 'full', md: 'container.xl' }} 
+      px={{ base: 2, md: 6 }}
+      centerContent
+    >
+      <VStack 
+        spacing={{ base: 4, md: 6 }} 
+        width="full" 
+        alignItems="stretch"
+      >
         <Button
           leftIcon={<FaArrowLeft />}
           variant="ghost"
           onClick={() => navigate('/botanica')}
           alignSelf="flex-start"
+          mb={2}
         >
           Back to Search
         </Button>
 
-        <Box>
-          <InputGroup size="lg">
-            <Input
-              placeholder="Search plants by name..."
-              value={searchQuery}
-              onChange={(e) => {
-                const newValue = e.target.value;
-                setSearchQuery(newValue);
-                setCurrentPage(1);
-                if (!newValue.trim()) {
-                  setResults([]);
-                  setError(null);
-                }
-              }}
-              fontSize="lg"
-              py={6}
-              boxShadow="sm"
-              _focus={{
-                boxShadow: 'md',
-              }}
-            />
-          </InputGroup>
-        </Box>
+        <InputGroup 
+          size={{ base: 'md', md: 'lg' }}
+          width="full"
+        >
+          <Input 
+            placeholder="Search plants..." 
+            value={searchQuery}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              setSearchQuery(newValue);
+              setCurrentPage(1);
+              if (!newValue.trim()) {
+                setResults([]);
+                setError(null);
+              }
+            }}
+            fontSize={{ base: 'sm', md: 'md' }}
+            height={{ base: '48px', md: 'auto' }}
+          />
+        </InputGroup>
 
         {isLoading ? (
           <VStack py={8} spacing={4}>
@@ -198,81 +204,91 @@ export const BotanicaSearch = () => {
           <Text color="gray.600" textAlign="center" py={8}>{error}</Text>
         ) : (
           <VStack spacing={8} align="stretch">
-            <Grid templateColumns="repeat(auto-fill, minmax(300px, 1fr))" gap={6}>
-              {results.map((plant) => (
-                <GridItem key={plant.id}>
-                  <Card
+            {/* Responsive grid for search results */}
+            <Grid 
+              templateColumns={{ 
+                base: 'repeat(2, 1fr)', 
+                md: 'repeat(3, 1fr)', 
+                lg: 'repeat(4, 1fr)' 
+              }}
+              gap={{ base: 2, md: 4 }}
+              width="full"
+            >
+              {results.map((result) => (
+                <GridItem key={result.id}>
+                  <Card 
+                    variant="outline" 
+                    size={{ base: 'sm', md: 'md' }}
+                    height="full"
                     cursor="pointer"
-                    onClick={() => navigate(`/botanica/plant/${plant.id}`)}
-                    _hover={{ transform: 'translateY(-2px)', shadow: 'md' }}
-                    transition="all 0.2s"
+                    _hover={{ 
+                      transform: 'scale(1.02)', 
+                      transition: 'transform 0.2s ease-in-out' 
+                    }}
+                    onClick={() => navigate(`/botanica/plant/${result.id}`)}
                   >
-                    <CardBody>
-                      <VStack spacing={4} align="stretch">
-                        <Box
-                          height="200px"
-                          borderRadius="md"
-                          overflow="hidden"
-                          bg="gray.100"
-                        >
-                          <Image
-                            src={plant.image_url}
-                            alt={plant.preferred_common_name || plant.name}
-                            width="100%"
-                            height="100%"
-                            objectFit="cover"
-                            fallback={
-                              <Box
-                                width="100%"
-                                height="100%"
-                                display="flex"
-                                alignItems="center"
-                                justifyContent="center"
-                              >
-                                <Text color="gray.500">No image available</Text>
-                              </Box>
-                            }
-                          />
-                        </Box>
-                        <Box>
-                          <Text fontSize="xl" fontWeight="semibold">
-                            {plant.preferred_common_name || plant.name}
-                          </Text>
-                          <HStack spacing={2} mt={1}>
-                            <Text fontSize="sm" color="gray.600">{plant.type}</Text>
-                            <Text fontSize="sm" color="gray.600">•</Text>
-                            <Text fontSize="sm" color="gray.600" fontStyle="italic">{plant.name}</Text>
-                          </HStack>
-                        </Box>
-                      </VStack>
+                    <CardBody 
+                      display="flex" 
+                      flexDirection="column" 
+                      alignItems="center"
+                      p={{ base: 2, md: 4 }}
+                    >
+                      <Image 
+                        src={result.image_url || '/default-plant.png'}
+                        alt={result.name}
+                        boxSize={{ base: '100px', md: '150px' }}
+                        objectFit="cover"
+                        borderRadius="md"
+                      />
+                      <Text 
+                        mt={2} 
+                        fontSize={{ base: 'xs', md: 'sm' }}
+                        textAlign="center"
+                      >
+                        {result.preferred_common_name || result.name}
+                      </Text>
                     </CardBody>
                   </Card>
                 </GridItem>
               ))}
             </Grid>
 
-            {totalPages > 1 && (
-              <ButtonGroup spacing={2} justifyContent="center">
-                <Button
+            {/* Responsive pagination */}
+            <HStack 
+              justifyContent="center" 
+              spacing={{ base: 2, md: 4 }}
+              width="full"
+              mt={{ base: 2, md: 4 }}
+            >
+              <ButtonGroup 
+                size={{ base: 'sm', md: 'md' }} 
+                variant="outline"
+              >
+                <Button 
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   isDisabled={currentPage === 1}
+                  width={{ base: '80px', md: 'auto' }}
                 >
                   Previous
                 </Button>
-                <Text alignSelf="center">
+                <Button 
+                  isDisabled={true}
+                  width={{ base: '80px', md: 'auto' }}
+                >
                   Page {currentPage} of {totalPages}
-                </Text>
-                <Button
+                </Button>
+                <Button 
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   isDisabled={currentPage === totalPages}
+                  width={{ base: '80px', md: 'auto' }}
                 >
                   Next
                 </Button>
               </ButtonGroup>
-            )}
+            </HStack>
           </VStack>
         )}
       </VStack>
     </Container>
-  );
-}; 
+  )
+}

@@ -16,6 +16,16 @@
   to = "/index.html"
   status = 200
 
+[headers]
+  # Mobile and performance optimization headers
+  [[headers.values]]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Cache-Control = "public, max-age=3600, must-revalidate"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["sharp"]
@@ -23,4 +33,9 @@
 
 [build.environment]
   NODE_VERSION = "18"
-  SHARP_IGNORE_GLOBAL_LIBVIPS = "1" 
+  SHARP_IGNORE_GLOBAL_LIBVIPS = "1"
+  
+# Performance and mobile optimization
+[context.production.environment]
+  NODE_ENV = "production"
+  NODE_OPTIONS = "--max_old_space_size=4096"
