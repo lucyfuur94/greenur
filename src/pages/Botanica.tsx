@@ -400,90 +400,91 @@ export const Botanica = () => {
   }, [plantInfo])
 
   return (
-    <Container 
-      maxW="container.xl" 
-      className="responsive-container"
-      px={{ base: 2, md: 4 }}
-    >
-      <VStack spacing={4} width="100%">
-        <Box width="100%" position="relative">
-          <InputGroup>
-            <Input
-              placeholder="Search plants..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="prevent-overflow"
-              width="100%"
-              pr="4.5rem"
-            />
-            <InputRightElement width="4.5rem">
-              <Button 
-                h="1.75rem" 
-                size="sm" 
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <FaCamera />
-              </Button>
-            </InputRightElement>
-          </InputGroup>
-        </Box>
+    <Box className="main-content">
+      <Box className="hero-section">
+        <Image
+          src="https://img.freepik.com/premium-vector/single-one-line-drawing-plants-herbs-concept-continuous-line-draw-design-graphic-vector-illustration_638785-2231.jpg"
+          alt="Line art plant illustration"
+          className="hero-image"
+        />
+        <Text className="hero-title">
+          Discover and learn about plants from around the world
+        </Text>
+      </Box>
 
-        {showSuggestions && (
-          <Box 
-            width="100%" 
-            maxHeight="300px" 
-            overflowY="auto" 
-            className="responsive-container"
-          >
-            {isSuggestionsLoading ? (
-              <Spinner />
-            ) : (
-              <Grid 
-                templateColumns={{
-                  base: "repeat(2, 1fr)", 
-                  md: "repeat(3, 1fr)", 
-                  lg: "repeat(4, 1fr)"
-                }} 
-                gap={4}
-                width="100%"
+      <Box className="search-container">
+        <InputGroup>
+          <Input
+            placeholder="Search plants by name..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-input"
+          />
+          <InputRightElement>
+            <Button
+              className="search-button"
+              onClick={() => fileInputRef.current?.click()}
+              aria-label="Upload plant image"
+            >
+              <FaCamera />
+            </Button>
+          </InputRightElement>
+        </InputGroup>
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleImageSelect}
+          accept="image/*"
+          style={{ display: 'none' }}
+        />
+      </Box>
+
+      {showSuggestions && (
+        <Box className="card-grid">
+          {isSuggestionsLoading ? (
+            <Spinner />
+          ) : suggestions.length > 0 ? (
+            suggestions.map((plant) => (
+              <Box
+                key={plant.id}
+                className="card"
+                onClick={() => navigate(`/botanica/plant/${plant.id}`)}
+                cursor="pointer"
               >
-                {suggestions.map((plant) => (
-                  <GridItem key={plant.id}>
-                    <Card 
-                      variant="outline" 
-                      width="100%" 
-                      className="prevent-overflow"
-                    >
-                      <CardBody>
-                        {plant.image && (
-                          <Image 
-                            src={plant.image} 
-                            alt={plant.name} 
-                            className="responsive-image-container"
-                          />
-                        )}
-                        <Text 
-                          fontWeight="bold" 
-                          className="multiline-ellipsis"
-                        >
-                          {plant.name}
-                        </Text>
-                        <Text 
-                          fontSize="sm" 
-                          color="gray.500"
-                          className="prevent-overflow"
-                        >
-                          {plant.scientificName || plant.type}
-                        </Text>
-                      </CardBody>
-                    </Card>
-                  </GridItem>
-                ))}
-              </Grid>
-            )}
-          </Box>
-        )}
-      </VStack>
-    </Container>
+                {plant.image && (
+                  <Image
+                    src={plant.image}
+                    alt={plant.name}
+                    className="card-image"
+                  />
+                )}
+                <Box className="card-content">
+                  <Text className="card-title">{plant.name}</Text>
+                  {plant.scientificName && (
+                    <Text className="card-subtitle">
+                      {plant.scientificName}
+                    </Text>
+                  )}
+                  <HStack mt={2} spacing={1}>
+                    {plant.tags.slice(0, 2).map((tag) => (
+                      <Badge
+                        key={tag}
+                        colorScheme="green"
+                        fontSize="xs"
+                        borderRadius="full"
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                  </HStack>
+                </Box>
+              </Box>
+            ))
+          ) : (
+            <Text color="gray.500">No plants found</Text>
+          )}
+        </Box>
+      )}
+    </Box>
   )
 }
