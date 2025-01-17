@@ -18,6 +18,9 @@
 
 [functions]
   node_bundler = "esbuild"
+  external_node_modules = ["sharp"]
+  included_files = ["netlify/functions/**/*"]
 
 [build.environment]
-  NODE_VERSION = "18" 
+  NODE_VERSION = "18"
+  SHARP_IGNORE_GLOBAL_LIBVIPS = "1" 
