@@ -22,23 +22,45 @@ const categorizeVideo = (title: string, description: string): Video['category'] 
 };
 
 export const fetchPlantVideos = async (plantName: string): Promise<Record<Video['category'], Video[]>> => {
+  const emptyResults = {
+    'How to grow': [],
+    'Care tips': [],
+    'Facts': [],
+    'Other': []
+  };
+
   try {
     const response = await fetch(
       `/.netlify/functions/get-videos?q=${encodeURIComponent(plantName + ' plant')}`
     );
     
     if (!response.ok) {
-      throw new Error('Failed to fetch videos');
+      console.error('Failed to fetch videos:', response.status, response.statusText);
+      return emptyResults;
     }
 
     const data = await response.json();
-    const videos = data.items.map((item: any) => ({
-      id: item.id.videoId,
-      title: item.snippet.title,
-      description: item.snippet.description,
-      thumbnail: item.snippet.thumbnails.medium.url,
-      category: categorizeVideo(item.snippet.title, item.snippet.description)
-    }));
+    
+    if (!data.items || !Array.isArray(data.items)) {
+      console.warn('Invalid video data format:', data);
+      return emptyResults;
+    }
+
+    const videos = data.items
+      .filter((item: any) => {
+        if (!item?.id?.videoId || !item?.snippet?.title) {
+          console.warn('Invalid video item:', item);
+          return false;
+        }
+        return true;
+      })
+      .map((item: any) => ({
+        id: item.id.videoId,
+        title: item.snippet.title,
+        description: item.snippet.description || '',
+        thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url || '',
+        category: categorizeVideo(item.snippet.title, item.snippet.description || '')
+      }));
 
     // Group videos by category
     return videos.reduce((acc: Record<Video['category'], Video[]>, video: Video) => {
@@ -47,14 +69,9 @@ export const fetchPlantVideos = async (plantName: string): Promise<Record<Video[
       }
       acc[video.category].push(video);
       return acc;
-    }, {
-      'How to grow': [],
-      'Care tips': [],
-      'Facts': [],
-      'Other': []
-    });
+    }, { ...emptyResults });
   } catch (error) {
     console.error('Error fetching videos:', error);
-    throw error;
+    return emptyResults;
   }
 }; 

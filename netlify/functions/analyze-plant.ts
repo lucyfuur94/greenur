@@ -1,19 +1,6 @@
 import { Handler } from '@netlify/functions'
 import OpenAI from 'openai'
-import { getAuth } from 'firebase-admin/auth'
-import { initializeApp, getApps, cert } from 'firebase-admin/app'
 import { resizeImage } from './utils/imageProcessor'
-
-// Initialize Firebase Admin if not already initialized
-if (!getApps().length) {
-  initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }),
-  })
-}
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -62,19 +49,6 @@ export const handler: Handler = async (event, context) => {
   }
 
   try {
-    // Verify Firebase Auth token
-    const authHeader = event.headers.authorization
-    if (!authHeader?.startsWith('Bearer ')) {
-      return { statusCode: 401, body: 'Unauthorized' }
-    }
-
-    const token = authHeader.split('Bearer ')[1]
-    try {
-      await getAuth().verifyIdToken(token)
-    } catch (error) {
-      return { statusCode: 401, body: 'Invalid token' }
-    }
-
     // Parse request body
     const { imageUrl } = JSON.parse(event.body || '{}')
     if (!imageUrl) {
@@ -89,7 +63,7 @@ export const handler: Handler = async (event, context) => {
 
     // Call GPT-4 Vision API
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4-vision-preview",
       messages: [
         {
           role: "system",
@@ -101,7 +75,9 @@ export const handler: Handler = async (event, context) => {
             { type: "text", text: "Analyze this plant image and provide care instructions." },
             {
               type: "image_url",
-              image_url: resizedImageUrl,
+              image_url: {
+                url: resizedImageUrl
+              }
             }
           ]
         }

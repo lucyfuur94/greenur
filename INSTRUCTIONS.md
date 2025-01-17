@@ -213,3 +213,5 @@
    - Check Netlify deploy logs
    - Monitor function execution in Netlify dashboard
    - Set up alerts for build failures 
+
+⚠️ IMPORTANT: When modifying environment files (.env, .env.local), always preserve existing API keys and configurations. Never remove or overwrite existing keys when adding new ones. 

@@ -11,7 +11,12 @@ const Navigation = () => {
   const bg = useColorModeValue('white', 'gray.800')
   const borderColor = useColorModeValue('gray.200', 'gray.700')
 
-  const isActive = (path: string) => location.pathname === path
+  const isActive = (path: string) => {
+    if (path === '/botanica') {
+      return location.pathname.startsWith('/botanica')
+    }
+    return location.pathname === path
+  }
 
   const handleSignOut = async () => {
     try {
@@ -24,7 +29,7 @@ const Navigation = () => {
 
   return (
     <Box bg={bg} borderBottom="1px" borderColor={borderColor} position="fixed" w="100%" zIndex={1}>
-      <Box px={4} maxW="100%">
+      <Box maxW="60%" mx="auto">
         <Flex h={16} alignItems="center" justifyContent="space-between">
           <HStack spacing={8} flex={1}>
             <Link 
@@ -156,9 +161,7 @@ export const Layout = ({ children }: LayoutProps) => {
     <Box>
       <Navigation />
       <Box pt={16}>
-        <Box px={4} py={8} maxW="100%">
-          {children}
-        </Box>
+        {children}
       </Box>
       <Assistant />
     </Box>

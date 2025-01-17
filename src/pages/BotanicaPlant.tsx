@@ -12,45 +12,22 @@ import {
   Card,
   CardHeader,
   CardBody,
-  Badge,
   Button,
   HStack,
   Link,
   Tabs,
   TabList,
-  TabPanels,
   Tab,
+  TabPanels,
   TabPanel,
-  Spinner,
+  UnorderedList,
+  ListItem,
+  SimpleGrid,
 } from '@chakra-ui/react'
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getPlantDetails } from '../services/wikiService'
-import { fetchOpenFarmData } from '../services/plantService'
-import { fetchPlantNews } from '../services/newsService'
-import { fetchPlantVideos, Video } from '../services/videoService'
-import { FaArrowLeft, FaExclamationTriangle, FaExternalLinkAlt } from 'react-icons/fa'
-
-interface NewsArticle {
-  title: string
-  description: string
-  url: string
-  imageUrl?: string
-  provider: string
-  datePublished: string
-}
-
-interface PlantDetails {
-  name: string;
-  scientificName: string;
-  family: string;
-  description: string;
-  type: string;
-  growthHabit: string;
-  nativeTo: string[];
-  careInstructions: Record<string, string>;
-  images: string[];
-}
+import { getPlantDetails, PlantDetails } from '../services/plantService'
+import { FaArrowLeft, FaExternalLinkAlt, FaSun, FaTint, FaSeedling, FaThermometerHalf, FaBug } from 'react-icons/fa'
 
 export const BotanicaPlant = () => {
   const { id } = useParams<{ id: string }>()
@@ -58,19 +35,8 @@ export const BotanicaPlant = () => {
   const toast = useToast()
 
   const [isLoading, setIsLoading] = useState(true)
-  const [isLoadingOpenFarm, setIsLoadingOpenFarm] = useState(true)
-  const [isLoadingNews, setIsLoadingNews] = useState(true)
-  const [isLoadingVideos, setIsLoadingVideos] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [plantDetails, setPlantDetails] = useState<PlantDetails | null>(null)
-  const [openFarmData, setOpenFarmData] = useState<any>(null)
-  const [news, setNews] = useState<NewsArticle[]>([])
-  const [videos, setVideos] = useState<Record<Video['category'], Video[]>>({
-    'How to grow': [],
-    'Care tips': [],
-    'Facts': [],
-    'Other': []
-  })
 
   useEffect(() => {
     if (id) {
@@ -83,27 +49,8 @@ export const BotanicaPlant = () => {
     setError(null)
 
     try {
-      const details = await getPlantDetails(id!)
+      const details = await getPlantDetails(parseInt(id!))
       setPlantDetails(details)
-
-      // Fetch additional data in parallel
-      Promise.all([
-        fetchOpenFarmData(details.name).then(data => {
-          setOpenFarmData(data)
-          setIsLoadingOpenFarm(false)
-        }),
-        fetchPlantNews(details.name).then(articles => {
-          setNews(articles)
-          setIsLoadingNews(false)
-        }),
-        fetchPlantVideos(details.name).then(videoData => {
-          setVideos(videoData)
-          setIsLoadingVideos(false)
-        })
-      ]).catch(error => {
-        console.error('Error fetching additional data:', error)
-      })
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load plant details'
       console.error('Error loading plant details:', error)
@@ -119,26 +66,26 @@ export const BotanicaPlant = () => {
     }
   }
 
-  const hasCareInstructions = (data: any) => {
-    if (!data) return false;
-    if (data.overview || data.sun_requirements || data.soil_requirements || data.water_requirements) {
-      return true;
-    }
-    return Object.values(plantDetails?.careInstructions || {}).some(value => value);
-  };
+  const formatDescription = (text: string) => {
+    // Remove HTML tags and decode HTML entities
+    const div = document.createElement('div')
+    div.innerHTML = text
+    return div.textContent || div.innerText || ''
+  }
 
   if (isLoading) {
     return (
-      <Container maxW="container.xl" py={8}>
+      <Container maxW="60%" py={8}>
+        <Button
+          leftIcon={<FaArrowLeft />}
+          variant="ghost"
+          onClick={() => navigate(-1)}
+          mb={8}
+        >
+          Back to Search
+        </Button>
+
         <VStack spacing={8} align="stretch">
-          <Button
-            leftIcon={<FaArrowLeft />}
-            variant="ghost"
-            onClick={() => navigate(-1)}
-            alignSelf="flex-start"
-          >
-            Back to Search
-          </Button>
           <Grid templateColumns={{ base: '1fr', md: '1fr 2fr' }} gap={8}>
             <GridItem>
               <Skeleton height="400px" borderRadius="lg" />
@@ -158,16 +105,17 @@ export const BotanicaPlant = () => {
 
   if (error) {
     return (
-      <Container maxW="container.xl" py={8}>
+      <Container maxW="60%" py={8}>
+        <Button
+          leftIcon={<FaArrowLeft />}
+          variant="ghost"
+          onClick={() => navigate(-1)}
+          mb={8}
+        >
+          Back to Search
+        </Button>
+
         <VStack spacing={8} align="stretch">
-          <Button
-            leftIcon={<FaArrowLeft />}
-            variant="ghost"
-            onClick={() => navigate(-1)}
-            alignSelf="flex-start"
-          >
-            Back to Search
-          </Button>
           <Box
             p={8}
             bg="red.50"
@@ -177,7 +125,6 @@ export const BotanicaPlant = () => {
             alignItems="center"
             gap={4}
           >
-            <FaExclamationTriangle size={24} />
             <VStack align="stretch" spacing={2}>
               <Text fontWeight="bold">Error Loading Plant Details</Text>
               <Text>{error}</Text>
@@ -193,303 +140,282 @@ export const BotanicaPlant = () => {
   }
 
   return (
-    <Box>
-      {/* Sticky Header */}
-      <Box 
-        position="sticky" 
-        top={0} 
-        bg="white" 
-        borderBottom="1px" 
-        borderColor="gray.200"
-        zIndex={10}
-        py={4}
-        px={8}
+    <Container maxW="60%" py={8}>
+      <Button
+        leftIcon={<FaArrowLeft />}
+        variant="ghost"
+        onClick={() => navigate(-1)}
+        mb={8}
       >
-        <Container maxW="container.xl">
-          <Button
-            leftIcon={<FaArrowLeft />}
-            variant="ghost"
-            onClick={() => navigate(-1)}
-          >
-            Back to Search
-          </Button>
-        </Container>
-      </Box>
+        Back to Search
+      </Button>
 
-      <Container maxW="container.xl" py={8}>
-        <Grid 
-          templateColumns={{ base: '1fr', xl: '350px 1fr 350px' }}
-          gap={8}
-        >
-          {/* Left Column - Image and Basic Info */}
-          <GridItem>
-            <VStack spacing={6} position="sticky" top="100px">
-              <Box
-                borderRadius="lg"
-                overflow="hidden"
-                bg="gray.100"
-                width="100%"
-                height="350px"
-              >
-                {plantDetails.images?.[0] ? (
-                  <Image
-                    src={plantDetails.images[0]}
-                    alt={plantDetails.name}
-                    objectFit="cover"
-                    width="100%"
-                    height="100%"
-                  />
-                ) : (
-                  <Box
-                    width="100%"
-                    height="100%"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Text color="gray.500">No image available</Text>
-                  </Box>
-                )}
-              </Box>
+      <Grid 
+        templateColumns={{ base: '1fr', md: '1fr 2fr' }}
+        gap={8}
+      >
+        {/* Left Column - Image and Basic Info */}
+        <GridItem>
+          <VStack spacing={6}>
+            <Box
+              borderRadius="lg"
+              overflow="hidden"
+              bg="gray.100"
+              width="100%"
+              height="350px"
+            >
+              {plantDetails.default_photo?.large_url ? (
+                <Image
+                  src={plantDetails.default_photo.large_url}
+                  alt={plantDetails.preferred_common_name || plantDetails.name}
+                  objectFit="cover"
+                  width="100%"
+                  height="100%"
+                />
+              ) : (
+                <Box
+                  width="100%"
+                  height="100%"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <Text color="gray.500">No image available</Text>
+                </Box>
+              )}
+            </Box>
 
-              <Card width="100%">
-                <CardBody>
+            <Card width="100%">
+              <CardBody>
+                <VStack spacing={4} align="stretch">
+                  <Heading size="lg">{plantDetails.preferred_common_name || plantDetails.name}</Heading>
+                  <Text color="gray.600" fontStyle="italic">
+                    {plantDetails.name}
+                  </Text>
+                  <SimpleGrid columns={2} spacing={4}>
+                    <HStack spacing={3}>
+                      <FaSun color="#ED8936" />
+                      <VStack align="start" spacing={0}>
+                        <Text fontWeight="bold">Light</Text>
+                        <Text fontSize="sm">Full Sun</Text>
+                      </VStack>
+                    </HStack>
+                    <HStack spacing={3}>
+                      <FaTint color="#4299E1" />
+                      <VStack align="start" spacing={0}>
+                        <Text fontWeight="bold">Water</Text>
+                        <Text fontSize="sm">Moderate</Text>
+                      </VStack>
+                    </HStack>
+                    <HStack spacing={3}>
+                      <FaSeedling color="#48BB78" />
+                      <VStack align="start" spacing={0}>
+                        <Text fontWeight="bold">Fertilizer</Text>
+                        <Text fontSize="sm">Monthly</Text>
+                      </VStack>
+                    </HStack>
+                    <HStack spacing={3}>
+                      <FaThermometerHalf color="#F56565" />
+                      <VStack align="start" spacing={0}>
+                        <Text fontWeight="bold">Temperature</Text>
+                        <Text fontSize="sm">65-75°F</Text>
+                      </VStack>
+                    </HStack>
+                  </SimpleGrid>
+                </VStack>
+              </CardBody>
+            </Card>
+          </VStack>
+        </GridItem>
+
+        {/* Right Column - Description and Growth Information */}
+        <GridItem>
+          <VStack spacing={6} align="stretch">
+            <Tabs>
+              <TabList>
+                <Tab>Overview</Tab>
+                <Tab>Growth Stages</Tab>
+                <Tab>Care Instructions</Tab>
+              </TabList>
+
+              <TabPanels>
+                <TabPanel>
                   <VStack spacing={4} align="stretch">
-                    <Heading size="lg">{plantDetails.name}</Heading>
-                    <Text color="gray.600" fontStyle="italic">
-                      {plantDetails.scientificName}
-                    </Text>
-                    {plantDetails.family && (
+                    {plantDetails.wikipedia_summary && (
                       <Box>
-                        <Text fontWeight="bold">Family</Text>
-                        <Text>{plantDetails.family}</Text>
-                      </Box>
-                    )}
-                    {plantDetails.type && (
-                      <Box>
-                        <Text fontWeight="bold">Type</Text>
-                        <Text>{plantDetails.type}</Text>
-                      </Box>
-                    )}
-                    {plantDetails.growthHabit && (
-                      <Box>
-                        <Text fontWeight="bold">Growth Habit</Text>
-                        <Text>{plantDetails.growthHabit}</Text>
-                      </Box>
-                    )}
-                    {plantDetails.nativeTo?.length > 0 && (
-                      <Box>
-                        <Text fontWeight="bold">Native To</Text>
-                        <HStack spacing={2} flexWrap="wrap">
-                          {plantDetails.nativeTo.map((region: string) => (
-                            <Badge key={region} colorScheme="brand">
-                              {region}
-                            </Badge>
-                          ))}
-                        </HStack>
+                        <Heading size="md" mb={2}>Description</Heading>
+                        <Text noOfLines={6}>{formatDescription(plantDetails.wikipedia_summary)}</Text>
+                        {plantDetails.wikipedia_url && (
+                          <Link href={plantDetails.wikipedia_url} isExternal mt={4} display="inline-flex" alignItems="center">
+                            Read more on Wikipedia <FaExternalLinkAlt size={12} style={{ marginLeft: '0.5rem' }} />
+                          </Link>
+                        )}
                       </Box>
                     )}
                   </VStack>
-                </CardBody>
-              </Card>
-            </VStack>
-          </GridItem>
+                </TabPanel>
 
-          {/* Middle Column - Description and Care */}
-          <GridItem>
-            <VStack spacing={6} align="stretch">
-              {plantDetails.description && (
-                <Card>
-                  <CardHeader>
-                    <Heading size="md">Description</Heading>
-                  </CardHeader>
-                  <CardBody>
-                    <Text>{plantDetails.description}</Text>
-                  </CardBody>
-                </Card>
-              )}
+                <TabPanel>
+                  <VStack spacing={4} align="stretch">
+                    <Box>
+                      <Heading size="md" mb={4}>Growth Stages</Heading>
+                      
+                      <Card mb={4}>
+                        <CardHeader>
+                          <Heading size="sm">1. Germination (1-2 weeks)</Heading>
+                        </CardHeader>
+                        <CardBody>
+                          <VStack align="stretch" spacing={3}>
+                            <Text>The seed absorbs water and begins to sprout.</Text>
+                            <UnorderedList spacing={2}>
+                              <ListItem>Temperature: 65-75°F (18-24°C)</ListItem>
+                              <ListItem>Water: Keep soil consistently moist</ListItem>
+                              <ListItem>Light: Not required until sprout emerges</ListItem>
+                            </UnorderedList>
+                          </VStack>
+                        </CardBody>
+                      </Card>
 
-              {(isLoadingOpenFarm || hasCareInstructions(openFarmData) || hasCareInstructions(plantDetails)) && (
-                <Card>
-                  <CardHeader>
-                    <Heading size="md">Care Instructions</Heading>
-                  </CardHeader>
-                  <CardBody>
-                    {isLoadingOpenFarm ? (
-                      <VStack spacing={4} align="center">
-                        <Spinner />
-                        <Text>Fetching care information...</Text>
-                      </VStack>
-                    ) : openFarmData && hasCareInstructions(openFarmData) ? (
-                      <VStack spacing={4} align="stretch">
-                        {openFarmData.overview && (
-                          <Box>
-                            <Text fontWeight="bold">Overview</Text>
-                            <Text>{openFarmData.overview}</Text>
-                          </Box>
-                        )}
-                        {openFarmData.sun_requirements && (
-                          <Box>
-                            <Text fontWeight="bold">Sun Requirements</Text>
-                            <Text>{openFarmData.sun_requirements}</Text>
-                          </Box>
-                        )}
-                        {openFarmData.soil_requirements && (
-                          <Box>
-                            <Text fontWeight="bold">Soil Requirements</Text>
-                            <Text>{openFarmData.soil_requirements}</Text>
-                          </Box>
-                        )}
-                        {openFarmData.water_requirements && (
-                          <Box>
-                            <Text fontWeight="bold">Water Requirements</Text>
-                            <Text>{openFarmData.water_requirements}</Text>
-                          </Box>
-                        )}
-                      </VStack>
-                    ) : hasCareInstructions(plantDetails) ? (
-                      <VStack spacing={4} align="stretch">
-                        {Object.entries(plantDetails.careInstructions)
-                          .filter(([_, value]) => value)
-                          .map(([key, value]) => (
-                            <Box key={key}>
-                              <Text fontWeight="bold" textTransform="capitalize">
-                                {key}
-                              </Text>
-                              <Text>{value}</Text>
-                            </Box>
-                          ))}
-                      </VStack>
-                    ) : null}
-                  </CardBody>
-                </Card>
-              )}
-            </VStack>
-          </GridItem>
+                      <Card mb={4}>
+                        <CardHeader>
+                          <Heading size="sm">2. Seedling (2-4 weeks)</Heading>
+                        </CardHeader>
+                        <CardBody>
+                          <VStack align="stretch" spacing={3}>
+                            <Text>First true leaves develop and plant establishes root system.</Text>
+                            <UnorderedList spacing={2}>
+                              <ListItem>Temperature: 65-75°F (18-24°C)</ListItem>
+                              <ListItem>Water: Maintain even moisture</ListItem>
+                              <ListItem>Light: 14-16 hours of direct sunlight or grow lights</ListItem>
+                              <ListItem>Fertilizer: Start with diluted fertilizer</ListItem>
+                            </UnorderedList>
+                          </VStack>
+                        </CardBody>
+                      </Card>
 
-          {/* Right Column - News and Videos */}
-          <GridItem>
-            <VStack spacing={6} position="sticky" top="100px">
-              {(isLoadingNews || news.length > 0) && (
-                <Card width="100%">
-                  <CardHeader>
-                    <Heading size="md">Recent News</Heading>
-                  </CardHeader>
-                  <CardBody>
-                    {isLoadingNews ? (
-                      <VStack spacing={4} align="center">
-                        <Spinner />
-                        <Text>Loading news articles...</Text>
-                      </VStack>
-                    ) : (
-                      <VStack spacing={4} align="stretch">
-                        {news.map((article, index) => (
-                          <Card key={index} variant="outline">
-                            <CardBody>
-                              <VStack spacing={3} align="stretch">
-                                {article.imageUrl && (
-                                  <Image
-                                    src={article.imageUrl}
-                                    alt={article.title}
-                                    borderRadius="md"
-                                    height="150px"
-                                    objectFit="cover"
-                                  />
-                                )}
-                                <Heading size="sm">{article.title}</Heading>
-                                <Text noOfLines={2} fontSize="sm">
-                                  {article.description}
-                                </Text>
-                                <Link href={article.url} isExternal>
-                                  <Button
-                                    rightIcon={<FaExternalLinkAlt />}
-                                    size="sm"
-                                    variant="outline"
-                                    width="full"
-                                  >
-                                    Read More
-                                  </Button>
-                                </Link>
+                      <Card mb={4}>
+                        <CardHeader>
+                          <Heading size="sm">3. Vegetative Growth (4-8 weeks)</Heading>
+                        </CardHeader>
+                        <CardBody>
+                          <VStack align="stretch" spacing={3}>
+                            <Text>Plant focuses on leaf and stem growth.</Text>
+                            <UnorderedList spacing={2}>
+                              <ListItem>Temperature: 65-75°F (18-24°C)</ListItem>
+                              <ListItem>Water: Regular watering, allow top soil to dry slightly</ListItem>
+                              <ListItem>Light: Full sun or 14-16 hours of grow lights</ListItem>
+                              <ListItem>Fertilizer: Regular feeding with balanced fertilizer</ListItem>
+                            </UnorderedList>
+                          </VStack>
+                        </CardBody>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <Heading size="sm">4. Maturity (8-12 weeks)</Heading>
+                        </CardHeader>
+                        <CardBody>
+                          <VStack align="stretch" spacing={3}>
+                            <Text>Plant reaches full size and begins producing.</Text>
+                            <UnorderedList spacing={2}>
+                              <ListItem>Temperature: 65-75°F (18-24°C)</ListItem>
+                              <ListItem>Water: Regular deep watering</ListItem>
+                              <ListItem>Light: Full sun or 12-14 hours of grow lights</ListItem>
+                              <ListItem>Fertilizer: Reduce nitrogen, increase phosphorus and potassium</ListItem>
+                            </UnorderedList>
+                          </VStack>
+                        </CardBody>
+                      </Card>
+                    </Box>
+                  </VStack>
+                </TabPanel>
+
+                <TabPanel>
+                  <VStack spacing={4} align="stretch">
+                    <Box>
+                      <Heading size="md" mb={4}>Care Instructions</Heading>
+
+                      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                        <Card>
+                          <CardBody>
+                            <HStack spacing={4} align="start">
+                              <Box color="orange.400">
+                                <FaSun size={24} />
+                              </Box>
+                              <VStack align="start" spacing={2}>
+                                <Heading size="sm">Light Requirements</Heading>
+                                <UnorderedList spacing={2}>
+                                  <ListItem>Full sun (6+ hours of direct sunlight)</ListItem>
+                                  <ListItem>Protect from intense afternoon sun</ListItem>
+                                  <ListItem>Rotate plant regularly</ListItem>
+                                </UnorderedList>
                               </VStack>
-                            </CardBody>
-                          </Card>
-                        ))}
-                      </VStack>
-                    )}
-                  </CardBody>
-                </Card>
-              )}
+                            </HStack>
+                          </CardBody>
+                        </Card>
 
-              {(isLoadingVideos || Object.values(videos).some(v => v.length > 0)) && (
-                <Card width="100%">
-                  <CardHeader>
-                    <Heading size="md">Videos</Heading>
-                  </CardHeader>
-                  <CardBody>
-                    {isLoadingVideos ? (
-                      <VStack spacing={4} align="center">
-                        <Spinner />
-                        <Text>Loading videos...</Text>
-                      </VStack>
-                    ) : (
-                      <Tabs>
-                        <TabList>
-                          {Object.entries(videos)
-                            .filter(([_, videos]) => videos.length > 0)
-                            .map(([category]) => (
-                              <Tab key={category}>{category}</Tab>
-                            ))}
-                        </TabList>
-                        <TabPanels>
-                          {Object.entries(videos)
-                            .filter(([_, videos]) => videos.length > 0)
-                            .map(([category, categoryVideos]) => (
-                              <TabPanel key={category} p={0} mt={4}>
-                                <VStack spacing={4} align="stretch">
-                                  {categoryVideos.map((video) => (
-                                    <Card key={video.id} variant="outline">
-                                      <CardBody>
-                                        <VStack spacing={3} align="stretch">
-                                          <Box
-                                            position="relative"
-                                            paddingBottom="56.25%"
-                                            height="0"
-                                            overflow="hidden"
-                                            borderRadius="md"
-                                          >
-                                            <Box
-                                              as="iframe"
-                                              position="absolute"
-                                              top="0"
-                                              left="0"
-                                              width="100%"
-                                              height="100%"
-                                              src={`https://www.youtube.com/embed/${video.id}`}
-                                              title={video.title}
-                                              allowFullScreen={true}
-                                              border="0"
-                                            />
-                                          </Box>
-                                          <Heading size="sm" noOfLines={2}>
-                                            {video.title}
-                                          </Heading>
-                                        </VStack>
-                                      </CardBody>
-                                    </Card>
-                                  ))}
-                                </VStack>
-                              </TabPanel>
-                            ))}
-                        </TabPanels>
-                      </Tabs>
-                    )}
-                  </CardBody>
-                </Card>
-              )}
-            </VStack>
-          </GridItem>
-        </Grid>
-      </Container>
-    </Box>
-  )
-} 
+                        <Card>
+                          <CardBody>
+                            <HStack spacing={4} align="start">
+                              <Box color="blue.400">
+                                <FaTint size={24} />
+                              </Box>
+                              <VStack align="start" spacing={2}>
+                                <Heading size="sm">Watering Schedule</Heading>
+                                <UnorderedList spacing={2}>
+                                  <ListItem>Water when top soil is dry</ListItem>
+                                  <ListItem>Avoid overwatering</ListItem>
+                                  <ListItem>Increase frequency in hot weather</ListItem>
+                                </UnorderedList>
+                              </VStack>
+                            </HStack>
+                          </CardBody>
+                        </Card>
+
+                        <Card>
+                          <CardBody>
+                            <HStack spacing={4} align="start">
+                              <Box color="green.400">
+                                <FaSeedling size={24} />
+                              </Box>
+                              <VStack align="start" spacing={2}>
+                                <Heading size="sm">Fertilization</Heading>
+                                <UnorderedList spacing={2}>
+                                  <ListItem>Apply balanced fertilizer monthly</ListItem>
+                                  <ListItem>Reduce feeding in winter</ListItem>
+                                  <ListItem>Watch for nutrient deficiency</ListItem>
+                                </UnorderedList>
+                              </VStack>
+                            </HStack>
+                          </CardBody>
+                        </Card>
+
+                        <Card>
+                          <CardBody>
+                            <HStack spacing={4} align="start">
+                              <Box color="red.400">
+                                <FaBug size={24} />
+                              </Box>
+                              <VStack align="start" spacing={2}>
+                                <Heading size="sm">Common Issues</Heading>
+                                <UnorderedList spacing={2}>
+                                  <ListItem>Monitor for pests</ListItem>
+                                  <ListItem>Check for diseases</ListItem>
+                                  <ListItem>Maintain good air flow</ListItem>
+                                </UnorderedList>
+                              </VStack>
+                            </HStack>
+                          </CardBody>
+                        </Card>
+                      </SimpleGrid>
+                    </Box>
+                  </VStack>
+                </TabPanel>
+              </TabPanels>
+            </Tabs>
+          </VStack>
+        </GridItem>
+      </Grid>
+    </Container>
+  );
+}; 

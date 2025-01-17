@@ -1,5 +1,3 @@
-import { auth } from '../config/firebase'
-
 export interface PlantAnalysis {
   plantType: string
   growthStage: string
@@ -9,12 +7,6 @@ export interface PlantAnalysis {
 
 export const analyzePlantImage = async (image: File | string): Promise<PlantAnalysis> => {
   try {
-    // Get the current user's ID token
-    const token = await auth.currentUser?.getIdToken()
-    if (!token) {
-      throw new Error('Not authenticated')
-    }
-
     // Create form data or use URL
     let body: FormData | string
     if (image instanceof File) {
@@ -29,19 +21,30 @@ export const analyzePlantImage = async (image: File | string): Promise<PlantAnal
     const response = await fetch('/.netlify/functions/analyze-plant', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
         ...(typeof image === 'string' && { 'Content-Type': 'application/json' })
       },
       body
     })
 
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'Failed to analyze plant image')
+      const errorText = await response.text()
+      let errorMessage: string
+      try {
+        const errorJson = JSON.parse(errorText)
+        errorMessage = errorJson.error || 'Failed to analyze plant image'
+      } catch {
+        errorMessage = errorText || 'Failed to analyze plant image'
+      }
+      throw new Error(errorMessage)
     }
 
-    const analysis = await response.json()
-    return analysis
+    const responseText = await response.text()
+    try {
+      const analysis = JSON.parse(responseText)
+      return analysis
+    } catch {
+      throw new Error('Invalid response format from server')
+    }
   } catch (error) {
     console.error('Error analyzing plant:', error)
     throw error
