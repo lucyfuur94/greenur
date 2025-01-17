@@ -3,6 +3,11 @@
   publish = "dist"
   functions = "netlify/functions"
 
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--legacy-peer-deps"
+  SHARP_IGNORE_GLOBAL_LIBVIPS = "1"
+
 [dev]
   command = "npm run dev:vite"
   targetPort = 5173
@@ -31,11 +36,6 @@
   external_node_modules = ["sharp"]
   included_files = ["netlify/functions/**/*"]
 
-[build.environment]
-  NODE_VERSION = "18"
-  SHARP_IGNORE_GLOBAL_LIBVIPS = "1"
-  
-# Performance and mobile optimization
 [context.production.environment]
   NODE_ENV = "production"
   NODE_OPTIONS = "--max_old_space_size=4096"

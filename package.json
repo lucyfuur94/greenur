@@ -6,10 +6,10 @@
   "scripts": {
     "dev": "netlify dev",
     "dev:vite": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npx tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "seed:build": "tsc src/scripts/seed.ts src/scripts/seedPlants.ts src/scripts/firebase.ts --outDir dist/scripts --module ES2020 --moduleResolution node --esModuleInterop --target ES2020",
+    "seed:build": "npx tsc src/scripts/seed.ts src/scripts/seedPlants.ts src/scripts/firebase.ts --outDir dist/scripts --module ES2020 --moduleResolution node --esModuleInterop --target ES2020",
     "seed": "npm run seed:build && node dist/scripts/seed.js"
   },
   "dependencies": {
