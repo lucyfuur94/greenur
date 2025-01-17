@@ -410,22 +410,41 @@ export const Botanica = () => {
         width="full" 
         alignItems="stretch"
       >
-        <Image 
-          src="https://img.freepik.com/premium-vector/single-one-line-drawing-plants-herbs-concept-continuous-line-draw-design-graphic-vector-illustration_638785-2231.jpg"
-          alt="Line art plant illustration"
-          width="full"
-          height="auto"
-          mb={1}
-        />
-        <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="medium" textAlign="center" color="gray.700" whiteSpace="nowrap">
+        {/* Mobile-Friendly Hero Image */}
+        <Box 
+          width="full" 
+          height={{ base: '200px', md: '300px' }} 
+          overflow="hidden" 
+          borderRadius="md"
+        >
+          <Image 
+            src="https://img.freepik.com/premium-vector/single-one-line-drawing-plants-herbs-concept-continuous-line-draw-design-graphic-vector-illustration_638785-2231.jpg"
+            alt="Line art plant illustration"
+            width="full"
+            height="full"
+            objectFit="cover"
+            objectPosition="center"
+          />
+        </Box>
+
+        {/* Mobile-Optimized Title */}
+        <Text 
+          fontSize={{ base: 'xl', md: '2xl' }} 
+          fontWeight="medium" 
+          textAlign="center" 
+          color="gray.700" 
+          whiteSpace="normal"
+          px={2}
+        >
           Discover and learn about plants from around the world
         </Text>
 
-        <Box position="relative" mx="auto" width="full">
+        {/* Search Input with Camera */}
+        <Box position="relative" width="full">
           <form onSubmit={(e) => {
             e.preventDefault();
             if (searchQuery.trim()) {
-              navigate(`/botanica/search?q=${encodeURIComponent(searchQuery)}`);
+              navigate(`/botanica/search?q=${encodeURIComponent(searchQuery.trim())}`);
             }
           }}>
             <InputGroup 
@@ -438,6 +457,11 @@ export const Botanica = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 fontSize={{ base: 'sm', md: 'md' }}
                 height={{ base: '48px', md: 'auto' }}
+                borderColor="green.300"
+                _focus={{ 
+                  borderColor: 'green.500', 
+                  boxShadow: 'outline' 
+                }}
               />
               <InputRightElement 
                 width={{ base: '3rem', md: '4rem' }}
@@ -448,10 +472,11 @@ export const Botanica = () => {
                   onClick={() => fileInputRef.current?.click()}
                   p={0}
                   size={{ base: 'sm', md: 'md' }}
+                  color="green.500"
+                  _hover={{ color: 'green.600' }}
                 >
                   <FaCamera 
                     size={{ base: 16, md: 24 }} 
-                    color="green.500" 
                   />
                 </Button>
                 <input
@@ -464,156 +489,115 @@ export const Botanica = () => {
               </InputRightElement>
             </InputGroup>
           </form>
-
-          {showSuggestions && searchQuery.trim() && (
-            <List
-              position="absolute"
-              top="100%"
-              left={0}
-              right={0}
-              bg="white"
-              boxShadow="lg"
-              borderRadius="md"
-              mt={2}
-              maxH="400px"
-              overflowY="auto"
-              zIndex={10}
-            >
-              {isSuggestionsLoading ? (
-                <ListItem px={4} py={3}>
-                  <HStack spacing={2} justify="center">
-                    <Spinner size="sm" />
-                    <Text>Searching for "{searchQuery}"...</Text>
-                  </HStack>
-                </ListItem>
-              ) : suggestions.length > 0 ? (
-                suggestions.map((plant) => (
-                  <ListItem
-                    key={plant.id}
-                    px={4}
-                    py={3}
-                    cursor="pointer"
-                    _hover={{ bg: "gray.50" }}
-                    onClick={() => navigate(`/botanica/plant/${plant.id}`)}
-                  >
-                    <HStack spacing={4}>
-                      <Image
-                        src={plant.image}
-                        alt={plant.name}
-                        boxSize={{ base: '50px', md: '75px' }}
-                        objectFit="cover"
-                        borderRadius="md"
-                        fallback={<Box boxSize={{ base: '50px', md: '75px' }} bg="gray.100" borderRadius="md" />}
-                      />
-                      <Box flex="1">
-                        <Text fontWeight="medium">{plant.name}</Text>
-                        <HStack spacing={2} mt={1}>
-                          <Text fontSize={{ base: 'xs', md: 'sm' }} color="gray.600">{plant.type}</Text>
-                          {plant.scientificName && (
-                            <>
-                              <Text fontSize={{ base: 'xs', md: 'sm' }} color="gray.600">•</Text>
-                              <Text fontSize={{ base: 'xs', md: 'sm' }} color="gray.600" fontStyle="italic">
-                                {plant.scientificName}
-                              </Text>
-                            </>
-                          )}
-                        </HStack>
-                      </Box>
-                    </HStack>
-                  </ListItem>
-                ))
-              ) : error ? (
-                <ListItem px={4} py={3}>
-                  <Text color="gray.600" textAlign="center">{error}</Text>
-                </ListItem>
-              ) : null}
-            </List>
-          )}
         </Box>
-      </VStack>
 
-      {/* Plant Analysis Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="xl">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Plant Analysis</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            <Tabs 
-              variant="soft-rounded" 
-              colorScheme="green" 
-              size={{ base: 'sm', md: 'md' }}
-              width="full"
-            >
-              <TabList 
-                overflowX="auto" 
-                width="full" 
-                flexWrap={{ base: 'nowrap', md: 'wrap' }}
+        {/* Responsive Plant Suggestions */}
+        <Grid 
+          templateColumns={{ 
+            base: 'repeat(2, 1fr)', 
+            md: 'repeat(3, 1fr)', 
+            lg: 'repeat(4, 1fr)' 
+          }}
+          gap={{ base: 2, md: 4 }}
+          width="full"
+        >
+          {suggestions.map((plant) => (
+            <GridItem key={plant.id}>
+              <Card 
+                variant="outline" 
+                size={{ base: 'sm', md: 'md' }}
+                height="full"
+                cursor="pointer"
+                _hover={{ 
+                  transform: 'scale(1.02)', 
+                  transition: 'transform 0.2s ease-in-out',
+                  boxShadow: 'md'
+                }}
+                onClick={() => navigate(`/botanica/plant/${plant.id}`)}
               >
-                <Tab>Analysis</Tab>
-                <Tab>Related Videos</Tab>
-              </TabList>
-              
-              <TabPanels>
-                <TabPanel>
-                  <VStack spacing={4} align="stretch">
-                    <AspectRatio ratio={4/3}>
-                      <Image
-                        src={imagePreview}
-                        alt="Uploaded plant"
-                        objectFit="cover"
-                        borderRadius="lg"
-                      />
-                    </AspectRatio>
-                    
-                    {plantInfo && (
-                      <>
-                        <Box>
-                          <Text fontWeight="bold">Plant Type</Text>
-                          <Text>{plantInfo.plantType}</Text>
+                <CardBody 
+                  display="flex" 
+                  flexDirection="column" 
+                  alignItems="center"
+                  p={{ base: 2, md: 4 }}
+                >
+                  <Box 
+                    width="full" 
+                    height={{ base: '120px', md: '180px' }} 
+                    borderRadius="md" 
+                    overflow="hidden"
+                  >
+                    <Image 
+                      src={plant.image || '/default-plant.png'}
+                      alt={plant.name}
+                      width="full"
+                      height="full"
+                      objectFit="cover"
+                      objectPosition="center"
+                      fallback={
+                        <Box 
+                          width="full" 
+                          height="full" 
+                          bg="gray.100" 
+                          display="flex" 
+                          alignItems="center" 
+                          justifyContent="center"
+                        >
+                          <Text color="gray.500" fontSize="sm">No Image</Text>
                         </Box>
-                        <Box>
-                          <Text fontWeight="bold">Growth Stage</Text>
-                          <Text>{plantInfo.growthStage}</Text>
-                        </Box>
-                        <Box>
-                          <Text fontWeight="bold">Growing Conditions</Text>
-                          <Text>{plantInfo.growingConditions}</Text>
-                        </Box>
-                        <Box>
-                          <Text fontWeight="bold">Care Plan</Text>
-                          <Text>{plantInfo.carePlan}</Text>
-                        </Box>
-                      </>
+                      }
+                    />
+                  </Box>
+                  <VStack 
+                    spacing={1} 
+                    mt={2} 
+                    width="full" 
+                    alignItems="center"
+                  >
+                    <Text 
+                      fontSize={{ base: 'xs', md: 'sm' }} 
+                      fontWeight="medium" 
+                      textAlign="center"
+                      noOfLines={2}
+                    >
+                      {plant.name}
+                    </Text>
+                    {plant.scientificName && (
+                      <Text 
+                        fontSize={{ base: 'x-small', md: 'xs' }} 
+                        color="gray.500" 
+                        fontStyle="italic"
+                        textAlign="center"
+                        noOfLines={1}
+                      >
+                        {plant.scientificName}
+                      </Text>
                     )}
+                    <HStack 
+                      spacing={1} 
+                      mt={1} 
+                      width="full" 
+                      justifyContent="center"
+                    >
+                      {plant.tags.slice(0, 2).map((tag) => (
+                        <Badge 
+                          key={tag} 
+                          colorScheme="green" 
+                          size="sm" 
+                          variant="subtle"
+                          fontSize={{ base: 'x-small', md: 'xs' }}
+                        >
+                          {tag}
+                        </Badge>
+                      ))}
+                    </HStack>
                   </VStack>
-                </TabPanel>
-                <TabPanel>
-                  <VStack spacing={4} align="stretch">
-                    {videos.map((video) => (
-                      <Box key={video.videoId} borderWidth="1px" borderRadius="lg" overflow="hidden">
-                        <AspectRatio ratio={16/9}>
-                          <Box
-                            as="iframe"
-                            src={`https://www.youtube.com/embed/${video.videoId}`}
-                            allowFullScreen
-                          />
-                        </AspectRatio>
-                        <Box p={4}>
-                          <Text fontWeight="bold">{video.title}</Text>
-                          <Badge colorScheme="green" mt={2}>
-                            {video.category}
-                          </Badge>
-                        </Box>
-                      </Box>
-                    ))}
-                  </VStack>
-                </TabPanel>
-              </TabPanels>
-            </Tabs>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+                </CardBody>
+              </Card>
+            </GridItem>
+          ))}
+        </Grid>
+      </VStack>
     </Container>
   )
-} 
+}
