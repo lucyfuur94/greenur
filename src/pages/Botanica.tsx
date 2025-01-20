@@ -89,24 +89,27 @@ export const Botanica: React.FC = () => {
       maxWidth="600px" 
       margin="0 auto" 
       padding="16px"
+      transform="translateY(-20px)"
     >
       {/* Hero Section */}
       <VStack 
-        spacing={4} 
+        spacing={3} 
         width="100%" 
-        marginBottom={6}
+        marginBottom={4}
         textAlign="center"
       >
         <Image 
           src="/plant-hero.svg" 
           alt="Plant Discovery" 
-          maxHeight="200px" 
+          maxHeight="180px" 
           objectFit="contain" 
+          mb={2}
         />
         <Text 
-          fontSize={["xl", "2xl"]} 
+          fontSize={["lg", "xl"]} 
           fontWeight="bold" 
           color="green.600"
+          lineHeight="shorter"
         >
           Discover Your Green World
         </Text>
@@ -115,7 +118,7 @@ export const Botanica: React.FC = () => {
       {/* Search Section */}
       <Flex 
         width="100%" 
-        marginBottom={6}
+        marginBottom={4}
         position="relative"
       >
         <Input 
@@ -125,6 +128,7 @@ export const Botanica: React.FC = () => {
           width="100%"
           paddingRight="50px"
           borderColor="green.300"
+          height="44px"
           _focus={{ 
             borderColor: "green.500", 
             boxShadow: "0 0 0 1px green.500" 
@@ -158,7 +162,7 @@ export const Botanica: React.FC = () => {
         <Box 
           display="grid" 
           gridTemplateColumns={`repeat(${gridColumns}, 1fr)`}
-          gap={4}
+          gap={3}
         >
           {suggestions.map((plant) => (
             <Box 
@@ -177,20 +181,20 @@ export const Botanica: React.FC = () => {
               <Image 
                 src={plant.default_photo?.medium_url || '/default-plant.png'} 
                 alt={plant.name} 
-                height="150px" 
+                height="130px" 
                 width="100%" 
                 objectFit="cover" 
               />
-              <Box p={3}>
+              <Box p={2}>
                 <Text 
                   fontWeight="bold" 
-                  fontSize="sm" 
+                  fontSize="xs" 
                   noOfLines={1}
                 >
                   {plant.name}
                 </Text>
                 <Text 
-                  fontSize="xs" 
+                  fontSize="2xs" 
                   color="gray.500" 
                   noOfLines={1}
                 >
@@ -199,8 +203,8 @@ export const Botanica: React.FC = () => {
                 {plant.iconic_taxon_name && (
                   <Badge 
                     colorScheme="green" 
-                    size="sm" 
-                    mt={2}
+                    size="xs" 
+                    mt={1}
                   >
                     {plant.iconic_taxon_name}
                   </Badge>
