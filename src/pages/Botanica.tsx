@@ -40,6 +40,9 @@ import { useNavigate } from 'react-router-dom'
 import { SearchBar } from '../components/SearchBar'
 import { SearchSuggestions, SearchSuggestion } from '../components/SearchSuggestions'
 import type { PlantAnalysis } from '../types/plant'
+import { useCollection } from 'react-firebase-hooks/firestore'
+import { collection } from 'firebase/firestore'
+import { db } from '../config/firebase'
 
 interface PlantSuggestion {
   id: string
@@ -330,59 +333,73 @@ export const Botanica = () => {
     navigate(`/botanica/plant/${suggestion.id}`);
   };
 
+  const [value, loading, errorCollection] = useCollection(
+    collection(db, 'plants'),
+    {
+      snapshotListenOptions: { includeMetadataChanges: true },
+    }
+  )
+
   return (
     <Box bg="white" h="calc(100vh - 60px)" pt={0} overflow="hidden" display="flex" flexDirection="column">
-      <Container maxW="100vw" width="100%" flex="1" px={{ base: 4, md: 6 }} py={4} overflow="hidden">
-        <VStack spacing={6} align="stretch">
-          {/* Hero Section */}
-          <VStack spacing={4} align="center">
-            <Image
-              src="/images/plant-line-art.jpg"
-              alt="Line art plant illustration"
-              maxW="275px"
-              mx="auto"
-              pt={6}
-              pb={6}
-            />
-            <Text
-              fontSize={{ base: "lg", md: "xl" }}
-              fontWeight="normal"
-              textAlign="center"
-              color="gray.800"
-              mb={2}
-            >
-              Discover and learn about plants from around the world
-            </Text>
-            <Box position="relative" width="100%" maxW="600px" ref={dropdownRef}>
-              <SearchBar
-                initialValue={searchQuery}
-                onSearch={(query) => {
-                  setSearchQuery(query);
-                  if (!query.trim()) {
-                    setSuggestions([]);
-                    setError(null);
-                    setShowSuggestions(false);
-                  }
-                }}
-                onImageSelect={handleImageSelect}
-                isLoading={isLoading}
-                placeholder="Search plants by name.."
-                size="lg"
+      {loading ? (
+        <Box textAlign="center" py={10}>
+          <Spinner size="xl" color="green.500" thickness="3px" emptyColor="gray.200" />
+          <Text mt={4} color="gray.600">Loading plant database...</Text>
+        </Box>
+      ) : (
+        <Container maxW="100vw" width="100%" flex="1" px={{ base: 4, md: 6 }} py={4} overflow="hidden">
+          <VStack spacing={6} align="stretch">
+            {/* Hero Section */}
+            <VStack spacing={4} align="center">
+              <Image
+                src="/images/plant-line-art.jpg"
+                alt="Line art plant illustration"
+                maxW="275px"
+                mx="auto"
+                pt={6}
+                pb={6}
               />
-              {showSuggestions && (
-                <SearchSuggestions
-                  suggestions={suggestions}
-                  onSelect={handleSuggestionSelect}
+              <Text
+                fontSize={{ base: "lg", md: "xl" }}
+                fontWeight="normal"
+                textAlign="center"
+                color="gray.800"
+                mb={2}
+              >
+                Discover and learn about plants from around the world
+              </Text>
+              <Box position="relative" width="100%" maxW="600px" ref={dropdownRef}>
+                <SearchBar
+                  initialValue={searchQuery}
+                  onSearch={(query) => {
+                    setSearchQuery(query);
+                    if (!query.trim()) {
+                      setSuggestions([]);
+                      setError(null);
+                      setShowSuggestions(false);
+                    }
+                  }}
+                  onImageSelect={handleImageSelect}
                   isLoading={isLoading}
-                  error={error || undefined}
+                  placeholder="Search plants by name.."
+                  size="lg"
                 />
-              )}
-            </Box>
-          </VStack>
+                {showSuggestions && (
+                  <SearchSuggestions
+                    suggestions={suggestions}
+                    onSelect={handleSuggestionSelect}
+                    isLoading={isLoading}
+                    error={error || undefined}
+                  />
+                )}
+              </Box>
+            </VStack>
 
-          {/* Rest of the component ... */}
-        </VStack>
-      </Container>
+            {/* Rest of the component ... */}
+          </VStack>
+        </Container>
+      )}
 
       {/* Image Analysis Modal */}
       <Modal isOpen={isOpen} onClose={onClose} size="xl">
