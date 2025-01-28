@@ -17,6 +17,7 @@ Greenur is a web application that helps you track and manage your plants' growth
 - Firebase (Authentication, Firestore, Storage)
 - Chakra UI for components
 - React Router for navigation
+- Storybook for UI development
 
 ## Getting Started
 
@@ -54,6 +55,8 @@ Greenur is a web application that helps you track and manage your plants' growth
 - `npm run preview` - Preview production build
 - `npm run lint` - Run ESLint
 - `npm run type-check` - Run TypeScript type checking
+- `npm run storybook` - Start Storybook
+- `npm run build-storybook` - Build static Storybook
 
 ## Contributing
 
@@ -88,3 +91,70 @@ Greenur is a web application that helps you track and manage your plants' growth
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## UI Development with Storybook
+
+We use Storybook for UI development and documentation. All UI components must have corresponding stories.
+
+### Guidelines
+
+1. **Component Development**
+   - Create component in appropriate directory
+   - Add TypeScript types and documentation
+   - Create story file in `src/stories`
+   - Test all states and variations
+
+2. **Story Requirements**
+   - Document all props and variants
+   - Include examples of different states
+   - Test responsive behavior
+   - Add to component categories
+
+3. **Categories**
+   - Pages (Botanica, Search, Plant Details, etc.)
+   - Components (Navigation, Assistant, etc.)
+   - Auth Components
+   - Layout Components
+
+4. **Testing**
+   - Use Storybook Controls
+   - Test responsive design
+   - Verify interactions
+   - Check accessibility
+
+### Running Storybook
+
+1. Start Storybook server:
+   ```bash
+   npm run storybook
+   ```
+
+2. Open browser at `http://localhost:6006`
+
+3. Navigate components:
+   - Use sidebar for navigation
+   - Controls panel for props
+   - Docs tab for documentation
+   - Canvas for testing
+
+## Project Structure
+
+```
+src/
+├── components/     # Reusable components
+├── pages/         # Page components
+├── stories/       # Storybook stories
+├── theme/         # Theme configuration
+├── contexts/      # React contexts
+├── services/      # API services
+└── config/        # Configuration files
+```
+
+## Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build production version
+- `npm run storybook` - Start Storybook
+- `npm run build-storybook` - Build static Storybook
+- `npm run test` - Run tests
+- `npm run lint` - Run linter

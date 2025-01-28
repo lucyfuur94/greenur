@@ -29,16 +29,16 @@ const theme = extendTheme({
   },
   colors: {
     brand: {
-      50: '#e8f5e9',
-      100: '#c8e6c9',
-      200: '#a5d6a7',
-      300: '#81c784',
-      400: '#66bb6a',
-      500: '#4caf50',
-      600: '#43a047',
-      700: '#388e3c',
-      800: '#2e7d32',
-      900: '#1b5e20',
+      50: '#E6F6EC',
+      100: '#C3E9D0',
+      200: '#9FDBB3',
+      300: '#7BCD96',
+      400: '#57C079',
+      500: '#33B25C',
+      600: '#298E4A',
+      700: '#1F6B37',
+      800: '#154725',
+      900: '#0B2412',
     },
   },
   fonts: {
@@ -68,6 +68,9 @@ const theme = extendTheme({
           fontSize: { base: 'sm', md: 'md' },
           px: { base: 3, md: 4 },
         },
+      },
+      defaultProps: {
+        colorScheme: 'brand',
       },
     },
     Input: {

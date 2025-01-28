@@ -31,18 +31,15 @@ import {
   GridItem,
   Card,
   CardBody,
+  ModalFooter,
 } from '@chakra-ui/react'
 import { useState, useRef, useEffect } from 'react'
 import { FaCamera } from 'react-icons/fa'
 import { analyzePlantImage } from '../services/gptService'
 import { useNavigate } from 'react-router-dom'
-
-interface PlantInfo {
-  plantType: string
-  growthStage: string
-  growingConditions: string
-  carePlan: string
-}
+import { SearchBar } from '../components/SearchBar'
+import { SearchSuggestions, SearchSuggestion } from '../components/SearchSuggestions'
+import type { PlantAnalysis } from '../types/plant'
 
 interface PlantSuggestion {
   id: string
@@ -99,13 +96,30 @@ export const Botanica = () => {
   }, [toast]);
 
   const [searchQuery, setSearchQuery] = useState('')
-  const [suggestions, setSuggestions] = useState<PlantSuggestion[]>([])
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [imagePreview, setImagePreview] = useState<string>('')
-  const [plantInfo, setPlantInfo] = useState<PlantInfo | null>(null)
   const [videos, setVideos] = useState<VideoInfo[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [showAnalysisPopup, setShowAnalysisPopup] = useState(false)
+  const [analysisResult, setAnalysisResult] = useState<PlantAnalysis | null>(null)
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false); // Close the dropdown
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownRef]);
 
   useEffect(() => {
     let currentController: AbortController | null = null;
@@ -117,7 +131,7 @@ export const Botanica = () => {
       
       // Create new controller for this request
       if (searchQuery.trim()) {
-        setIsSuggestionsLoading(true);
+        setIsLoading(true);
         setShowSuggestions(true);
         currentController = new AbortController();
         handleSearch(currentController.signal);
@@ -177,10 +191,9 @@ export const Botanica = () => {
     setError(null);
     setSuggestions([]); // Clear previous results while searching
 
-    // Check minimum length requirement
     if (searchQuery.trim().length < 2) {
       setError('Please enter at least 2 characters to search');
-      setIsSuggestionsLoading(false);
+      setIsLoading(false);
       return;
     }
 
@@ -199,7 +212,6 @@ export const Botanica = () => {
       // Get detailed information for each plant to determine its type
       const plantPromises = data.results
         .filter((result: any) => {
-          // Only include results where the common name matches the search term
           const searchTerm = searchQuery.trim().toLowerCase();
           const commonName = result.preferred_common_name?.toLowerCase() || '';
           return result.iconic_taxon_name === "Plantae" && commonName.includes(searchTerm);
@@ -213,22 +225,20 @@ export const Botanica = () => {
             const details = detailsData.results[0];
             
             return {
-              id: plant.id.toString(),
+              id: plant.id,
               name: plant.preferred_common_name || plant.name,
               type: getPlantType(details.ancestors || []),
               scientificName: plant.name,
               image: plant.default_photo?.medium_url,
-              tags: [details.establishment_means, details.preferred_establishment_means].filter(Boolean)
             };
           } catch (error) {
             console.error(`Error fetching details for plant ${plant.id}:`, error);
             return {
-              id: plant.id.toString(),
+              id: plant.id,
               name: plant.preferred_common_name || plant.name,
               type: 'Plant',
               scientificName: plant.name,
               image: plant.default_photo?.medium_url,
-              tags: []
             };
           }
         });
@@ -251,7 +261,6 @@ export const Botanica = () => {
       }));
 
       setSuggestions(formattedResults);
-      setShowSuggestions(formattedResults.length > 0);
       
       if (formattedResults.length === 0 && !signal.aborted) {
         setError('No plants found matching your search');
@@ -270,221 +279,161 @@ export const Botanica = () => {
       });
     } finally {
       if (!signal.aborted) {
-        setIsSuggestionsLoading(false);
+        setIsLoading(false);
       }
     }
   };
 
-  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
-      
-      try {
-        setIsSuggestionsLoading(true)
-        
-        // Analyze the plant directly
-        const analysis = await analyzePlantImage(file)
-        setPlantInfo(analysis)
-
-        // TODO: Fetch related videos
-        const mockVideos: VideoInfo[] = [
-          {
-            title: 'How to Care for Your Plant',
-            videoId: 'example1',
-            thumbnail: 'https://img.youtube.com/vi/example1/0.jpg',
-            category: 'tutorial'
-          },
-        ]
-        setVideos(mockVideos)
-
-        onOpen()
-      } catch (error) {
-        console.error('Error analyzing image:', error)
+  const handleImageSelect = async (file: File) => {
+    try {
+      // Check file type first
+      const supportedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!supportedTypes.includes(file.type)) {
         toast({
-          title: 'Error',
-          description: 'Failed to analyze the plant image. Please try again.',
+          title: 'Unsupported File Type',
+          description: 'Please upload a JPEG, PNG or WebP image',
           status: 'error',
           duration: 5000,
-        })
-      } finally {
-        setIsSuggestionsLoading(false)
+        });
+        return;
       }
-    }
-  }
 
-  // Add weather-based recommendations
-  const [weatherInfo, setWeatherInfo] = useState<{
-    temp: number;
-    humidity: number;
-    description: string;
-  } | null>(null)
+      // Create image preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
 
-  const getWeatherRecommendations = async (latitude: number, longitude: number) => {
-    try {
-      const response = await fetch(
-        `/.netlify/functions/get-weather?lat=${latitude}&lon=${longitude}`
-      )
-      if (!response.ok) throw new Error('Failed to fetch weather data')
-      
-      const data = await response.json()
-      setWeatherInfo(data)
-      
-      // Add weather-specific care instructions to plantInfo if available
-      if (plantInfo) {
-        const weatherBasedCare = generateWeatherBasedCare(data, plantInfo)
-        setPlantInfo(prev => ({
-          ...prev!,
-          carePlan: prev!.carePlan + '\n\nWeather-based recommendations:\n' + weatherBasedCare
-        }))
-      }
+      // Open modal and start analysis
+      onOpen();
+      setAnalysisResult(null);
+
+      const info = await analyzePlantImage(file);
+      console.log('Analysis result:', info);
+      setAnalysisResult(info);
+
     } catch (error) {
-      console.error('Error fetching weather:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to analyze image';
+      console.error('Error analyzing image:', error);
+      
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        status: 'error',
+        duration: 5000,
+      });
     }
-  }
+  };
 
-  const generateWeatherBasedCare = (weather: typeof weatherInfo, plant: PlantInfo) => {
-    if (!weather) return ''
-
-    const recommendations: string[] = []
-    const plantType = plant.plantType.toLowerCase()
-
-    // Temperature recommendations
-    if (weather.temp > 30) {
-      recommendations.push('• High temperature alert: Increase watering frequency and provide shade if possible')
-      if (plantType.includes('succulent') || plantType.includes('cactus')) {
-        recommendations.push('• Your plant is heat-tolerant but still needs protection from extreme heat')
-      } else if (plantType.includes('tropical')) {
-        recommendations.push('• Mist tropical plants frequently in high temperatures')
-      }
-    } else if (weather.temp < 10) {
-      recommendations.push('• Low temperature alert: Move sensitive plants indoors or provide frost protection')
-      if (plantType.includes('tropical')) {
-        recommendations.push('• Tropical plants are particularly sensitive to cold - move indoors immediately')
-      }
-    }
-
-    // Humidity recommendations
-    if (weather.humidity < 40) {
-      recommendations.push('• Low humidity alert: Consider using a humidifier or misting your plants')
-      if (plantType.includes('tropical') || plantType.includes('fern')) {
-        recommendations.push('• Your plant prefers high humidity - group plants together or use a pebble tray')
-      }
-    } else if (weather.humidity > 80) {
-      recommendations.push('• High humidity alert: Ensure good air circulation to prevent fungal growth')
-      if (plantType.includes('succulent') || plantType.includes('cactus')) {
-        recommendations.push('• Your plant prefers lower humidity - improve air circulation and reduce watering')
-      }
-    }
-
-    return recommendations.join('\n')
-  }
-
-  // Get weather data when plant info is displayed
-  useEffect(() => {
-    if (plantInfo) {
-      // Get user's location for weather data
-      navigator.geolocation.getCurrentPosition(
-        position => {
-          getWeatherRecommendations(position.coords.latitude, position.coords.longitude)
-        },
-        error => {
-          console.error('Error getting location:', error)
-        }
-      )
-    }
-  }, [plantInfo])
+  const handleSuggestionSelect = (suggestion: SearchSuggestion) => {
+    navigate(`/botanica/plant/${suggestion.id}`);
+  };
 
   return (
-    <Box className="main-content">
-      <Box className="hero-section">
-        <Image
-          src="https://img.freepik.com/premium-vector/single-one-line-drawing-plants-herbs-concept-continuous-line-draw-design-graphic-vector-illustration_638785-2231.jpg"
-          alt="Line art plant illustration"
-          className="hero-image"
-        />
-        <Text className="hero-title">
-          Discover and learn about plants from around the world
-        </Text>
-      </Box>
-
-      <Box className="search-container">
-        <InputGroup>
-          <Input
-            placeholder="Search plants by name..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="search-input"
-          />
-          <InputRightElement>
-            <Button
-              className="search-button"
-              onClick={() => fileInputRef.current?.click()}
-              aria-label="Upload plant image"
+    <Box bg="white" h="calc(100vh - 60px)" pt={0} overflow="hidden" display="flex" flexDirection="column">
+      <Container maxW="100vw" width="100%" flex="1" px={{ base: 4, md: 6 }} py={4} overflow="hidden">
+        <VStack spacing={6} align="stretch">
+          {/* Hero Section */}
+          <VStack spacing={4} align="center">
+            <Image
+              src="/images/plant-line-art.jpg"
+              alt="Line art plant illustration"
+              maxW="275px"
+              mx="auto"
+              pt={6}
+              pb={6}
+            />
+            <Text
+              fontSize={{ base: "lg", md: "xl" }}
+              fontWeight="normal"
+              textAlign="center"
+              color="gray.800"
+              mb={2}
             >
-              <FaCamera />
-            </Button>
-          </InputRightElement>
-        </InputGroup>
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleImageSelect}
-          accept="image/*"
-          style={{ display: 'none' }}
-        />
-      </Box>
+              Discover and learn about plants from around the world
+            </Text>
+            <Box position="relative" width="100%" maxW="600px" ref={dropdownRef}>
+              <SearchBar
+                initialValue={searchQuery}
+                onSearch={(query) => {
+                  setSearchQuery(query);
+                  if (!query.trim()) {
+                    setSuggestions([]);
+                    setError(null);
+                    setShowSuggestions(false);
+                  }
+                }}
+                onImageSelect={handleImageSelect}
+                isLoading={isLoading}
+                placeholder="Search plants by name.."
+                size="lg"
+              />
+              {showSuggestions && (
+                <SearchSuggestions
+                  suggestions={suggestions}
+                  onSelect={handleSuggestionSelect}
+                  isLoading={isLoading}
+                  error={error || undefined}
+                />
+              )}
+            </Box>
+          </VStack>
 
-      {showSuggestions && (
-        <Box className="card-grid">
-          {isSuggestionsLoading ? (
-            <Spinner />
-          ) : suggestions.length > 0 ? (
-            suggestions.map((plant) => (
-              <Box
-                key={plant.id}
-                className="card"
-                onClick={() => navigate(`/botanica/plant/${plant.id}`)}
-                cursor="pointer"
-              >
-                {plant.image && (
-                  <Image
-                    src={plant.image}
-                    alt={plant.name}
-                    className="card-image"
-                  />
-                )}
-                <Box className="card-content">
-                  <Text className="card-title">{plant.name}</Text>
-                  {plant.scientificName && (
-                    <Text className="card-subtitle">
-                      {plant.scientificName}
-                    </Text>
-                  )}
-                  <HStack mt={2} spacing={1}>
-                    {plant.tags.slice(0, 2).map((tag) => (
-                      <Badge
-                        key={tag}
-                        colorScheme="green"
-                        fontSize="xs"
-                        borderRadius="full"
-                      >
-                        {tag}
-                      </Badge>
-                    ))}
-                  </HStack>
+          {/* Rest of the component ... */}
+        </VStack>
+      </Container>
+
+      {/* Image Analysis Modal */}
+      <Modal isOpen={isOpen} onClose={onClose} size="xl">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Plant Analysis</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            {imagePreview && (
+              <AspectRatio ratio={4/3} mb={4}>
+                <Image 
+                  src={imagePreview} 
+                  alt="Uploaded plant" 
+                  objectFit="contain"
+                  backgroundColor="gray.50"
+                />
+              </AspectRatio>
+            )}
+            {analysisResult ? (
+              <VStack align="stretch" spacing={4}>
+                <Box>
+                  <Text fontWeight="bold">Common Name:</Text>
+                  <Text>{analysisResult.commonName}</Text>
                 </Box>
-              </Box>
-            ))
-          ) : (
-            <Text color="gray.500">No plants found</Text>
-          )}
-        </Box>
-      )}
+                <Box>
+                  <Text fontWeight="bold">Scientific Name:</Text>
+                  <Text>{analysisResult.scientificName}</Text>
+                </Box>
+                <ModalFooter>
+                  <Button 
+                    colorScheme="green"
+                    onClick={() => {
+                      if (analysisResult?.commonName) {
+                        navigate(`/botanica/search?q=${encodeURIComponent(analysisResult.commonName)}`);
+                        onClose();
+                      }
+                    }}
+                  >
+                    Search
+                  </Button>
+                </ModalFooter>
+              </VStack>
+            ) : (
+              <VStack py={8}>
+                <Spinner size="xl" color="brand.500" />
+                <Text>Analyzing your plant...</Text>
+              </VStack>
+            )}
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Box>
-  )
-}
+  );
+};

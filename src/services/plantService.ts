@@ -9,6 +9,7 @@ interface PlantSearchResult {
     medium_url: string;
   };
   iconic_taxon_name: string;
+  scientific_name?: string;
   ancestors: Array<{
     name: string;
     rank: string;
@@ -27,6 +28,11 @@ export interface PlantDetails {
     medium_url: string;
     large_url: string;
   };
+  images?: Array<{
+    url: string;
+    attribution?: string;
+    license_code?: string;
+  }>;
   ancestors?: Array<{
     name: string;
     rank: string;
@@ -39,6 +45,10 @@ export interface PlantDetails {
     description: string;
   };
   wikipedia_summary?: string;
+  description?: string;
+  url?: string;
+  light?: string;
+  watering?: string;
 }
 
 interface SearchResponse {
@@ -110,7 +120,15 @@ export const getPlantDetails = async (id: number): Promise<PlantDetails> => {
 
     const details = data.results[0];
     
-    // Ensure we have the photo URLs
+    // Process all available photos
+    const allPhotos = details.taxon_photos || [];
+    details.images = allPhotos.map((photo: any) => ({
+      url: photo.photo.large_url || photo.photo.medium_url || photo.photo.url,
+      attribution: photo.photo.attribution,
+      license_code: photo.photo.license_code
+    }));
+    
+    // Ensure we have the default photo URLs
     if (details.default_photo) {
       details.default_photo = {
         medium_url: details.default_photo.medium_url || details.default_photo.url,

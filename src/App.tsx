@@ -1,19 +1,17 @@
 import { ChakraProvider } from '@chakra-ui/react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import { Navigation } from './components/Navigation'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Botanica } from './pages/Botanica'
 import { BotanicaPlant } from './pages/BotanicaPlant'
 import { BotanicaSearch } from './pages/BotanicaSearch'
 import { Profile } from './pages/Profile'
 import { Settings } from './pages/Settings'
 import { Tracker } from './pages/Tracker'
-import { theme } from './theme'
+import theme from './theme'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { Layout } from './components/layout/Layout'
 import { Login } from './components/auth/Login'
 import { SignUp } from './components/auth/SignUp'
 import { Onboarding } from './pages/Onboarding'
-import './App.css'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -132,24 +130,7 @@ function App() {
     <ChakraProvider theme={theme}>
       <AuthProvider>
         <Router>
-          <div className="App">
-            <Navigation />
-            <main>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<SignUp />} />
-                <Route path="/" element={<Navigate to="/botanica" replace />} />
-                <Route path="/onboarding" element={<Onboarding />} />
-                <Route path="/botanica" element={<Botanica />} />
-                <Route path="/botanica/plant/:id" element={<BotanicaPlant />} />
-                <Route path="/botanica/search" element={<BotanicaSearch />} />
-                <Route path="/tracker" element={<Tracker />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/settings" element={<Settings />} />
-              </Routes>
-              <AppRoutes />
-            </main>
-          </div>
+          <AppRoutes />
         </Router>
       </AuthProvider>
     </ChakraProvider>

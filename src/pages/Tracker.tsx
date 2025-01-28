@@ -25,7 +25,8 @@ import { storage, db } from '../config/firebase'
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { FaPlus } from 'react-icons/fa'
-import { analyzePlantImage, type PlantAnalysis } from '../services/gptService'
+import { analyzePlantImage } from '../services/gptService'
+import type { PlantAnalysis } from '../types/plant'
 
 export const Tracker = () => {
   const { isOpen, onOpen, onClose: onDisclosureClose } = useDisclosure()
@@ -78,15 +79,18 @@ export const Tracker = () => {
     }
   }
 
-  const analyzePlant = async (imageUrl: string) => {
+  const handleImageUpload = async (imageUrl: string) => {
     try {
-      const analysis = await analyzePlantImage(imageUrl)
-      return analysis
+      // Convert data URL to File
+      const blob = await fetch(imageUrl).then(r => r.blob());
+      const file = new File([blob], 'plant-image.jpg', { type: 'image/jpeg' });
+      
+      const analysis = await analyzePlantImage(file);
+      // ... rest of the code
     } catch (error) {
-      console.error('Error analyzing plant:', error)
-      throw new Error('Failed to analyze plant image')
+      console.error('Error analyzing image:', error);
     }
-  }
+  };
 
   const handleCancel = async () => {
     if (isAnalyzing && uploadedImageRef) {
@@ -122,11 +126,11 @@ export const Tracker = () => {
       setUploadedImageRef(imagePath)
 
       // Analyze the plant using GPT
-      const plantAnalysis = await analyzePlant(imageUrl)
+      const plantAnalysis = await analyzePlantImage(selectedImage)
       setAnalysis(plantAnalysis)
 
       // Generate default nickname if not provided
-      const plantNickname = nickname || `${plantAnalysis.plantType.split(' ')[0]}_${Date.now().toString().slice(-4)}`
+      const plantNickname = nickname || (analysis?.commonName ? `${analysis.commonName.split(' ')[0]}_${Date.now().toString().slice(-4)}` : `Plant_${Date.now().toString().slice(-4)}`);
 
       // Save to Firestore
       await addDoc(collection(db, 'plants'), {
@@ -263,21 +267,21 @@ export const Tracker = () => {
                 <VStack align="stretch" width="100%" spacing={4}>
                   <Box>
                     <Text fontWeight="bold">Plant Type:</Text>
-                    <Text>{analysis.plantType}</Text>
+                    <Text>{analysis?.plantType || 'Unknown'}</Text>
                   </Box>
                   <Box>
                     <Text fontWeight="bold">Growth Stage:</Text>
                     <Badge colorScheme="brand" fontSize="md" px={3} py={1}>
-                      {analysis.growthStage}
+                      {analysis?.growthStage || 'Not specified'}
                     </Badge>
                   </Box>
                   <Box>
                     <Text fontWeight="bold">Growing Conditions:</Text>
-                    <Text>{analysis.growingConditions}</Text>
+                    <Text>{analysis?.growingConditions || 'Not specified'}</Text>
                   </Box>
                   <Box>
                     <Text fontWeight="bold">Care Plan:</Text>
-                    <Text>{analysis.carePlan}</Text>
+                    <Text>{analysis?.carePlan || 'No care plan available'}</Text>
                   </Box>
                 </VStack>
               )}

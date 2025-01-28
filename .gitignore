@@ -37,3 +37,5 @@ yarn-error.log*
 .netlify
 serviceAccountKey.json
 .env.development
+
+*storybook.log
