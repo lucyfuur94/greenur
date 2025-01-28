@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "npm install && npm run build"
   publish = "dist"
   functions = "netlify/functions"
 
@@ -40,3 +40,4 @@
 [context.production.environment]
   NODE_ENV = "production"
   NODE_OPTIONS = "--max_old_space_size=4096"
+  NODE_VERSION = "18.17.1"

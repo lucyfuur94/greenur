@@ -6,11 +6,12 @@
   "scripts": {
     "dev": "netlify dev",
     "dev:vite": "vite",
-    "build": "npx tsc -b && vite build",
+    "build": "tsc && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "seed:build": "npx tsc src/scripts/seed.ts src/scripts/seedPlants.ts src/scripts/firebase.ts --outDir dist/scripts --module ES2020 --moduleResolution node --esModuleInterop --target ES2020",
-    "seed": "npm run seed:build && node dist/scripts/seed.js"
+    "seed": "npm run seed:build && node dist/scripts/seed.js",
+    "prebuild": "npm install --include=dev"
   },
   "dependencies": {
     "@chakra-ui/icons": "^2.2.4",
