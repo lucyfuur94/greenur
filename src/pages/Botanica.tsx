@@ -43,6 +43,8 @@ import type { PlantAnalysis } from '../types/plant'
 import { useCollection } from 'react-firebase-hooks/firestore'
 import { collection } from 'firebase/firestore'
 import { db } from '../config/firebase'
+import { getPlantType } from '../utils/plantUtils'
+import { searchTaxa, getMatchedName, formatDisplayName } from '../services/iNaturalistService'
 
 interface PlantSuggestion {
   id: string
@@ -153,41 +155,6 @@ export const Botanica = () => {
     };
   }, [searchQuery]);
 
-  const getPlantType = (ancestors: Array<{ name: string; rank: string }>) => {
-    // Look for common plant types in the ancestry
-    const typeMap: { [key: string]: string } = {
-      'angiosperms': 'Flowering Plant',
-      'eudicots': 'Flowering Plant',
-      'monocots': 'Flowering Plant',
-      'asterids': 'Flowering Plant',
-      'rosids': 'Flowering Plant',
-      'magnoliids': 'Flowering Plant',
-      'gymnosperms': 'Conifer',
-      'ferns': 'Fern',
-      'mosses': 'Moss',
-      'algae': 'Algae',
-      'fungi': 'Fungus',
-      'solanales': 'Vegetable/Fruit',
-      'fabales': 'Legume',
-      'poales': 'Grass/Grain',
-      'asparagales': 'Ornamental',
-      'arecales': 'Palm',
-      'pinales': 'Conifer',
-      'lamiales': 'Herb/Ornamental'
-    };
-
-    for (const ancestor of ancestors) {
-      const name = ancestor.name.toLowerCase();
-      for (const [key, value] of Object.entries(typeMap)) {
-        if (name.includes(key)) {
-          return value;
-        }
-      }
-    }
-
-    return 'Plant';
-  };
-
   const handleSearch = async (signal: AbortSignal) => {
     if (!searchQuery.trim()) return;
     
@@ -201,25 +168,12 @@ export const Botanica = () => {
     }
 
     try {
-      const response = await fetch(
-        `https://api.inaturalist.org/v1/taxa/autocomplete?q=${encodeURIComponent(searchQuery.trim())}&per_page=20&iconic_taxa=Plantae`,
-        { signal }
-      );
-      
-      if (!response.ok) {
-        throw new Error('Failed to search plants');
-      }
-
-      const data = await response.json();
+      const { results } = await searchTaxa(searchQuery.trim(), 1, true);
       
       // Get detailed information for each plant to determine its type
-      const plantPromises = data.results
-        .filter((result: any) => {
-          const searchTerm = searchQuery.trim().toLowerCase();
-          const commonName = result.preferred_common_name?.toLowerCase() || '';
-          return result.iconic_taxon_name === "Plantae" && commonName.includes(searchTerm);
-        })
-        .map(async (plant: any) => {
+      const plantPromises = results
+        .filter(result => result.matched_term)
+        .map(async (plant) => {
           try {
             const detailsResponse = await fetch(
               `https://api.inaturalist.org/v1/taxa/${plant.id}`
@@ -227,45 +181,42 @@ export const Botanica = () => {
             const detailsData = await detailsResponse.json();
             const details = detailsData.results[0];
             
+            const plantType = getPlantType(details.ancestors || []);
+            const matchedName = getMatchedName(plant);
+            const displayName = formatDisplayName(plant, matchedName, plantType);
+            
             return {
               id: plant.id,
-              name: plant.preferred_common_name || plant.name,
-              type: getPlantType(details.ancestors || []),
+              name: plant.name,
+              type: plantType,
               scientificName: plant.name,
               image: plant.default_photo?.medium_url,
+              displayName,
+              matchedTerm: plant.matched_term,
+              taxon_photos: plant.taxon_photos
             };
           } catch (error) {
             console.error(`Error fetching details for plant ${plant.id}:`, error);
+            const matchedName = getMatchedName(plant);
+            const displayName = formatDisplayName(plant, matchedName, 'Plant');
+            
             return {
               id: plant.id,
-              name: plant.preferred_common_name || plant.name,
+              name: plant.name,
               type: 'Plant',
               scientificName: plant.name,
               image: plant.default_photo?.medium_url,
+              displayName,
+              matchedTerm: plant.matched_term,
+              taxon_photos: plant.taxon_photos
             };
           }
         });
 
       const processedResults = await Promise.all(plantPromises);
+      setSuggestions(processedResults);
       
-      // Format names to title case
-      const formattedResults = processedResults.map(result => ({
-        ...result,
-        name: result.name
-          .toLowerCase()
-          .split(' ')
-          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' '),
-        scientificName: result.scientificName
-          .toLowerCase()
-          .split(' ')
-          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ')
-      }));
-
-      setSuggestions(formattedResults);
-      
-      if (formattedResults.length === 0 && !signal.aborted) {
+      if (processedResults.length === 0 && !signal.aborted) {
         setError('No plants found matching your search');
       }
     } catch (error) {
@@ -330,7 +281,12 @@ export const Botanica = () => {
   };
 
   const handleSuggestionSelect = (suggestion: SearchSuggestion) => {
-    navigate(`/botanica/plant/${suggestion.id}`);
+    navigate(`/botanica/plant/${suggestion.id}`, { 
+      state: { 
+        matchedTerm: suggestion.matchedTerm,
+        taxonPhotos: suggestion.taxon_photos
+      }
+    });
   };
 
   const [value, loading, errorCollection] = useCollection(

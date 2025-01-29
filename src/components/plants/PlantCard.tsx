@@ -1,16 +1,10 @@
-import { Box, Image, Text, VStack, Badge, Card, CardBody, HStack } from '@chakra-ui/react';
+import { Box, Image, Text, VStack } from '@chakra-ui/react';
 
-export interface PlantCardProps {
-  /** Plant name */
+interface PlantCardProps {
   name: string;
-  /** Scientific name of the plant */
-  scientificName: string;
-  /** URL to plant's primary image */
+  secondaryText: string;
   imageUrl: string;
-  /** Type of plant (e.g., Flowering Plant, Herb, etc.) */
-  type: string;
-  /** Handler for when card is clicked */
-  onClick?: () => void;
+  onClick: () => void;
 }
 
 /**
@@ -19,45 +13,39 @@ export interface PlantCardProps {
  */
 export const PlantCard = ({
   name,
-  scientificName,
+  secondaryText,
   imageUrl,
-  type,
-  onClick,
+  onClick
 }: PlantCardProps) => {
   return (
-    <Card
-      onClick={onClick}
-      cursor={onClick ? 'pointer' : 'default'}
-      _hover={onClick ? { transform: 'translateY(-2px)', shadow: 'lg' } : undefined}
-      transition="all 0.2s"
+    <Box
+      as="article"
+      borderWidth="1px"
+      borderRadius="lg"
       overflow="hidden"
+      cursor="pointer"
+      onClick={onClick}
+      transition="all 0.2s"
+      _hover={{
+        transform: 'translateY(-2px)',
+        boxShadow: 'md'
+      }}
     >
-      <CardBody p={0}>
-        <Box position="relative" height="200px">
-          <Image
-            src={imageUrl || '/default-plant.png'}
-            alt={name}
-            objectFit="cover"
-            width="100%"
-            height="100%"
-            boxShadow="md"
-            borderRadius="md"
-          />
-        </Box>
-        <VStack align="stretch" p={4} spacing={2}>
-          <Text fontWeight="semibold" fontSize="lg" noOfLines={1}>
-            {name}
-          </Text>
-          <HStack spacing={1}>
-            <Text fontSize="sm" color="gray.600">
-              {type}
-            </Text>
-            <Text fontSize="sm" color="gray.600" fontStyle="italic">
-              • {scientificName}
-            </Text>
-          </HStack>
-        </VStack>
-      </CardBody>
-    </Card>
+      <Image
+        src={imageUrl}
+        alt={name}
+        height="200px"
+        width="100%"
+        objectFit="cover"
+      />
+      <Box p={4}>
+        <Text fontSize="sm" fontWeight="medium" mb={1}>
+          {name}
+        </Text>
+        <Text fontSize="sm" color="gray.600">
+          {secondaryText}
+        </Text>
+      </Box>
+    </Box>
   );
 };

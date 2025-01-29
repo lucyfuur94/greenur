@@ -33,6 +33,15 @@ export interface PlantDetails {
     attribution?: string;
     license_code?: string;
   }>;
+  taxon_photos?: Array<{
+    photo: {
+      url: string;
+      medium_url: string;
+      large_url: string;
+      attribution?: string;
+      license_code?: string;
+    };
+  }>;
   ancestors?: Array<{
     name: string;
     rank: string;

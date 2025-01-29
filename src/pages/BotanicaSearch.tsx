@@ -9,14 +9,16 @@ import {
   useToast,
   Spinner,
   HStack,
+  ButtonGroup,
 } from '@chakra-ui/react'
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { searchPlants } from '../services/plantService'
+import { searchTaxa, getMatchedName, formatDisplayName } from '../services/iNaturalistService'
 import { FaArrowLeft } from 'react-icons/fa'
 import { SearchBar } from '../components/SearchBar'
 import { SearchSuggestions, SearchSuggestion } from '../components/SearchSuggestions'
 import { PlantCard } from '../components/plants/PlantCard'
+import { getPlantType } from '../utils/plantUtils'
 
 export const BotanicaSearch = () => {
   const navigate = useNavigate()
@@ -28,66 +30,61 @@ export const BotanicaSearch = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [totalResults, setTotalResults] = useState(0)
 
-  const getPlantType = (ancestors: Array<{ name: string; rank: string }>) => {
-    // Look for common plant types in the ancestry
-    const typeMap: { [key: string]: string } = {
-      'angiosperms': 'Flowering Plant',
-      'eudicots': 'Flowering Plant',
-      'monocots': 'Flowering Plant',
-      'asterids': 'Flowering Plant',
-      'rosids': 'Flowering Plant',
-      'magnoliids': 'Flowering Plant',
-      'gymnosperms': 'Conifer',
-      'ferns': 'Fern',
-      'mosses': 'Moss',
-      'algae': 'Algae',
-      'fungi': 'Fungus',
-      'solanales': 'Vegetable/Fruit',
-      'fabales': 'Legume',
-      'poales': 'Grass/Grain',
-      'asparagales': 'Ornamental',
-      'arecales': 'Palm',
-      'pinales': 'Conifer',
-      'lamiales': 'Herb/Ornamental'
-    };
-
-    for (const ancestor of ancestors) {
-      const name = ancestor.name.toLowerCase();
-      for (const [key, value] of Object.entries(typeMap)) {
-        if (name.includes(key)) {
-          return value;
-        }
-      }
-    }
-
-    return 'Plant';
-  };
-
-  const handleSearch = async (searchQuery: string) => {
+  const handleSearch = async (searchQuery: string, page: number = 1) => {
     if (!searchQuery.trim()) return;
     
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await searchPlants(searchQuery);
-      const processedResults = response.results
-        .filter(plant => {
-          const searchTerm = searchQuery.toLowerCase();
-          const commonName = plant.preferred_common_name?.toLowerCase() || '';
-          return plant.iconic_taxon_name === "Plantae" && commonName.includes(searchTerm);
-        })
-        .map(plant => ({
-          id: plant.id,
-          name: plant.preferred_common_name || plant.name,
-          type: getPlantType(plant.ancestors || []),
-          image: plant.default_photo?.medium_url,
-          scientificName: plant.scientific_name || plant.name,
-          tags: []
-        }));
+      const { results, total_results } = await searchTaxa(searchQuery.trim(), page);
+      setTotalResults(total_results);
+      
+      const processedResults = await Promise.all(
+        results
+          .filter(plant => plant.matched_term)
+          .map(async (plant) => {
+            try {
+              const detailsResponse = await fetch(
+                `https://api.inaturalist.org/v1/taxa/${plant.id}`
+              );
+              const detailsData = await detailsResponse.json();
+              const details = detailsData.results[0];
+
+              const plantType = getPlantType(details.ancestors || []);
+              const matchedName = getMatchedName(plant);
+              const displayName = formatDisplayName(plant, matchedName, plantType);
+
+              return {
+                id: plant.id,
+                name: plant.name,
+                type: plantType,
+                scientificName: plant.name,
+                image: plant.default_photo?.medium_url,
+                displayName,
+                matchedTerm: plant.matched_term,
+                taxon_photos: plant.taxon_photos
+              };
+            } catch (error) {
+              console.error(`Error fetching details for plant ${plant.id}:`, error);
+              const matchedName = getMatchedName(plant);
+              const displayName = formatDisplayName(plant, matchedName, 'Plant');
+              
+              return {
+                id: plant.id,
+                name: plant.name,
+                type: 'Plant',
+                scientificName: plant.name,
+                image: plant.default_photo?.medium_url,
+                displayName,
+                matchedTerm: plant.matched_term,
+                taxon_photos: plant.taxon_photos
+              };
+            }
+          })
+      );
       setSearchResults(processedResults);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to search plants';
@@ -106,9 +103,18 @@ export const BotanicaSearch = () => {
 
   useEffect(() => {
     if (query) {
-      handleSearch(query);
+      handleSearch(query, currentPage);
     }
-  }, [query]);
+  }, [query, currentPage]);
+
+  const totalPages = Math.ceil(totalResults / 9);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      window.scrollTo(0, 0);
+    }
+  };
 
   const handleImageSearch = async (file: File) => {
     toast({
@@ -120,12 +126,18 @@ export const BotanicaSearch = () => {
   };
 
   const handleSuggestionSelect = (suggestion: SearchSuggestion) => {
-    navigate(`/botanica/plant/${suggestion.id}`);
+    navigate(`/botanica/plant/${suggestion.id}`, { 
+      state: { 
+        matchedTerm: suggestion.displayName.primary,
+        taxonPhotos: suggestion.taxon_photos,
+        displayName: suggestion.displayName
+      } 
+    });
   };
 
   return (
     <Box bg="gray.50" minH="100vh" pt={4}>
-      <Container maxW="full" px={0}>
+      <Container maxW="container.lg" px={4}>
         <VStack spacing={8} align="stretch">
           {/* Header with Back Button and Search */}
           <HStack spacing={4}>
@@ -140,7 +152,10 @@ export const BotanicaSearch = () => {
             <Box width="100%">
               <SearchBar
                 initialValue={query}
-                onSearch={handleSearch}
+                onSearch={(q) => {
+                  setCurrentPage(1);
+                  handleSearch(q, 1);
+                }}
                 onImageSelect={() => {}}
                 isLoading={isLoading}
                 size="md"
@@ -159,25 +174,68 @@ export const BotanicaSearch = () => {
               <Text fontWeight="bold">{error}</Text>
             </Box>
           ) : searchResults.length > 0 ? (
-            <Grid
-              templateColumns={{
-                base: '1fr',
-                md: 'repeat(2, 1fr)',
-                lg: 'repeat(3, 1fr)',
-              }}
-              gap={6}
-            >
-              {searchResults.map((plant) => (
-                <PlantCard
-                  key={plant.id}
-                  name={plant.name}
-                  scientificName={plant.scientificName || ''}
-                  imageUrl={plant.image || '/default-plant.png'}
-                  type={plant.type}
-                  onClick={() => navigate(`/botanica/plant/${plant.id}`)}
-                />
-              ))}
-            </Grid>
+            <VStack spacing={4} align="stretch">
+              <Box maxH="calc(100vh - 300px)" overflowY="auto" px={2}>
+                <Grid
+                  templateColumns={{
+                    base: '1fr',
+                    sm: 'repeat(2, 1fr)',
+                    md: 'repeat(3, 1fr)',
+                  }}
+                  gap={4}
+                  pb={4}
+                >
+                  {searchResults.map((plant) => (
+                    <PlantCard
+                      key={plant.id}
+                      name={plant.displayName.primary}
+                      secondaryText={plant.displayName.secondary}
+                      imageUrl={plant.image || '/default-plant.png'}
+                      onClick={() => navigate(`/botanica/plant/${plant.id}`, {
+                        state: {
+                          matchedTerm: plant.displayName.primary,
+                          taxonPhotos: plant.taxon_photos,
+                          displayName: plant.displayName
+                        }
+                      })}
+                    />
+                  ))}
+                </Grid>
+              </Box>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <HStack justify="center" spacing={4} py={4}>
+                  <ButtonGroup variant="outline" spacing={2}>
+                    <Button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      isDisabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <Button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        variant={currentPage === page ? 'solid' : 'outline'}
+                        colorScheme={currentPage === page ? 'green' : 'gray'}
+                      >
+                        {page}
+                      </Button>
+                    ))}
+                    <Button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      isDisabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </ButtonGroup>
+                  <Text color="gray.600">
+                    Showing {((currentPage - 1) * 9) + 1}-{Math.min(currentPage * 9, totalResults)} of {totalResults}
+                  </Text>
+                </HStack>
+              )}
+            </VStack>
           ) : query ? (
             <VStack py={8} spacing={2}>
               <Text fontSize="lg" fontWeight="medium">No plants found</Text>
