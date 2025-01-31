@@ -1,0 +1,264 @@
+---
+description: Instructions
+globs: 
+---
+# Greenur Development Instructions
+
+## 1. Code Style & Standards
+
+### 1.1 TypeScript Usage
+- Always use TypeScript for type safety
+- Maintain proper interfaces for all data structures
+- Use type annotations for function parameters and return values
+
+### 1.2 Component Structure
+- Follow functional component pattern
+- Use hooks for state management
+- Implement error boundaries
+- Break down complex components into smaller, reusable ones
+
+### 1.3 API Integration
+- Implement error handling for all API calls
+- Use AbortController for cancellable requests
+- Implement request debouncing where appropriate
+- Cache API responses when possible
+
+### 1.4 Performance Considerations
+- Implement loading states
+- Use React.memo for expensive renders
+- Implement proper cleanup in useEffect hooks
+- Use image optimization techniques
+
+## 2. Specific Guidelines
+
+### 2.1 Search Implementation
+```typescript
+// Example of proper debounced search
+useEffect(() => {
+  const delayDebounceFn = setTimeout(() => {
+    if (searchQuery.trim()) {
+      handleSearch();
+    }
+  }, 100);
+  return () => clearTimeout(delayDebounceFn);
+}, [searchQuery]);
+```
+
+### 2.2 Loading States
+```typescript
+// Proper loading state implementation
+{isLoading ? (
+  <LoadingSkeleton />
+) : error ? (
+  <ErrorMessage error={error} />
+) : (
+  <ActualContent data={data} />
+)}
+```
+
+### 2.3 API Error Handling
+```typescript
+try {
+  const response = await api.call();
+  handleSuccess(response);
+} catch (error) {
+  handleError(error);
+  showToast({
+    title: 'Error',
+    description: getErrorMessage(error),
+    status: 'error'
+  });
+}
+```
+
+## 3. File Organization
+
+### 3.1 Component Files
+- Place in appropriate feature directories
+- Include related types and hooks
+- Export as named exports
+
+### 3.2 Service Files
+- Separate API calls into service files
+- Implement proper typing for API responses
+- Include error handling
+
+### 3.3 Utility Files
+- Create shared utilities in utils directory
+- Document complex utility functions
+- Ensure type safety
+
+## 4. Testing Guidelines
+
+### 4.1 Component Tests
+- Test component rendering
+- Test user interactions
+- Test error states
+- Test loading states
+
+### 4.2 Integration Tests
+- Test API integration
+- Test routing functionality
+- Test state management
+
+## 5. Documentation
+
+### 5.1 Code Comments
+- Document complex logic
+- Explain non-obvious implementations
+- Include examples for reusable components
+
+### 5.2 Type Documentation
+- Document complex types
+- Include usage examples
+- Document API response types
+
+## 6. Accessibility
+
+### 6.1 ARIA Labels
+- Include proper aria-labels
+- Implement keyboard navigation
+- Follow WCAG guidelines
+
+### 6.2 Color Contrast
+- Maintain proper color contrast ratios
+- Test with screen readers
+- Implement focus states
+
+## 7. Error Handling
+
+### 7.1 User Errors
+- Show clear error messages
+- Provide recovery options
+- Log errors appropriately
+
+### 7.2 API Errors
+- Handle network errors
+- Handle validation errors
+- Implement fallback mechanisms
+
+## 8. State Management
+
+### 8.1 Local State
+- Use useState for component state
+- Use useReducer for complex state
+- Implement proper state updates
+
+### 8.2 Global State
+- Use Context API appropriately
+- Handle loading and error states
+- Implement proper state updates
+
+## 9. Performance
+
+### 9.1 Code Splitting
+- Implement lazy loading
+- Use proper chunking
+- Optimize bundle size
+
+### 9.2 Rendering
+- Avoid unnecessary renders
+- Use memoization techniques
+- Implement virtual scrolling for large lists
+
+## 10. Security
+
+### 10.1 Authentication
+- Implement secure token handling
+- Secure sensitive routes
+- Handle session expiration
+
+### 10.2 Data Handling
+- Sanitize user input
+- Implement input validation
+- Handle sensitive data securely
+
+## 11. Deployment
+
+### 11.1 Git Workflow
+```bash
+# Before making changes
+git pull origin main
+
+# After making changes
+git add .
+git commit -m "Descriptive commit message"
+git push origin main
+```
+
+### 11.2 Netlify Deployment
+- Automatic deployment on main branch push
+- Required environment variables:
+  - `YOUTUBE_API_KEY`
+  - `FIREBASE_CONFIG`
+
+### 11.3 Environment Setup
+- Create `.env` file for local development
+- Add required API keys
+- Never commit `.env` files
+
+### 11.4 Build Process
+```bash
+# Local build test
+npm run build
+
+# Local preview
+npm run preview
+```
+
+### 11.5 Deployment Checks
+- Verify local build success
+- Check for linting errors
+- Confirm API key configuration
+- Test Netlify functions locally
+
+### 11.6 Monitoring
+- Review Netlify deploy logs
+- Monitor function executions
+- Set up build failure alerts
+
+## 12. Versioning Protocol
+- Update `src/config/version.ts` for:
+  - New feature releases
+  - Major service updates
+  - Breaking API changes
+- Follow semantic versioning (MAJOR.MINOR.PATCH)
+
+## 13. Testing Requirements
+- Component snapshot tests
+- API response validation
+- Netlify function integration tests
+- Cross-browser compatibility checks 
+
+## 14. Terminal Command Formatting Rules
+### 14.1 Pure executable format - Commands must be shareable as:
+```bash
+git checkout main
+git pull origin main
+git checkout -b test main
+```
+
+### 14.2 No inline comments - Instead add context above the code block:
+```bash
+# Switch to main branch and create test branch
+git checkout main && git checkout -b test
+```
+
+### 14.3 Multi-line safety - Use `&& \` for chained commands:
+```bash
+git checkout main && \
+git pull origin main && \
+git checkout -b test main
+```
+
+### 14.4 Validation command - Always include verification step:
+```bash
+git branch --show-current  # Should output 'test'
+```
+
+## 15. Important**: When modifying environment files (`.env`, `.env.local`):
+- Preserve existing API keys
+- Never overwrite existing configurations
+- Add new keys at the end of the file
+
+

@@ -9,4 +9,21 @@ service firebase.storage {
                    && request.resource.contentType.matches('image/.*');
     }
   }
+}
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/locations/{locationId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Add this catch-all rule for development
+    match /{document=**} {
+      allow read, write: if request.auth != null && false;
+    }
+  }
 } 

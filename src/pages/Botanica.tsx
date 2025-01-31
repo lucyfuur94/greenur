@@ -74,27 +74,29 @@ export const Botanica = () => {
     const errorLogs: string[] = [];
 
     console.error = (...args) => {
-      // Log to our array
-      errorLogs.push(args.map(arg => 
-        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-      ).join(' '));
-      
-      // Still call original console.error
+      // Always log to terminal
       originalConsoleError.apply(console, args);
       
-      // Show toast for new errors
-      if (errorLogs.length > 0) {
+      // Filter sensitive errors
+      const message = args.join(' ');
+      if (message.includes('[Navigation] Geolocation error')) {
+        return;
+      }
+
+      // Log to error array
+      errorLogs.push(message);
+      
+      // Show toast for user-facing errors
+      if (!message.includes('[Expected]')) {
         toast({
-          title: 'Console Error Detected',
-          description: `Check console for details. Latest error: ${errorLogs[errorLogs.length - 1].slice(0, 100)}...`,
-          status: 'warning',
+          title: 'Application Error',
+          description: 'Check console for details',
+          status: 'error',
           duration: 5000,
-          isClosable: true,
         });
       }
     };
 
-    // Cleanup
     return () => {
       console.error = originalConsoleError;
     };
@@ -111,20 +113,6 @@ export const Botanica = () => {
   const [analysisResult, setAnalysisResult] = useState<PlantAnalysis | null>(null)
 
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false); // Close the dropdown
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [dropdownRef]);
 
   useEffect(() => {
     let currentController: AbortController | null = null;
@@ -298,64 +286,57 @@ export const Botanica = () => {
 
   return (
     <Box bg="white" h="calc(100vh - 60px)" pt={0} overflow="hidden" display="flex" flexDirection="column">
-      {loading ? (
-        <Box textAlign="center" py={10}>
-          <Spinner size="xl" color="green.500" thickness="3px" emptyColor="gray.200" />
-          <Text mt={4} color="gray.600">Loading plant database...</Text>
-        </Box>
-      ) : (
-        <Container maxW="100vw" width="100%" flex="1" px={{ base: 4, md: 6 }} py={4} overflow="hidden">
-          <VStack spacing={6} align="stretch">
-            {/* Hero Section */}
-            <VStack spacing={4} align="center">
-              <Image
-                src="/images/plant-line-art.jpg"
-                alt="Line art plant illustration"
-                maxW="275px"
-                mx="auto"
-                pt={6}
-                pb={6}
+      <Container maxW="100vw" width="100%" flex="1" px={{ base: 4, md: 6 }} py={4} overflow="hidden">
+        <VStack spacing={6} align="stretch">
+          {/* Hero Section */}
+          <VStack spacing={4} align="center">
+            <Image
+              src="/images/plant-line-art.jpg"
+              alt="Line art plant illustration"
+              maxW="275px"
+              mx="auto"
+              pt={6}
+              pb={6}
+            />
+            <Text
+              fontSize={{ base: "lg", md: "xl" }}
+              fontWeight="normal"
+              textAlign="center"
+              color="gray.800"
+              mb={2}
+            >
+              Discover and learn about plants from around the world
+            </Text>
+            <Box position="relative" width="100%" maxW="600px" ref={dropdownRef}>
+              <SearchBar
+                initialValue={searchQuery}
+                onSearch={(query) => {
+                  setSearchQuery(query);
+                  if (!query.trim()) {
+                    setSuggestions([]);
+                    setError(null);
+                    setShowSuggestions(false);
+                  }
+                }}
+                onImageSelect={handleImageSelect}
+                isLoading={isLoading}
+                placeholder="Search plants by name.."
+                size="lg"
               />
-              <Text
-                fontSize={{ base: "lg", md: "xl" }}
-                fontWeight="normal"
-                textAlign="center"
-                color="gray.800"
-                mb={2}
-              >
-                Discover and learn about plants from around the world
-              </Text>
-              <Box position="relative" width="100%" maxW="600px" ref={dropdownRef}>
-                <SearchBar
-                  initialValue={searchQuery}
-                  onSearch={(query) => {
-                    setSearchQuery(query);
-                    if (!query.trim()) {
-                      setSuggestions([]);
-                      setError(null);
-                      setShowSuggestions(false);
-                    }
-                  }}
-                  onImageSelect={handleImageSelect}
+              {showSuggestions && (
+                <SearchSuggestions
+                  suggestions={suggestions}
+                  onSelect={handleSuggestionSelect}
                   isLoading={isLoading}
-                  placeholder="Search plants by name.."
-                  size="lg"
+                  error={error || undefined}
                 />
-                {showSuggestions && (
-                  <SearchSuggestions
-                    suggestions={suggestions}
-                    onSelect={handleSuggestionSelect}
-                    isLoading={isLoading}
-                    error={error || undefined}
-                  />
-                )}
-              </Box>
-            </VStack>
-
-            {/* Rest of the component ... */}
+              )}
+            </Box>
           </VStack>
-        </Container>
-      )}
+
+          {/* Rest of the component ... */}
+        </VStack>
+      </Container>
 
       {/* Image Analysis Modal */}
       <Modal isOpen={isOpen} onClose={onClose} size="xl">

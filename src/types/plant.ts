@@ -31,4 +31,16 @@ export interface PlantDetails {
     is_valid: boolean;
     position?: number;
   }>;
+}
+
+/**
+ * Example iNaturalist response:
+ * {
+ *   "id": 12345,
+ *   "name": "Rosa rubiginosa",
+ *   "preferred_common_name": "Sweet Briar Rose"
+ * }
+ */
+export interface PlantIdentification {
+  // ... existing interface
 } 

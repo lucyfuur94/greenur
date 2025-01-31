@@ -1,7 +1,13 @@
-import { Box, Flex, Link, useColorModeValue, Menu, MenuButton, MenuList, MenuItem, Avatar, Button, HStack } from '@chakra-ui/react'
+import { Box, Flex, Link, useColorModeValue, Menu, MenuButton, MenuList, MenuItem, Avatar, Button, HStack, useToast } from '@chakra-ui/react'
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom'
 import { auth } from '../config/firebase'
 import { useAuth } from '../contexts/AuthContext'
+import { useState, useEffect, useRef } from 'react'
+import { LocationPicker } from './LocationPicker'
+import { WeatherWidget } from './WeatherWidget'
+import { Location } from '../services/locationService'
+import { WeatherData, getWeatherData, getWeatherByCity } from '../services/weatherService'
+import { DEFAULT_LOCATION } from '../config/weatherConfig'
 
 export const Navigation = () => {
   const location = useLocation()
@@ -9,6 +15,10 @@ export const Navigation = () => {
   const { currentUser } = useAuth()
   const bg = useColorModeValue('white', 'gray.800')
   const borderColor = useColorModeValue('gray.200', 'gray.700')
+  const [weather, setWeather] = useState<WeatherData | null>(null)
+  const [currentLocation, setCurrentLocation] = useState<Location | null>(null)
+  const toast = useToast()
+  const locationErrorHandled = useRef(false)
 
   const isActive = (path: string) => {
     if (path === '/botanica') {
@@ -22,7 +32,142 @@ export const Navigation = () => {
       await auth.signOut()
       navigate('/login')
     } catch (error) {
-      console.error('Error signing out:', error)
+      console.error('[Navigation] Error signing out:', error)
+    }
+  }
+
+  const handleGeolocationError = (error: GeolocationPositionError) => {
+    console.error('[Navigation] Geolocation error:', error)
+    if (!locationErrorHandled.current) {
+      toast({
+        title: 'Location Service',
+        description: `${error.message || 'Geolocation unavailable'}. Showing weather for New Delhi, India.`,
+        status: 'info',
+        duration: 5000,
+        isClosable: true,
+      })
+      locationErrorHandled.current = true
+    }
+    handleDefaultLocation()
+  }
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            console.log('[Navigation] Got user location, fetching weather data...')
+            const weatherData = await getWeatherData(
+              position.coords.latitude,
+              position.coords.longitude
+            )
+            console.log('[Navigation] Successfully fetched weather data')
+            setWeather(weatherData)
+            setCurrentLocation({
+              id: 'current',
+              type: 'other',
+              name: weatherData.location.name,
+              address: `${weatherData.location.name}, ${weatherData.location.country}`,
+              lat: weatherData.location.lat,
+              lon: weatherData.location.lon
+            })
+          } catch (error) {
+            console.error('[Navigation] Error fetching weather:', error)
+            // Only show toast for non-API key related errors
+            if (error instanceof Error && !error.message.includes('API key')) {
+              toast({
+                title: 'Error fetching weather',
+                description: error.message,
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+              })
+            }
+            // Fallback to default location
+            handleDefaultLocation()
+          }
+        },
+        handleGeolocationError
+      )
+    } else {
+      console.log('[Navigation] Geolocation not supported, using default location')
+      if (!locationErrorHandled.current) {
+        toast({
+          title: 'Location Service',
+          description: 'Geolocation not supported. Showing weather for New Delhi, India.',
+          status: 'info',
+          duration: 5000,
+          isClosable: true,
+        })
+        locationErrorHandled.current = true
+      }
+      handleDefaultLocation()
+    }
+  }, [])
+
+  const handleDefaultLocation = async () => {
+    try {
+      console.log('[Navigation] Fetching weather for default location:', DEFAULT_LOCATION.name)
+      const weatherData = await getWeatherByCity(`${DEFAULT_LOCATION.name}, ${DEFAULT_LOCATION.country}`)
+      console.log('[Navigation] Successfully fetched default weather data')
+      setWeather(weatherData)
+      setCurrentLocation({
+        id: 'default',
+        type: 'other',
+        name: DEFAULT_LOCATION.name,
+        address: `${DEFAULT_LOCATION.name}, ${DEFAULT_LOCATION.country}`,
+        lat: DEFAULT_LOCATION.lat,
+        lon: DEFAULT_LOCATION.lon
+      })
+    } catch (error) {
+      console.error('[Navigation] Error fetching default weather:', error)
+      if (error instanceof Error && !error.message.includes('API key')) {
+        toast({
+          title: 'Error fetching weather',
+          description: error.message,
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        })
+      }
+    }
+  }
+
+  const handleLocationSelect = async (location: Location) => {
+    try {
+      console.log('[Navigation] Fetching weather for selected location:', location.name)
+      const weatherData = await getWeatherData(location.lat, location.lon)
+      console.log('[Navigation] Successfully fetched weather for selected location')
+      setWeather(weatherData)
+      setCurrentLocation(location)
+    } catch (error) {
+      console.error('[Navigation] Error fetching weather for selected location:', error)
+      toast({
+        title: 'Error fetching weather',
+        description: error instanceof Error ? error.message : 'Failed to fetch weather data',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      })
+    }
+  }
+
+  const handleGlobalLocation = async (location: Location) => {
+    try {
+      console.log('[Navigation] Fetching weather for selected location:', location.name)
+      const weatherData = await getWeatherData(location.lat, location.lon)
+      console.log('[Navigation] Successfully fetched weather for selected location')
+      setWeather(weatherData)
+      setCurrentLocation(location)
+    } catch (error) {
+      console.error('[Navigation] Error fetching weather for selected location:', error)
+      toast({
+        title: 'Error fetching weather',
+        description: error instanceof Error ? error.message : 'Failed to fetch weather data',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      })
     }
   }
 
@@ -72,40 +217,59 @@ export const Navigation = () => {
               ))}
             </HStack>
           </HStack>
-          
-          {currentUser ? (
-            <Menu>
-              <MenuButton
-                as={Button}
-                rounded="full"
-                variant="link"
-                cursor="pointer"
-                minW={10}
-              >
-                <Avatar 
-                  size="sm" 
-                  src={currentUser.photoURL || undefined}
-                  name={currentUser.displayName || undefined}
-                  bg="brand.500"
-                  color="white"
-                />
-              </MenuButton>
-              <MenuList>
-                <MenuItem as={RouterLink} to="/profile">Profile</MenuItem>
-                <MenuItem as={RouterLink} to="/settings">Settings</MenuItem>
-                <MenuItem onClick={handleSignOut}>Sign Out</MenuItem>
-              </MenuList>
-            </Menu>
-          ) : (
-            <HStack spacing={4}>
-              <Button as={RouterLink} to="/login" variant="ghost">
-                Login
-              </Button>
-              <Button as={RouterLink} to="/signup">
-                Sign Up
-              </Button>
-            </HStack>
-          )}
+
+          <HStack spacing={4}>
+            <LocationPicker
+              onLocationSelect={handleGlobalLocation}
+              currentLocation={currentLocation}
+              onLocationError={(error) => {
+                if (!locationErrorHandled.current) {
+                  toast({
+                    title: 'Location Service',
+                    description: `${error.message}. Showing weather for New Delhi, India.`,
+                    status: 'info',
+                    duration: 5000,
+                    isClosable: true,
+                  });
+                  locationErrorHandled.current = true;
+                }
+              }}
+            />
+            {weather && <WeatherWidget weather={weather} />}
+            {currentUser ? (
+              <Menu>
+                <MenuButton
+                  as={Button}
+                  rounded="full"
+                  variant="link"
+                  cursor="pointer"
+                  minW={10}
+                >
+                  <Avatar 
+                    size="sm" 
+                    src={currentUser.photoURL || undefined}
+                    name={currentUser.displayName || undefined}
+                    bg="brand.500"
+                    color="white"
+                  />
+                </MenuButton>
+                <MenuList>
+                  <MenuItem as={RouterLink} to="/profile">Profile</MenuItem>
+                  <MenuItem as={RouterLink} to="/settings">Settings</MenuItem>
+                  <MenuItem onClick={handleSignOut}>Sign Out</MenuItem>
+                </MenuList>
+              </Menu>
+            ) : (
+              <HStack spacing={4}>
+                <Button as={RouterLink} to="/login" variant="ghost">
+                  Login
+                </Button>
+                <Button as={RouterLink} to="/signup">
+                  Sign Up
+                </Button>
+              </HStack>
+            )}
+          </HStack>
         </Flex>
       </Box>
     </Box>
