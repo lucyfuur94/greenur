@@ -7,7 +7,14 @@ import { LocationPicker } from './LocationPicker'
 import { WeatherWidget } from './WeatherWidget'
 import { Location } from '../services/locationService'
 import { WeatherData, getWeatherData, getWeatherByCity } from '../services/weatherService'
-import { DEFAULT_LOCATION } from '../config/weatherConfig'
+import { env } from '../config/env'
+
+const DEFAULT_LOCATION = {
+  name: 'New Delhi',
+  country: 'India',
+  lat: 28.6139,
+  lon: 77.2090
+};
 
 export const Navigation = () => {
   const location = useLocation()

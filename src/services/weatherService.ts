@@ -1,7 +1,4 @@
-import { WEATHER_API_KEY } from '../config/weatherConfig';
-
-// Add logging to check API key
-console.log('[WeatherService] API Key status:', WEATHER_API_KEY ? 'Present' : 'Missing');
+import { env } from '../config/env';
 
 export interface WeatherData {
   location: {
@@ -47,8 +44,8 @@ const handleWeatherResponse = async (response: Response) => {
 };
 
 export const getWeatherData = async (lat: number, lon: number): Promise<WeatherData> => {
-  // Use Netlify's environment variable format
-  const apiKey = import.meta.env.VITE_WEATHER_API_KEY || process.env.VITE_WEATHER_API_KEY;
+  // Use env.VITE_WEATHER_API_KEY
+  const apiKey = env.VITE_WEATHER_API_KEY;
   
   if (!apiKey) {
     throw new Error('[WeatherService] API key not configured. Check Netlify environment variables');
@@ -76,15 +73,16 @@ export const getWeatherData = async (lat: number, lon: number): Promise<WeatherD
 };
 
 export const getWeatherByCity = async (city: string): Promise<WeatherData> => {
-  try {
-    if (!WEATHER_API_KEY) {
-      console.error('[WeatherService] Weather API key is not configured. Check your .env.local file.');
-      throw new Error('Weather API key is not configured');
-    }
+  const apiKey = env.VITE_WEATHER_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('[WeatherService] API key not configured. Check Netlify environment variables');
+  }
 
+  try {
     console.log('[WeatherService] Making API call for city:', city);
     const response = await fetch(
-      `https://api.weatherapi.com/v1/forecast.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(city)}&days=7&aqi=no`,
+      `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${encodeURIComponent(city)}&days=7&aqi=no`,
       {
         method: 'GET',
         headers: {
@@ -99,4 +97,8 @@ export const getWeatherByCity = async (city: string): Promise<WeatherData> => {
     console.error('[WeatherService] Error fetching weather data:', error);
     throw error;
   }
-}; 
+};
+
+if (!env.VITE_WEATHER_API_KEY) {
+  throw new Error('Weather API key missing in environment variables');
+} 

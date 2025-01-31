@@ -39,3 +39,6 @@ serviceAccountKey.json
 .env.development
 
 *storybook.log
+
+# Local overrides
+.env.local
