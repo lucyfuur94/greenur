@@ -1,6 +1,6 @@
 import { db } from '../config/firebase';
 import { doc, updateDoc, arrayUnion, arrayRemove, getDoc, deleteDoc, collection, addDoc, getDocs, query, where } from 'firebase/firestore';
-import { env } from '../config/env';
+import { WEATHER_API_KEY } from '../config/weatherConfig';
 
 export interface Location {
   id: string;
@@ -20,19 +20,12 @@ export interface SavedLocations {
   saved: Location[];
 }
 
-const DEFAULT_LOCATION = {
-  name: 'New Delhi',
-  country: 'India',
-  lat: 28.6139,
-  lon: 77.2090
-};
-
 export const searchLocations = async (query: string): Promise<Location[]> => {
-  if (!query.trim() || !env.VITE_WEATHER_API_KEY) return [];
+  if (!query.trim() || !WEATHER_API_KEY) return [];
 
   try {
     const response = await fetch(
-      `https://api.weatherapi.com/v1/search.json?key=${env.VITE_WEATHER_API_KEY}&q=${encodeURIComponent(query)}`,
+      `https://api.weatherapi.com/v1/search.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(query)}`,
       {
         method: 'GET',
         headers: {

@@ -82,7 +82,14 @@ export const getWeatherByCity = async (city: string): Promise<WeatherData> => {
   try {
     console.log('[WeatherService] Making API call for city:', city);
     const response = await fetch(
-      `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${encodeURIComponent(city)}`
+      `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${encodeURIComponent(city)}&days=7&aqi=no`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        mode: 'cors',
+      }
     );
 
     return await handleWeatherResponse(response);

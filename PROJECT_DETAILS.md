@@ -54,7 +54,22 @@
 - Google Cloud Translation API
 
 ## 4. Development Practices
-### 4.1 Logging Standards
+### 4.1 Version Management
+- **Semantic Versioning**:
+  - MAJOR version for breaking changes
+  - MINOR version for new features
+  - PATCH version for bug fixes
+- **Merge Operations**:
+  - Merges to `main` from `test` increment minor version (1.0.0 → 1.1.0)
+  - Hotfix merges to `main` increment patch version (1.0.1 → 1.0.2)
+  - Use `scripts/merge-test-to-main.sh` for production merges
+- **Release Process**:
+  - Major versions require:
+    - Update to `PROJECT_DETAILS.md`
+    - Migration guide for breaking changes
+    - Approval via `!release major` comment
+
+### 4.2 Logging Standards
 - All new code must include appropriate logging:
   - Debug logs for complex operations
   - Info logs for user-initiated actions
@@ -63,37 +78,6 @@
 - Log to both console and terminal in development
 - Never log sensitive user data (emails, passwords, location coordinates)
 - Use the centralized logger utility for production logging
-
-### 4.2 Versioning
-- Centralized logging system 
-- Comprehensive error handling
-- TypeScript type definitions
-- Agile feature development
-
-### Version Management Policy
-
-1. **Merge Operations**:
-   - 🔀 `test` → `main` merges require minor version increment (1.2.3 → 1.3.0)
-   - 🔧 Hotfix branches → `main` require patch increment (1.2.3 → 1.2.4)
-   - 🚀 Use `scripts/merge-test-to-main.sh` for all production releases
-
-2. **Version Bump Rules**:
-   ```bash
-   # Major: Breaking API changes, database migrations
-   ./scripts/version-update.sh major
-
-   # Minor: New features, enhanced functionality
-   ./scripts/version-update.sh minor
-
-   # Patch: Bug fixes, security updates
-   ./scripts/version-update.sh patch
-   ```
-
-3. **Release Checklist**:
-   - [ ] Update `src/config/version.ts`
-   - [ ] Run `npm run build`
-   - [ ] Verify `PROJECT_DETAILS.md` changelog
-   - [ ] Execute merge script
 
 ## Overview
 Greenur is a modern web application designed to help users discover, learn about, and care for plants. The platform combines data from multiple sources including Wikidata, Wikipedia, OpenFarm, and various other APIs to provide comprehensive plant information.
@@ -233,4 +217,4 @@ Greenur is a modern web application designed to help users discover, learn about
 
 ## Versioning
 - Current production version: 0.1.2
-- Current development version: 0.1.7 (unreleased)
+- Current development version: 0.1.7 (unreleased) 
