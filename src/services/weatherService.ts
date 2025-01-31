@@ -47,15 +47,18 @@ const handleWeatherResponse = async (response: Response) => {
 };
 
 export const getWeatherData = async (lat: number, lon: number): Promise<WeatherData> => {
-  try {
-    if (!WEATHER_API_KEY) {
-      console.error('[WeatherService] Weather API key is not configured. Check your .env.local file.');
-      throw new Error('Weather API key is not configured');
-    }
+  // Use Netlify's environment variable format
+  const apiKey = import.meta.env.VITE_WEATHER_API_KEY || process.env.VITE_WEATHER_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('[WeatherService] API key not configured. Check Netlify environment variables');
+  }
 
+  const url = `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${lat},${lon}`;
+  try {
     console.log('[WeatherService] Making API call for coordinates:', { lat, lon });
     const response = await fetch(
-      `https://api.weatherapi.com/v1/forecast.json?key=${WEATHER_API_KEY}&q=${lat},${lon}&days=7&aqi=no`,
+      url,
       {
         method: 'GET',
         headers: {

@@ -1,6 +1,6 @@
 [build]
-  command = "npm install && npm run build"
-  publish = "dist"
+  command = "npm run build"
+  publish = "dist-server"
   functions = "netlify/functions"
 
 [build.environment]
@@ -8,6 +8,7 @@
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
   SHARP_IGNORE_GLOBAL_LIBVIPS = "1"
+  VITE_WEATHER_API_KEY = "@weather_api_key"
 
 [dev]
   command = "npm run dev:vite"
