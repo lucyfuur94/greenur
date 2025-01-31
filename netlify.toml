@@ -1,14 +1,12 @@
 [build]
   command = "npm run build"
-  publish = "dist-server"
+  publish = "dist"
   functions = "netlify/functions"
 
 [build.environment]
   NODE_OPTIONS = "--experimental-vm-modules --max_old_space_size=4096"
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
-  SHARP_IGNORE_GLOBAL_LIBVIPS = "1"
-  VITE_WEATHER_API_KEY = "your_actual_api_key_here"
 
 [dev]
   command = "npm run dev:vite"
