@@ -14,11 +14,6 @@ import {
   ModalHeader,
   ModalBody,
   ModalCloseButton,
-  Tabs,
-  TabList,
-  TabPanels,
-  Tab,
-  TabPanel,
   AspectRatio,
   useToast,
   Image,
@@ -32,9 +27,10 @@ import {
   Card,
   CardBody,
   ModalFooter,
+  Center,
 } from '@chakra-ui/react'
 import { useState, useRef, useEffect } from 'react'
-import { FaCamera } from 'react-icons/fa'
+import { FaCamera, FaBook } from 'react-icons/fa'
 import { analyzePlantImage } from '../services/gptService'
 import { useNavigate } from 'react-router-dom'
 import { SearchBar } from '../components/SearchBar'
@@ -45,6 +41,7 @@ import { collection } from 'firebase/firestore'
 import { db } from '../config/firebase'
 import { getPlantType } from '../utils/plantUtils'
 import { searchTaxa, getMatchedName, formatDisplayName } from '../services/iNaturalistService'
+import { PlantCatalog } from '../components/plants/PlantCatalog'
 
 interface PlantSuggestion {
   id: string
@@ -62,8 +59,35 @@ interface VideoInfo {
   category: 'tutorial' | 'timelapse' | 'creative'
 }
 
+interface PlantSearchResult {
+  id: string;
+  name: string;
+  type: string;
+  scientificName: string;
+  image: string;
+  displayName: string;
+  matchedTerm: string;
+  taxon_photos: Array<{ url: string }>;
+}
+
+interface SearchResponse {
+  total: number;
+  page: number;
+  limit: number;
+  results: PlantSearchResult[];
+}
+
 export const Botanica = () => {
-  const { isOpen, onOpen, onClose } = useDisclosure()
+  const { 
+    isOpen: isImageModalOpen, 
+    onOpen: onImageModalOpen, 
+    onClose: onImageModalClose 
+  } = useDisclosure()
+  const {
+    isOpen: isCatalogOpen,
+    onOpen: onCatalogOpen,
+    onClose: onCatalogClose
+  } = useDisclosure()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const toast = useToast()
   const navigate = useNavigate()
@@ -111,6 +135,8 @@ export const Botanica = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [showAnalysisPopup, setShowAnalysisPopup] = useState(false)
   const [analysisResult, setAnalysisResult] = useState<PlantAnalysis | null>(null)
+  const [isSearchEnabled, setIsSearchEnabled] = useState(false);
+  const [detectedPlantId, setDetectedPlantId] = useState<string | null>(null);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -156,52 +182,30 @@ export const Botanica = () => {
     }
 
     try {
-      const { results } = await searchTaxa(searchQuery.trim(), 1, true);
+      const response = await fetch(
+        `/.netlify/functions/search-plants?q=${encodeURIComponent(searchQuery.trim())}&page=1&limit=5`,
+        { signal }
+      );
       
-      // Get detailed information for each plant to determine its type
-      const plantPromises = results
-        .filter(result => result.matched_term)
-        .map(async (plant) => {
-          try {
-            const detailsResponse = await fetch(
-              `https://api.inaturalist.org/v1/taxa/${plant.id}`
-            );
-            const detailsData = await detailsResponse.json();
-            const details = detailsData.results[0];
-            
-            const plantType = getPlantType(details.ancestors || []);
-            const matchedName = getMatchedName(plant);
-            const displayName = formatDisplayName(plant, matchedName, plantType);
-            
-            return {
-              id: plant.id,
-              name: plant.name,
-              type: plantType,
-              scientificName: plant.name,
-              image: plant.default_photo?.medium_url,
-              displayName,
-              matchedTerm: plant.matched_term,
-              taxon_photos: plant.taxon_photos
-            };
-          } catch (error) {
-            console.error(`Error fetching details for plant ${plant.id}:`, error);
-            const matchedName = getMatchedName(plant);
-            const displayName = formatDisplayName(plant, matchedName, 'Plant');
-            
-            return {
-              id: plant.id,
-              name: plant.name,
-              type: 'Plant',
-              scientificName: plant.name,
-              image: plant.default_photo?.medium_url,
-              displayName,
-              matchedTerm: plant.matched_term,
-              taxon_photos: plant.taxon_photos
-            };
-          }
-        });
+      if (!response.ok) {
+        throw new Error('Failed to search plants');
+      }
 
-      const processedResults = await Promise.all(plantPromises);
+      const data: SearchResponse = await response.json();
+      const processedResults = data.results.map((plant: PlantSearchResult) => ({
+        id: plant.id,
+        name: plant.name,
+        type: plant.type,
+        scientificName: plant.scientificName,
+        image: plant.image,
+        displayName: {
+          primary: plant.name,
+          secondary: `${plant.type} • ${plant.scientificName}`
+        },
+        matchedTerm: plant.matchedTerm,
+        taxon_photos: plant.taxon_photos
+      }));
+      
       setSuggestions(processedResults);
       
       if (processedResults.length === 0 && !signal.aborted) {
@@ -226,6 +230,58 @@ export const Botanica = () => {
     }
   };
 
+  const checkAndAddPlantToCatalog = async (plantName: string, scientificName: string) => {
+    try {
+      // First check if plant exists
+      const searchResponse = await fetch(
+        `/.netlify/functions/search-plants?q=${encodeURIComponent(plantName.trim())}&page=1&limit=1`
+      );
+      
+      if (!searchResponse.ok) {
+        throw new Error('Failed to search plant catalog');
+      }
+
+      const searchData = await searchResponse.json();
+      
+      // If plant not found, add it to catalog
+      if (searchData.results.length === 0) {
+        const addResponse = await fetch('/.netlify/functions/add-plant', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ plantName, scientificName })
+        });
+
+        if (!addResponse.ok) {
+          throw new Error('Failed to add plant to catalog');
+        }
+
+        const addData = await addResponse.json();
+        setDetectedPlantId(addData._id);
+
+        toast({
+          title: 'New Plant Detected!',
+          description: `${plantName} has been added to our plant catalog.`,
+          status: 'success',
+          duration: 5000,
+        });
+      } else {
+        setDetectedPlantId(searchData.results[0].id);
+      }
+      
+      setIsSearchEnabled(true);
+    } catch (error) {
+      console.error('Error checking/adding plant:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to process plant catalog operation',
+        status: 'error',
+        duration: 5000,
+      });
+    }
+  };
+
   const handleImageSelect = async (file: File) => {
     try {
       // Check file type first
@@ -242,29 +298,47 @@ export const Botanica = () => {
 
       // Create image preview
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         setImagePreview(reader.result as string);
+        setIsLoading(true);
+        setError(null);
+        setIsSearchEnabled(false);
+        setDetectedPlantId(null);
+        onImageModalOpen();
+        
+        try {
+          const analysis = await analyzePlantImage(file);
+          setAnalysisResult(analysis);
+          setShowAnalysisPopup(true);
+
+          // Check and add to catalog if needed
+          await checkAndAddPlantToCatalog(
+            analysis.commonName,
+            analysis.scientificName
+          );
+        } catch (error) {
+          console.error('Error analyzing image:', error);
+          toast({
+            title: 'Analysis Failed',
+            description: error instanceof Error ? error.message : 'Failed to analyze plant image',
+            status: 'error',
+            duration: 5000,
+          });
+          onImageModalClose();
+        } finally {
+          setIsLoading(false);
+        }
       };
       reader.readAsDataURL(file);
-
-      // Open modal and start analysis
-      onOpen();
-      setAnalysisResult(null);
-
-      const info = await analyzePlantImage(file);
-      console.log('Analysis result:', info);
-      setAnalysisResult(info);
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to analyze image';
-      console.error('Error analyzing image:', error);
-      
+      console.error('Error handling image:', error);
       toast({
         title: 'Error',
-        description: errorMessage,
+        description: 'Failed to process image',
         status: 'error',
         duration: 5000,
       });
+      setIsLoading(false);
     }
   };
 
@@ -332,30 +406,59 @@ export const Botanica = () => {
                 />
               )}
             </Box>
+            <Button
+              leftIcon={<FaBook />}
+              colorScheme="green"
+              variant="outline"
+              onClick={onCatalogOpen}
+              size="lg"
+              mt={4}
+            >
+              Open Plant Catalog
+            </Button>
           </VStack>
-
-          {/* Rest of the component ... */}
         </VStack>
       </Container>
 
       {/* Image Analysis Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="xl">
+      <Modal isOpen={isImageModalOpen} onClose={onImageModalClose} size="xl">
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>Plant Analysis</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
             {imagePreview && (
-              <AspectRatio ratio={4/3} mb={4}>
-                <Image 
-                  src={imagePreview} 
-                  alt="Uploaded plant" 
-                  objectFit="contain"
-                  backgroundColor="gray.50"
-                />
-              </AspectRatio>
+              <Box position="relative">
+                <AspectRatio ratio={4/3} mb={4}>
+                  <Image 
+                    src={imagePreview} 
+                    alt="Uploaded plant" 
+                    objectFit="contain"
+                    backgroundColor="gray.50"
+                  />
+                </AspectRatio>
+                {isLoading && (
+                  <Box
+                    position="absolute"
+                    top={0}
+                    left={0}
+                    right={0}
+                    bottom={4}
+                    bg="blackAlpha.600"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    borderRadius="md"
+                  >
+                    <VStack spacing={4} color="white">
+                      <Spinner size="xl" color="white" />
+                      <Text fontWeight="medium">Analyzing plant...</Text>
+                    </VStack>
+                  </Box>
+                )}
+              </Box>
             )}
-            {analysisResult ? (
+            {analysisResult && !isLoading ? (
               <VStack align="stretch" spacing={4}>
                 <Box>
                   <Text fontWeight="bold">Common Name:</Text>
@@ -369,22 +472,35 @@ export const Botanica = () => {
                   <Button 
                     colorScheme="green"
                     onClick={() => {
-                      if (analysisResult?.commonName) {
-                        navigate(`/botanica/search?q=${encodeURIComponent(analysisResult.commonName)}`);
-                        onClose();
+                      if (detectedPlantId) {
+                        navigate(`/botanica/plant/${detectedPlantId}`);
+                        onImageModalClose();
                       }
                     }}
+                    isDisabled={!isSearchEnabled}
                   >
-                    Search
+                    {isSearchEnabled ? 'Search' : 'Processing...'}
                   </Button>
                 </ModalFooter>
               </VStack>
-            ) : (
-              <VStack py={8}>
-                <Spinner size="xl" color="brand.500" />
-                <Text>Analyzing your plant...</Text>
-              </VStack>
-            )}
+            ) : null}
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+
+      {/* Plant Catalog Modal */}
+      <Modal 
+        isOpen={isCatalogOpen} 
+        onClose={onCatalogClose} 
+        size="6xl"
+        scrollBehavior="inside"
+      >
+        <ModalOverlay />
+        <ModalContent maxH="85vh" mt="80px">
+          <ModalHeader>Plant Catalog</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <PlantCatalog />
           </ModalBody>
         </ModalContent>
       </Modal>

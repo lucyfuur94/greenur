@@ -1,7 +1,7 @@
 import { Box, VStack, Text, Spinner, Flex, Image, HStack } from '@chakra-ui/react';
 
 export interface SearchSuggestion {
-  id: number;
+  id: string;
   name: string;
   type: string;
   scientificName: string;
@@ -10,15 +10,8 @@ export interface SearchSuggestion {
     primary: string;
     secondary: string;
   };
-  taxon_photos?: Array<{
-    photo: {
-      url: string;
-      medium_url: string;
-      large_url: string;
-      attribution?: string;
-      license_code?: string;
-    };
-  }>;
+  matchedTerm: string;
+  taxon_photos: Array<{ url: string }>;
 }
 
 interface SearchSuggestionsProps {

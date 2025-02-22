@@ -51,7 +51,7 @@ export const getWeatherData = async (lat: number, lon: number): Promise<WeatherD
     throw new Error('[WeatherService] API key not configured. Check Netlify environment variables');
   }
 
-  const url = `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${lat},${lon}`;
+  const url = `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${lat},${lon}&days=7&aqi=no`;
   try {
     console.log('[WeatherService] Making API call for coordinates:', { lat, lon });
     const response = await fetch(

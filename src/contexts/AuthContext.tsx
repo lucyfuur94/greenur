@@ -55,17 +55,26 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setCurrentUser(user)
       
       if (user) {
-        // Fetch user data from Firestore
-        const userDoc = await getDoc(doc(db, 'users', user.uid))
-        if (userDoc.exists()) {
-          const userData = userDoc.data()
-          setOnboardingCompleted(userData.onboardingCompleted || false)
-          setUserPreferences(userData.preferences || null)
-        } else {
+        try {
+          // Fetch user data from Firestore
+          const userDoc = await getDoc(doc(db, 'users', user.uid))
+          if (userDoc.exists()) {
+            const userData = userDoc.data()
+            setOnboardingCompleted(userData.onboardingCompleted || false)
+            setUserPreferences(userData.preferences || null)
+          } else {
+            // New user - initialize with default values
+            setOnboardingCompleted(false)
+            setUserPreferences(null)
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error)
+          // Don't let Firestore errors block the auth state
           setOnboardingCompleted(false)
           setUserPreferences(null)
         }
       } else {
+        // No user - reset states
         setOnboardingCompleted(false)
         setUserPreferences(null)
       }

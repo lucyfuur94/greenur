@@ -6,6 +6,7 @@ import { BotanicaSearch } from './pages/BotanicaSearch'
 import { Profile } from './pages/Profile'
 import { Settings } from './pages/Settings'
 import { Tracker } from './pages/Tracker'
+import { PlantTracking } from './pages/PlantTracking'
 import theme from './theme'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { Layout } from './components/layout/Layout'
@@ -77,6 +78,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <Layout>
               <Tracker />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tracker/plant/:id"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <PlantTracking />
             </Layout>
           </ProtectedRoute>
         }

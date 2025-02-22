@@ -7,10 +7,14 @@ export default defineConfig({
   server: {
     proxy: {
       '/.netlify/functions': {
-        target: 'http://localhost:9999',
+        target: 'http://localhost:8888',
         changeOrigin: true,
         secure: false,
-      },
+        ws: true
+      }
     },
+    hmr: {
+      port: 24678
+    }
   },
 })

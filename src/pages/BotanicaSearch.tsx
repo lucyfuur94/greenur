@@ -4,7 +4,6 @@ import {
   VStack,
   Text,
   Grid,
-  GridItem,
   Button,
   useToast,
   Spinner,
@@ -13,12 +12,27 @@ import {
 } from '@chakra-ui/react'
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { searchTaxa, getMatchedName, formatDisplayName } from '../services/iNaturalistService'
 import { FaArrowLeft } from 'react-icons/fa'
 import { SearchBar } from '../components/SearchBar'
-import { SearchSuggestions, SearchSuggestion } from '../components/SearchSuggestions'
 import { PlantCard } from '../components/plants/PlantCard'
-import { getPlantType } from '../utils/plantUtils'
+
+interface SearchResult {
+  id: string;
+  name: string;
+  type: string;
+  scientificName: string;
+  image: string;
+  displayName: string;
+  matchedTerm: string;
+  taxon_photos: Array<{ url: string }>;
+}
+
+interface SearchResponse {
+  total: number;
+  page: number;
+  limit: number;
+  results: SearchResult[];
+}
 
 export const BotanicaSearch = () => {
   const navigate = useNavigate()
@@ -26,11 +40,12 @@ export const BotanicaSearch = () => {
   const toast = useToast()
 
   const query = searchParams.get('q') || ''
-  const [searchResults, setSearchResults] = useState<SearchSuggestion[]>([])
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalResults, setTotalResults] = useState(0)
+  const [itemsPerPage] = useState(9)
 
   const handleSearch = async (searchQuery: string, page: number = 1) => {
     if (!searchQuery.trim()) return;
@@ -39,53 +54,15 @@ export const BotanicaSearch = () => {
     setError(null);
 
     try {
-      const { results, total_results } = await searchTaxa(searchQuery.trim(), page);
-      setTotalResults(total_results);
+      const response = await fetch(`/.netlify/functions/search-plants?q=${encodeURIComponent(searchQuery.trim())}&page=${page}&limit=${itemsPerPage}`);
       
-      const processedResults = await Promise.all(
-        results
-          .filter(plant => plant.matched_term)
-          .map(async (plant) => {
-            try {
-              const detailsResponse = await fetch(
-                `https://api.inaturalist.org/v1/taxa/${plant.id}`
-              );
-              const detailsData = await detailsResponse.json();
-              const details = detailsData.results[0];
+      if (!response.ok) {
+        throw new Error('Failed to search plants');
+      }
 
-              const plantType = getPlantType(details.ancestors || []);
-              const matchedName = getMatchedName(plant);
-              const displayName = formatDisplayName(plant, matchedName, plantType);
-
-              return {
-                id: plant.id,
-                name: plant.name,
-                type: plantType,
-                scientificName: plant.name,
-                image: plant.default_photo?.medium_url,
-                displayName,
-                matchedTerm: plant.matched_term,
-                taxon_photos: plant.taxon_photos
-              };
-            } catch (error) {
-              console.error(`Error fetching details for plant ${plant.id}:`, error);
-              const matchedName = getMatchedName(plant);
-              const displayName = formatDisplayName(plant, matchedName, 'Plant');
-              
-              return {
-                id: plant.id,
-                name: plant.name,
-                type: 'Plant',
-                scientificName: plant.name,
-                image: plant.default_photo?.medium_url,
-                displayName,
-                matchedTerm: plant.matched_term,
-                taxon_photos: plant.taxon_photos
-              };
-            }
-          })
-      );
-      setSearchResults(processedResults);
+      const data: SearchResponse = await response.json();
+      setSearchResults(data.results);
+      setTotalResults(data.total);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to search plants';
       console.error('Error searching plants:', error);
@@ -107,32 +84,13 @@ export const BotanicaSearch = () => {
     }
   }, [query, currentPage]);
 
-  const totalPages = Math.ceil(totalResults / 9);
+  const totalPages = Math.ceil(totalResults / itemsPerPage);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
       window.scrollTo(0, 0);
     }
-  };
-
-  const handleImageSearch = async (file: File) => {
-    toast({
-      title: 'Coming Soon',
-      description: 'Image search functionality will be available soon!',
-      status: 'info',
-      duration: 5000,
-    });
-  };
-
-  const handleSuggestionSelect = (suggestion: SearchSuggestion) => {
-    navigate(`/botanica/plant/${suggestion.id}`, { 
-      state: { 
-        matchedTerm: suggestion.displayName.primary,
-        taxonPhotos: suggestion.taxon_photos,
-        displayName: suggestion.displayName
-      } 
-    });
   };
 
   return (
@@ -156,9 +114,9 @@ export const BotanicaSearch = () => {
                   setCurrentPage(1);
                   handleSearch(q, 1);
                 }}
-                onImageSelect={() => {}}
                 isLoading={isLoading}
                 size="md"
+                hideImageUpload={true}
               />
             </Box>
           </HStack>
@@ -188,14 +146,17 @@ export const BotanicaSearch = () => {
                   {searchResults.map((plant) => (
                     <PlantCard
                       key={plant.id}
-                      name={plant.displayName.primary}
-                      secondaryText={plant.displayName.secondary}
+                      name={plant.name}
+                      secondaryText={plant.scientificName}
                       imageUrl={plant.image || '/default-plant.png'}
                       onClick={() => navigate(`/botanica/plant/${plant.id}`, {
                         state: {
-                          matchedTerm: plant.displayName.primary,
-                          taxonPhotos: plant.taxon_photos,
-                          displayName: plant.displayName
+                          matchedTerm: plant.matchedTerm,
+                          taxon_photos: plant.taxon_photos,
+                          displayName: {
+                            primary: plant.name,
+                            secondary: `${plant.type} • ${plant.scientificName}`
+                          }
                         }
                       })}
                     />
@@ -231,7 +192,7 @@ export const BotanicaSearch = () => {
                     </Button>
                   </ButtonGroup>
                   <Text color="gray.600">
-                    Showing {((currentPage - 1) * 9) + 1}-{Math.min(currentPage * 9, totalResults)} of {totalResults}
+                    Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, totalResults)} of {totalResults}
                   </Text>
                 </HStack>
               )}

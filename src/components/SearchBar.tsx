@@ -26,7 +26,7 @@ export interface SearchBarProps {
   /**
    * Callback fired when user selects an image
    */
-  onImageSelect: (file: File) => void;
+  onImageSelect?: (file: File) => void;
   /**
    * Whether the component is in a loading state
    */
@@ -43,6 +43,10 @@ export interface SearchBarProps {
    * Shadow depth of the search bar
    */
   boxShadow?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  /**
+   * Whether to hide the image upload button
+   */
+  hideImageUpload?: boolean;
   customNavigate?: NavigateFunction; // For Storybook testing
 }
 
@@ -55,6 +59,7 @@ export const SearchBar = ({
   placeholder = 'Search plants by name..',
   size = 'lg',
   boxShadow = 'sm',
+  hideImageUpload = false,
   customNavigate,
 }: SearchBarProps) => {
   const [searchQuery, setSearchQuery] = useState(initialValue);
@@ -79,7 +84,7 @@ export const SearchBar = ({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (file && onImageSelect) {
       onImageSelect(file);
     }
   };
@@ -137,7 +142,7 @@ export const SearchBar = ({
             height={currentSize.height}
             fontSize={currentSize.fontSize}
             pl={currentSize.padding}
-            pr={`calc(${currentSize.rightElementWidth} + ${currentSize.padding})`}
+            pr={hideImageUpload ? currentSize.padding : `calc(${currentSize.rightElementWidth} + ${currentSize.padding})`}
             border="1px solid"
             borderColor="gray.200"
             _hover={{ borderColor: "gray.300" }}
@@ -151,26 +156,28 @@ export const SearchBar = ({
             autoFocus={autoFocus}
             width="100%"
           />
-          <InputRightElement 
-            width={currentSize.rightElementWidth} 
-            height={currentSize.height}
-            right={2}
-          >
-            <IconButton
-              aria-label="Upload plant image"
-              icon={<FaCamera size={currentSize.iconSize} />}
-              variant="ghost"
-              height={`calc(${currentSize.height} - 16px)`}
-              minWidth={`calc(${currentSize.rightElementWidth} - 8px)`}
-              color="gray.400"
-              _hover={{
-                bg: "transparent",
-                color: "gray.600",
-              }}
-              onClick={handleImageClick}
-              isDisabled={isLoading}
-            />
-          </InputRightElement>
+          {!hideImageUpload && onImageSelect && (
+            <InputRightElement 
+              width={currentSize.rightElementWidth} 
+              height={currentSize.height}
+              right={2}
+            >
+              <IconButton
+                aria-label="Upload plant image"
+                icon={<FaCamera size={currentSize.iconSize} />}
+                variant="ghost"
+                height={`calc(${currentSize.height} - 16px)`}
+                minWidth={`calc(${currentSize.rightElementWidth} - 8px)`}
+                color="gray.400"
+                _hover={{
+                  bg: "transparent",
+                  color: "gray.600",
+                }}
+                onClick={handleImageClick}
+                isDisabled={isLoading}
+              />
+            </InputRightElement>
+          )}
         </InputGroup>
       </Box>
 

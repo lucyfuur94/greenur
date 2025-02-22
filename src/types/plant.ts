@@ -5,8 +5,8 @@ export interface PlantAnalysis {
   growthStage?: string;
   growingConditions?: string;
   carePlan?: string;
-  problems?: string;
-  treatment?: string;
+  problems?: string[];
+  treatment?: string[];
 }
 
 export interface PlantDetails {
@@ -43,4 +43,32 @@ export interface PlantDetails {
  */
 export interface PlantIdentification {
   // ... existing interface
+}
+
+export interface TrackedPlant {
+  _id: string;
+  userId: string;
+  nickname: string;
+  plantId: string;
+  currentImage: string;
+  dateAdded: string;
+  healthStatus: string;
+  plantDetails: {
+    common_name: string;
+    scientific_name: string;
+    plant_type: string;
+  };
+  imageHistory: Array<{
+    url: string;
+    timestamp: string;
+  }>;
+  lastUpdated?: string;
+}
+
+export interface PlantToAdd {
+  id: string;
+  name: string;
+  scientificName: string;
+  type: string;
+  image: string;
 } 

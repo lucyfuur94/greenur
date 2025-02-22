@@ -16,6 +16,7 @@ export const Navigation = () => {
   const bg = useColorModeValue('white', 'gray.800')
   const borderColor = useColorModeValue('gray.200', 'gray.700')
   const [weather, setWeather] = useState<WeatherData | null>(null)
+  const [isLoadingWeather, setIsLoadingWeather] = useState(true)
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null)
   const toast = useToast()
   const locationErrorHandled = useRef(false)
@@ -56,6 +57,7 @@ export const Navigation = () => {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           try {
+            setIsLoadingWeather(true)
             console.log('[Navigation] Got user location, fetching weather data...')
             const weatherData = await getWeatherData(
               position.coords.latitude,
@@ -73,7 +75,6 @@ export const Navigation = () => {
             })
           } catch (error) {
             console.error('[Navigation] Error fetching weather:', error)
-            // Only show toast for non-API key related errors
             if (error instanceof Error && !error.message.includes('API key')) {
               toast({
                 title: 'Error fetching weather',
@@ -83,8 +84,9 @@ export const Navigation = () => {
                 isClosable: true,
               })
             }
-            // Fallback to default location
             handleDefaultLocation()
+          } finally {
+            setIsLoadingWeather(false)
           }
         },
         handleGeolocationError
@@ -107,6 +109,7 @@ export const Navigation = () => {
 
   const handleDefaultLocation = async () => {
     try {
+      setIsLoadingWeather(true)
       console.log('[Navigation] Fetching weather for default location:', DEFAULT_LOCATION.name)
       const weatherData = await getWeatherByCity(`${DEFAULT_LOCATION.name}, ${DEFAULT_LOCATION.country}`)
       console.log('[Navigation] Successfully fetched default weather data')
@@ -130,11 +133,14 @@ export const Navigation = () => {
           isClosable: true,
         })
       }
+    } finally {
+      setIsLoadingWeather(false)
     }
   }
 
   const handleLocationSelect = async (location: Location) => {
     try {
+      setIsLoadingWeather(true)
       console.log('[Navigation] Fetching weather for selected location:', location.name)
       const weatherData = await getWeatherData(location.lat, location.lon)
       console.log('[Navigation] Successfully fetched weather for selected location')
@@ -149,11 +155,14 @@ export const Navigation = () => {
         duration: 5000,
         isClosable: true,
       })
+    } finally {
+      setIsLoadingWeather(false)
     }
   }
 
   const handleGlobalLocation = async (location: Location) => {
     try {
+      setIsLoadingWeather(true)
       console.log('[Navigation] Fetching weather for selected location:', location.name)
       const weatherData = await getWeatherData(location.lat, location.lon)
       console.log('[Navigation] Successfully fetched weather for selected location')
@@ -168,6 +177,8 @@ export const Navigation = () => {
         duration: 5000,
         isClosable: true,
       })
+    } finally {
+      setIsLoadingWeather(false)
     }
   }
 
@@ -235,7 +246,7 @@ export const Navigation = () => {
                 }
               }}
             />
-            {weather && <WeatherWidget weather={weather} />}
+            <WeatherWidget weather={weather || undefined} isLoading={isLoadingWeather} />
             {currentUser ? (
               <Menu>
                 <MenuButton

@@ -3,17 +3,12 @@
   publish = "dist"
   functions = "netlify/functions"
 
-[build.environment]
-  NODE_OPTIONS = "--experimental-vm-modules --max_old_space_size=4096"
-  NODE_VERSION = "20"
-  NPM_FLAGS = "--legacy-peer-deps"
-
 [dev]
+  framework = "#custom"
   command = "npm run dev:vite"
   targetPort = 5173
   port = 8888
   publish = "dist"
-  framework = "vite"
   autoLaunch = true
 
 [[redirects]]
@@ -21,28 +16,9 @@
   to = "/index.html"
   status = 200
 
-[headers]
-  # Mobile and performance optimization headers
-  [[headers.values]]
-    X-Content-Type-Options = "nosniff"
-    X-Frame-Options = "DENY"
-    X-XSS-Protection = "1; mode=block"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    Cache-Control = "public, max-age=3600, must-revalidate"
-    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
-
 [functions]
   node_bundler = "esbuild"
-  external_node_modules = ["jimp", "busboy"]
-  included_files = ["netlify/functions/**/*"]
+  external_node_modules = ["jimp", "sharp", "busboy"]
 
-[context.production.environment]
-  NODE_ENV = "production"
-  NODE_OPTIONS = "--max_old_space_size=4096"
-  NODE_VERSION = "18.17.1"
-
-[[redirects]]
-  from = "/__/firebase/*"
-  to = "https://www.gstatic.com/firebasejs/9.23.0/:splat"
-  status = 200
-  force = true
+[build.environment]
+  NODE_VERSION = "18.17.1" 
