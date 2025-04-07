@@ -1,0 +1,26 @@
+name: Deploy to Koyeb
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-koyeb.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Koyeb CLI
+        uses: koyeb/action-cli@v2
+        with:
+          api_token: ${{ secrets.KOYEB_API_TOKEN }}
+
+      - name: Deploy to Koyeb
+        run: |
+          koyeb service update olympic-perry/greenur --docker ${{ github.repository }}:${{ github.sha }} --build-path backend --ports 8080:http
+          koyeb service redeploy olympic-perry/greenur 
