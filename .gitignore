@@ -2,6 +2,7 @@
 /node_modules
 /.pnp
 .pnp.js
+/**/node_modules/
 
 # Testing
 /coverage
@@ -42,3 +43,12 @@ serviceAccountKey.json
 
 # Local overrides
 .env.local
+
+# Sensitive information
+**/*credentials*.json
+**/*service-account*.json
+**/.coveralls.yml
+**/google-credentials.json
+*.pem
+**/secrets/
+**/private/
