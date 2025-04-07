@@ -1,0 +1,15 @@
+import { Message } from "./stun/message";
+import { Address } from "./types/model";
+export declare class TransactionError extends Error {
+    response?: Message;
+    addr?: Address;
+}
+export declare class TransactionFailed extends TransactionError {
+    response: Message;
+    addr: Address;
+    constructor(response: Message, addr: Address);
+    get str(): string;
+}
+export declare class TransactionTimeout extends TransactionError {
+    get str(): string;
+}

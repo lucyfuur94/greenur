@@ -3,7 +3,7 @@ name: Deploy to Koyeb
 on:
   push:
     branches:
-      - test
+      - main
     paths:
       - 'backend/**'
       - '.github/workflows/deploy-koyeb.yml'

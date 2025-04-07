@@ -423,7 +423,7 @@ function cleanupConnection(connectionId) {
 
 // Basic route for health check
 app.get('/', (req, res) => {
-  res.send('Botanist AI Voice Service is running - Version 1.0');
+  res.send('Botanist AI Voice Service is running');
 });
 
 // Start the server
