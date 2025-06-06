@@ -1,0 +1,114 @@
+---
+description: Defines the rules, conventions, and best practices for writing code within this project. This includes formatting guidelines (e.g., indentation, line length), naming conventions, commenting standards, linting rules, and language-specific idioms.
+globs: 
+alwaysApply: false
+---
+# Coding Standards and Best Practices
+
+## TypeScript
+- Use TypeScript for all new files
+- Define proper types for all props and state
+- Avoid using `any` type
+- Use interfaces for component props (e.g., `interface ComponentProps`)
+- Use type annotations for function parameters and return types
+- Use React.FC<Props> type for functional components
+
+## React Components
+- Use functional components with hooks
+- Follow the React hooks rules (useState, useEffect at top level)
+- Keep components focused and single-responsibility
+- Extract reusable logic into custom hooks
+- Use proper prop naming conventions
+- Use forwardRef for components that need to forward refs
+- Use proper event handler naming (e.g., handleTaskToggle)
+
+## File Organization
+- One component per file
+- Use PascalCase for component files (e.g., HomePage.tsx)
+- Use camelCase for utility files (e.g., utils.ts)
+- Keep related files close together
+- Group components by feature when possible
+- Organize UI components in src/components/ui/
+- Page components in src/pages/
+
+## State Management
+- Use React hooks for local state
+- Keep state as close to where it's needed as possible
+- Use proper state initialization
+- Handle loading and error states
+- Use state lifting for sharing state between components
+- Use React context when state needs to be shared widely
+
+## Styling
+- Use Tailwind CSS for styling
+- Follow mobile-first approach
+- Use semantic class names
+- Maintain consistent spacing
+- Use design system tokens for colors
+- Use the cn() utility for conditional class merging
+- Use hover/focus states for interactive elements
+
+## Data Management and Storage
+- Use Firebase only for authentication
+- Use MongoDB for all data storage and retrieval
+- Create appropriate models for MongoDB collections
+- Use a service layer pattern to abstract database operations
+- Keep MongoDB operations in separate service files under src/lib/services/
+- Define proper TypeScript interfaces for MongoDB documents
+- Use environment variables for MongoDB connection strings
+
+## Component Structure
+```tsx
+import React from "react";
+import { ComponentDependency } from "@/components/ui/component-dependency";
+
+interface ComponentProps {
+  // Props interface
+  propName: PropType;
+  onAction?: (data: DataType) => void;
+}
+
+export const Component: React.FC<ComponentProps> = ({ 
+  propName, 
+  onAction 
+}) => {
+  // State hooks
+  const [state, setState] = useState<StateType>(initialState);
+  
+  // Effect hooks
+  useEffect(() => {
+    // Effect logic
+  }, [dependencies]);
+  
+  // Handler functions
+  const handleAction = () => {
+    // Handler logic
+    if (onAction) onAction(data);
+  };
+  
+  return (
+    // JSX with Tailwind classes
+    <div className="flex items-center p-4 bg-white rounded-xl shadow-md">
+      {/* Component content */}
+    </div>
+  );
+};
+```
+
+## Import Order
+1. React and framework imports
+2. Third-party libraries
+3. Local components
+4. Utilities and helpers
+5. Types and interfaces
+6. Assets and styles
+
+## Path Aliases
+- Use @/ path alias for imports from src directory
+- Example: `import { Button } from "@/components/ui/button"`
+
+## Performance Considerations
+- Use React.memo for components that render often but rarely change
+- Use useCallback for functions passed as props
+- Use useMemo for expensive calculations
+- Avoid unnecessary re-renders

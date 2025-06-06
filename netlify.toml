@@ -1,0 +1,58 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[dev]
+  command = "npm run dev:vite"
+  port = 8888
+  targetPort = 5173
+  publish = "dist"
+  framework = "#custom"
+  autoLaunch = true
+  # Add HMR WebSocket proxy
+  [[dev.proxy]]
+    from = "/ws"
+    to = "http://localhost:5173/ws"
+
+[build.environment]
+  NODE_VERSION = "18.17.1"
+  NETLIFY_FUNCTION_TIMEOUT = "30"
+
+[[redirects]]
+  from = "/api/functions/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/api/function/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/botanist/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/plant/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/api/edge/*"
+  to = "/.netlify/edge-functions/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  external_node_modules = ["firebase-admin", "firebase-admin/auth", "firebase-admin/storage", "openai", "busboy", "jimp", "sharp", "axios"]
+
+[edge-functions]
+  directory = "netlify/edge-functions" 

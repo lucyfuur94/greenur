@@ -1,0 +1,250 @@
+---
+description: Provides details about the reusable User Interface (UI) components used in the project. This can include information on the chosen component library or design system, specific custom components, their props/API, usage examples, styling conventions, and state management patterns related to the UI.
+globs: 
+alwaysApply: false
+---
+# UI Components and Design System
+
+## Component Library
+We use shadcn/ui components from `@/components/ui/`:
+
+### Core Components
+- `Button` - Primary interaction element with multiple variants
+- `Input` - Text input fields with customizable styles
+- `Card` - Container for grouped content with flexible structure
+- `Avatar` - User profile images with image and fallback support
+- `Badge` - Status indicators for metadata
+- `Checkbox` - Selection controls with customizable states
+- `ScrollArea` - Scrollable containers with custom scrollbars
+
+## Icon System
+We use Lucide React icons (`lucide-react`) for all UI icons:
+
+```tsx
+// Import specific icons
+import { 
+  Search, 
+  Plus, 
+  Home,
+  Settings,
+  ChevronRight
+} from "lucide-react";
+
+// Usage in components
+<Button>
+  <Plus className="w-5 h-5 mr-2" />
+  Add Item
+</Button>
+
+// Icon in absolute position
+<div className="relative">
+  <Input placeholder="Search..." className="pl-10" />
+  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+    <Search className="w-4 h-4" />
+  </span>
+</div>
+
+// Icon sizing conventions
+// Small: w-4 h-4
+// Regular: w-5 h-5  
+// Large: w-6 h-6
+```
+
+## Design Tokens
+
+### Colors
+The app uses CSS variables for theming with HSL values:
+
+```css
+--primary: 142 77% 36%;      /* Green: #17A34A */
+--secondary: 120 45% 34%;    /* Dark green: #2E7D32 */
+--success: 88 54% 53%;       /* Light green: #8BC34A */
+--background: 0 0% 100%;     /* White: #FFFFFF */
+--foreground: 0 0% 20%;      /* Dark gray: #333333 */
+--muted: 0 0% 96%;           /* Light gray: #F5F7F5 */
+--accent: 120 33% 90%;       /* Light green bg: #E8F5E9 */
+--destructive: 0 84% 60%;    /* Red: #EF4444 */
+--chart-1: 142 77% 36%;      /* Green */
+--chart-2: 120 45% 34%;      /* Dark green */
+--chart-3: 88 54% 53%;       /* Light green */
+--chart-4: 202 77% 36%;      /* Blue */
+--chart-5: 43 77% 50%;       /* Yellow */
+```
+
+### Typography
+- Font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif
+- Sizes:
+  - xs: 0.75rem (12px)
+  - sm: 0.875rem (14px)
+  - base: 1rem (16px)
+  - lg: 1.125rem (18px)
+  - xl: 1.25rem (20px)
+  - 2xl: 1.5rem (24px)
+
+### Spacing
+- Uses Tailwind's spacing scale
+- Common values:
+  - px-4 (1rem, 16px)
+  - py-3 (0.75rem, 12px)
+  - mt-2 (0.5rem, 8px)
+  - mb-3 (0.75rem, 12px)
+  - gap-4 (1rem, 16px)
+
+### Shadows
+```css
+shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+```
+
+### Border Radius
+```css
+rounded-none: 0px;
+rounded-sm: calc(var(--radius) - 4px);
+rounded-md: calc(var(--radius) - 2px);
+rounded-lg: var(--radius);
+rounded-xl: 0.75rem;
+rounded-full: 9999px;
+```
+
+## Component Examples
+
+### Button Variants
+```tsx
+// Primary button
+<Button variant="default">Primary</Button>
+
+// Secondary button
+<Button variant="secondary">Secondary</Button>
+
+// Outline button
+<Button variant="outline">Outline</Button>
+
+// Ghost button
+<Button variant="ghost">Ghost</Button>
+
+// Destructive button
+<Button variant="destructive">Delete</Button>
+
+// Link style button
+<Button variant="link">Link Style</Button>
+
+// Button sizes
+<Button size="sm">Small</Button>
+<Button size="default">Default</Button>
+<Button size="lg">Large</Button>
+<Button size="icon"><Search className="h-4 w-4" /></Button>
+```
+
+### Card Usage
+```tsx
+<Card className="p-4 shadow-md rounded-xl">
+  <div className="flex items-center justify-between mb-4">
+    <h2 className="text-md font-medium">Card Title</h2>
+    <Button 
+      variant="ghost" 
+      size="sm" 
+      className="text-xs text-[#2E7D32]"
+    >
+      Action
+    </Button>
+  </div>
+  <div className="flex items-center">
+    {/* Card content */}
+  </div>
+</Card>
+```
+
+### Avatar Usage
+```tsx
+<Avatar
+  className="h-10 w-10 cursor-pointer ring-2 ring-[#17A34A]/10"
+  onClick={handleProfileClick}
+>
+  <AvatarImage src="profile-image.jpg" alt="User profile" />
+  <AvatarFallback className="bg-[#8BC34A] text-white">
+    US
+  </AvatarFallback>
+</Avatar>
+```
+
+### Form Elements
+```tsx
+// Styled search input
+<div className="relative">
+  <Input
+    className="pl-10 pr-4 py-3 w-full bg-[#F5F7F5] border-none rounded-xl focus:outline-none focus:ring-2 focus:ring-[#17A34A]"
+    placeholder="Search..."
+  />
+  <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+    <Search className="w-4 h-4" />
+  </span>
+</div>
+
+// Checkbox with label
+<div className="flex items-center space-x-2">
+  <Checkbox
+    id="task-checkbox"
+    checked={isChecked}
+    onCheckedChange={handleChange}
+    className="h-5 w-5 cursor-pointer"
+  />
+  <label
+    htmlFor="task-checkbox"
+    className="text-sm font-medium cursor-pointer"
+  >
+    Task label
+  </label>
+</div>
+```
+
+### Badge Styles
+```tsx
+// Default badge
+<Badge>Default</Badge>
+
+// Outline badge with custom colors
+<Badge 
+  variant="outline" 
+  className="bg-[#E8F5E9] text-[#2E7D32] border-none"
+>
+  Status
+</Badge>
+
+// Secondary badge
+<Badge variant="secondary">
+  Secondary
+</Badge>
+```
+
+### ScrollArea Usage
+```tsx
+<ScrollArea className="h-[320px] pr-2">
+  <div className="space-y-3 pr-3">
+    {items.map((item) => (
+      <Card key={item.id} className="p-3">
+        {/* Card content */}
+      </Card>
+    ))}
+  </div>
+</ScrollArea>
+```
+
+### Layout Patterns
+
+#### Mobile Layout with Fixed Header
+```tsx
+<div className="relative flex flex-col h-screen w-full bg-[#FFFFFF] text-[#333333] overflow-hidden">
+  {/* Fixed Header */}
+  <div className="fixed top-0 left-0 w-full bg-white z-10 shadow-sm">
+    <div className="flex items-center justify-between px-4 py-3">
+      {/* Header content */}
+    </div>
+  </div>
+
+  {/* Main Scrollable Content */}
+  <div className="flex-1 pt-[76px] pb-16 overflow-auto">
+    {/* Page content */}
+  </div>
+</div>
+```

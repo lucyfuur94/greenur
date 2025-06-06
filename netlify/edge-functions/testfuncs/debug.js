@@ -1,0 +1,1 @@
+export default async (request) => { return new Response(JSON.stringify({ message: 'Debug info', env: { viteOpenai: Boolean(process.env.VITE_OPENAI_API_KEY), openai: Boolean(process.env.OPENAI_API_KEY) } }), { headers: { 'Content-Type': 'application/json' } }); }

@@ -1,0 +1,38 @@
+---
+description: Documents the organization of directories and files within the project. It explains the layout, the purpose of key folders (e.g., src, tests, config, assets), and the conventions for placing different types of code or resources.
+globs: 
+alwaysApply: false
+---
+# Greenur Web App Project Structure
+
+## Overview
+Greenur is a modern web application for plant care management built with React, TypeScript, and Tailwind CSS. The project uses Vite as the build tool and follows a component-based architecture.
+
+## Core Files
+- [src/main.tsx](mdc:src/main.tsx) - Application entry point
+- [src/App.tsx](mdc:src/App.tsx) - Root component that handles routing
+- [index.html](mdc:index.html) - HTML entry point
+
+## Directory Structure
+- `src/pages/` - Page components (e.g., [src/pages/HomePage.tsx](mdc:src/pages/HomePage.tsx))
+- `src/components/` - Reusable UI components
+- `src/lib/` - Utility functions and shared logic
+- `src/assets/` - Static assets like images and icons
+
+## UI Components
+The project uses shadcn/ui components, imported from `@/components/ui/`. Key components:
+- Avatar
+- Button
+- Card
+- Input
+- ScrollArea
+- Badge
+- Checkbox
+
+## Styling
+- Uses Tailwind CSS for styling
+- Custom color scheme:
+  - Primary: #17A34A (green)
+  - Secondary: #2E7D32 (dark green)
+  - Background: #FFFFFF
+  - Text: #333333

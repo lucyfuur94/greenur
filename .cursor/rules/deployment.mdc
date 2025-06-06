@@ -1,0 +1,41 @@
+---
+description: Outlines the process, configurations, environments, and tools used for deploying the application. This may cover build steps, CI/CD pipeline details, server information, required environment variables, infrastructure specifics, and deployment strategies (e.g., blue/green, canary).
+globs: 
+alwaysApply: false
+---
+# Deployment Configuration and Process
+
+## Build Process
+- Uses Vite for building
+- Build command: `npm run build`
+- Output directory: `dist/`
+- Environment variables must be set before building
+
+## Netlify Configuration
+The project is configured for Netlify deployment using [netlify.toml](mdc:netlify.toml):
+- Build command: `npm run build`
+- Publish directory: `dist`
+- Node version: 18.x
+- Redirects configured for SPA routing
+
+## Environment Variables
+Required environment variables:
+- `VITE_API_URL` - Backend API URL
+- `VITE_STORAGE_URL` - Storage service URL
+- `VITE_AUTH_DOMAIN` - Authentication domain
+
+## Pre-deployment Checklist
+1. All environment variables are set
+2. Build succeeds locally
+3. TypeScript compilation passes
+4. No console errors
+5. All routes work correctly
+6. Images and assets are optimized
+
+## Deployment Steps
+1. Ensure all changes are committed
+2. Run build locally to verify
+3. Push to main branch
+4. Netlify will automatically deploy
+5. Verify deployment in Netlify dashboard
+6. Check deployed site functionality
