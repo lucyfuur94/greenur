@@ -367,6 +367,7 @@ void displaySensorData() {
   if (!oled_available) return;
   
   display.clear();
+  display.normalDisplay(); // Ensure normal display mode (not inverted)
   display.setTextAlignment(TEXT_ALIGN_LEFT);
   display.setFont(ArialMT_Plain_10);
   
@@ -1159,22 +1160,26 @@ void displayQRCodeAndSetupInfo() {
     // Show QR code for registration
     String qrData = "{\"type\":\"greenur_device\",\"deviceId\":\"" + device_id + "\",\"setupWifi\":\"" + String(ap_ssid) + "-" + device_id.substring(6) + "\"}";
     
-    // Generate QR code using QRcodeOled library (correct API)
+    // Temporarily invert display for better QR code visibility (white on black)
+    display.invertDisplay();
+    
+    // Generate QR code using QRcodeOled library
     QRcodeOled qrcode(&display); // Only pass display object
     qrcode.init();
     
-    // Create and display QR code (create() method automatically displays it)
+    // Create QR code - should now appear as white pixels on black background
     qrcode.create(qrData);
     
-    // Note: QR code is now displayed on screen, add text below it
-    // The QR code will be automatically positioned, so we add text at the bottom
+    // Add text below QR code
     display.setTextAlignment(TEXT_ALIGN_CENTER);
     display.drawString(64, 50, "Scan QR to register");
     display.drawString(64, 60, "& setup WiFi");
     
-    Serial.println("QR Code displayed with data: " + qrData);
+    Serial.println("QR Code displayed (inverted) with data: " + qrData);
   } else {
-    // Device is registered, just show WiFi setup info
+    // Device is registered, use normal display mode
+    display.normalDisplay(); // Ensure normal display mode
+    
     display.drawString(64, 10, "Device Registered!");
     display.drawString(64, 25, "Connect to WiFi:");
     display.drawString(64, 35, (String(ap_ssid) + "-" + device_id.substring(6)).substring(0, 20));
