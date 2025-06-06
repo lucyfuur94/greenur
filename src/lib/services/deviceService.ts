@@ -121,6 +121,22 @@ export function openDeviceConfigPage(): void {
  */
 export function parseDeviceQRCode(qrText: string): DeviceData | null {
   try {
+    // First try URL format (new format)
+    if (qrText.startsWith('https://') || qrText.startsWith('http://')) {
+      const url = new URL(qrText);
+      const deviceId = url.searchParams.get('deviceId');
+      const setupWifi = url.searchParams.get('setupWifi');
+      
+      if (deviceId && setupWifi) {
+        return {
+          type: 'greenur_device',
+          deviceId,
+          setupWifi
+        };
+      }
+    }
+    
+    // Fallback to JSON format (old format) for backward compatibility
     const data = JSON.parse(qrText);
     
     if (data.type === 'greenur_device' && data.deviceId && data.setupWifi) {

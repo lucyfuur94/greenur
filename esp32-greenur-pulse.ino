@@ -1152,49 +1152,41 @@ void displayQRCodeAndSetupInfo() {
     return;
   }
   
+  // Always ensure normal display mode first
+  display.normalDisplay();
+  display.clear();
+  
   if (!device_registered) {
-    // Create shorter QR data for better scanning and smaller QR code size
-    String qrData = device_id + "," + String(ap_ssid) + "-" + device_id.substring(6);
+    // Create simpler QR data format (URL format is more reliable)
+    String qrData = "https://legendary-naiad-02cf89.netlify.app/track?deviceId=" + device_id + "&setupWifi=" + String(ap_ssid) + "-" + device_id.substring(6);
     
-    Serial.println("Generating QR Code with data: " + qrData);
+    Serial.println("QR Code data: " + qrData);
+    Serial.println("QR Code data length: " + String(qrData.length()));
     
-    // Clear display first
-    display.clear();
-    
-    // Initialize QR code generator with smaller version for better size
+    // Generate QR code using QRcodeOled library with specific positioning
     QRcodeOled qrcode(&display);
     qrcode.init();
     
-    // For better visibility, let's try setting display to inverse mode
-    display.invertDisplay();
-    
-    // Generate the QR code
+    // Create QR code - it should automatically position itself properly
     qrcode.create(qrData);
     
-    // Add informational text at the bottom
-    display.setFont(ArialMT_Plain_10);
+    // Add text below QR code in normal mode
     display.setTextAlignment(TEXT_ALIGN_CENTER);
-    display.drawString(64, 54, "Scan to register");
+    display.setFont(ArialMT_Plain_10);
+    display.drawString(64, 50, "Scan QR to register");
+    display.drawString(64, 60, "& setup WiFi");
     
-    Serial.println("QR Code generated successfully");
+    Serial.println("QR Code displayed (URL format, normal mode)");
   } else {
-    // Device is registered - show WiFi setup info in normal mode
-    display.clear();
-    display.normalDisplay(); // Make sure we're in normal mode
-    
-    display.setFont(ArialMT_Plain_10);
+    // Device is registered, show WiFi setup info
     display.setTextAlignment(TEXT_ALIGN_CENTER);
-    
-    display.drawString(64, 8, "Device Registered!");
-    display.drawString(64, 20, "WiFi Setup:");
-    display.drawString(64, 32, (String(ap_ssid) + "-" + device_id.substring(6)).substring(0, 18));
-    display.drawString(64, 44, "Go to:");
-    display.drawString(64, 56, "192.168.4.1");
-    
-    Serial.println("Showing device registered message");
+    display.setFont(ArialMT_Plain_10);
+    display.drawString(64, 10, "Device Registered!");
+    display.drawString(64, 25, "Connect to WiFi:");
+    display.drawString(64, 35, (String(ap_ssid) + "-" + device_id.substring(6)).substring(0, 20));
+    display.drawString(64, 50, "Go to 192.168.4.1");
   }
   
-  // Update display
   safeDisplayUpdate();
 }
 

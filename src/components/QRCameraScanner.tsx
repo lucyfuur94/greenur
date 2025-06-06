@@ -3,6 +3,7 @@ import { Camera, X, AlertCircle, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import QrScanner from 'qr-scanner';
+import { parseDeviceQRCode } from '@/lib/services/deviceService';
 
 interface QRCameraScannerProps {
   onScanSuccess: (deviceData: DeviceData) => void;
@@ -100,46 +101,10 @@ const QRCameraScanner: React.FC<QRCameraScannerProps> = ({ onScanSuccess, onClos
     try {
       console.log('QR Code scanned:', result);
       
-      // Handle new simplified format: greenur://deviceId/wifiName
-      if (result.startsWith('greenur://')) {
-        const urlParts = result.replace('greenur://', '').split('/');
-        if (urlParts.length >= 2) {
-          const deviceData: DeviceData = {
-            type: 'greenur_device',
-            deviceId: urlParts[0],
-            setupWifi: urlParts[1]
-          };
-          stopScanning();
-          onScanSuccess(deviceData);
-          return;
-        } else {
-          setError('Invalid Greenur QR code format. Please scan a valid device QR code.');
-          return;
-        }
-      }
+      // Use the parseDeviceQRCode function to handle both URL and JSON formats
+      const deviceData = parseDeviceQRCode(result);
       
-      // Handle comma-separated format: deviceId,wifiName
-      if (result.includes(',') && !result.includes('{')) {
-        const parts = result.split(',');
-        if (parts.length >= 2) {
-          const deviceData: DeviceData = {
-            type: 'greenur_device',
-            deviceId: parts[0].trim(),
-            setupWifi: parts[1].trim()
-          };
-          stopScanning();
-          onScanSuccess(deviceData);
-          return;
-        } else {
-          setError('Invalid device QR code format. Please scan a valid device QR code.');
-          return;
-        }
-      }
-      
-      // Handle legacy JSON format
-      const deviceData = JSON.parse(result) as DeviceData;
-      
-      if (deviceData.type === 'greenur_device' && deviceData.deviceId && deviceData.setupWifi) {
+      if (deviceData) {
         stopScanning();
         onScanSuccess(deviceData);
       } else {
@@ -154,52 +119,16 @@ const QRCameraScanner: React.FC<QRCameraScannerProps> = ({ onScanSuccess, onClos
 
   const handleManualInput = () => {
     try {
-      const input = manualInput.trim();
+      // Use the parseDeviceQRCode function for manual input as well
+      const deviceData = parseDeviceQRCode(manualInput);
       
-      // Handle new simplified format: greenur://deviceId/wifiName
-      if (input.startsWith('greenur://')) {
-        const urlParts = input.replace('greenur://', '').split('/');
-        if (urlParts.length >= 2) {
-          const deviceData: DeviceData = {
-            type: 'greenur_device',
-            deviceId: urlParts[0],
-            setupWifi: urlParts[1]
-          };
-          onScanSuccess(deviceData);
-          return;
-        } else {
-          setError('Invalid Greenur QR code format. Please enter valid device data.');
-          return;
-        }
-      }
-      
-      // Handle comma-separated format: deviceId,wifiName
-      if (input.includes(',') && !input.includes('{')) {
-        const parts = input.split(',');
-        if (parts.length >= 2) {
-          const deviceData: DeviceData = {
-            type: 'greenur_device',
-            deviceId: parts[0].trim(),
-            setupWifi: parts[1].trim()
-          };
-          onScanSuccess(deviceData);
-          return;
-        } else {
-          setError('Invalid device QR code format. Please enter valid device data.');
-          return;
-        }
-      }
-      
-      // Handle legacy JSON format
-      const deviceData = JSON.parse(input) as DeviceData;
-      
-      if (deviceData.type === 'greenur_device' && deviceData.deviceId && deviceData.setupWifi) {
+      if (deviceData) {
         onScanSuccess(deviceData);
       } else {
         setError('Invalid QR code format. Please enter valid Greenur device QR code data.');
       }
     } catch (err) {
-      setError('Invalid format. Please enter valid QR code data (deviceId,wifiName or greenur://deviceId/wifiName or JSON).');
+      setError('Invalid format. Please enter valid QR code data or URL.');
     }
   };
 
@@ -328,12 +257,9 @@ const QRCameraScanner: React.FC<QRCameraScannerProps> = ({ onScanSuccess, onClos
                 <textarea
                   value={manualInput}
                   onChange={(e) => setManualInput(e.target.value)}
-                  placeholder='ESP32-XXXXXX,Greenur-Device-Setup-XXXXXX'
+                  placeholder='{"type":"greenur_device","deviceId":"ESP32-XXXXXX","setupWifi":"Greenur-Device-Setup-XXXXXX"}'
                   className="w-full h-24 p-3 border rounded-lg text-xs font-mono"
                 />
-                <p className="text-xs text-gray-500 mt-2">
-                  Format: deviceId,wifiName or greenur://deviceId/wifiName or JSON
-                </p>
               </div>
               
               <div className="flex space-x-2">
