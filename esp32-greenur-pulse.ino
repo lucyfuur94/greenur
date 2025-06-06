@@ -1165,17 +1165,12 @@ void displayQRCodeAndSetupInfo() {
     
     // Display pairing code prominently
     display.setTextAlignment(TEXT_ALIGN_CENTER);
-    display.setFont(ArialMT_Plain_10);
-    display.drawString(64, 5, "Pairing Code:");
+    display.setFont(ArialMT_Plain_16);
+    display.drawString(64, 10, "Pairing Code:");
     
     // Large pairing code display
     display.setFont(ArialMT_Plain_24);
-    display.drawString(64, 20, pairingCode);
-    
-    // Instructions
-    display.setFont(ArialMT_Plain_10);
-    display.drawString(64, 45, "Enter this code in");
-    display.drawString(64, 55, "Greenur app to pair");
+    display.drawString(64, 35, pairingCode);
     
     Serial.println("Pairing Code displayed: " + pairingCode);
   } else {
