@@ -14,15 +14,9 @@ import {
   Plus,
   ClipboardList,
   BarChart3,
-  CalendarDays, 
-  Droplets, 
   Camera, 
   Droplet,
   Sun,
-  Lightbulb, 
-  CheckCircle2, 
-  Clock, 
-  TrendingUp, 
   Thermometer, 
   Wind
 } from "lucide-react";
