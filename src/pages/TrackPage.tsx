@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { QrCode, ExternalLink, CheckCircle, AlertCircle, Wifi, ArrowRight, ArrowLeft, Smartphone, Hash } from "lucide-react";
+import { ExternalLink, CheckCircle, AlertCircle, Wifi, ArrowRight, ArrowLeft, Smartphone, Hash } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import FooterNavigation from '@/components/FooterNavigation';
 import { registerPulseDevice, registerPulseDeviceByPairingCode, openDeviceConfigPage } from '@/lib/services/deviceService';
@@ -50,6 +50,7 @@ const TrackPage: React.FC = () => {
   const [registrationError, setRegistrationError] = useState<string | null>(null);
   const [wifiConnectionStatus, setWifiConnectionStatus] = useState<'idle' | 'connecting' | 'connected' | 'failed'>('idle');
   const navigate = useNavigate();
+  const pairingInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -66,10 +67,15 @@ const TrackPage: React.FC = () => {
         } finally {
           setIsLoading(false);
         }
+      } else if (user === null) {
+        // User is explicitly null (not authenticated), redirect to login
+        console.log('User not authenticated, redirecting to login');
+        navigate('/login');
       }
+      // If user is undefined, we're still loading auth state
     };
     fetchConfig();
-  }, [user, token]);
+  }, [user, token, navigate]);
 
   const handleQRScanSuccess = async (deviceData: DeviceData) => {
     setScannedDevice(deviceData);
@@ -93,6 +99,14 @@ const TrackPage: React.FC = () => {
     }
   };
 
+  const handlePairingCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 9);
+    setPairingCode(value);
+    if (pairingError) {
+      setPairingError(null);
+    }
+  };
+
   const handlePairingCodeSubmit = async () => {
     setPairingError(null);
     setRegistrationError(null);
@@ -102,10 +116,19 @@ const TrackPage: React.FC = () => {
       return;
     }
 
+    // Check authentication before proceeding
+    if (!user || !token) {
+      setRegistrationError('You must be logged in to register a device');
+      return;
+    }
+
     setCurrentStep('register');
 
     // Register device using pairing code
     try {
+      console.log('Attempting to register device with pairing code:', pairingCode.trim());
+      console.log('User authenticated:', !!user, 'Token available:', !!token);
+      
       const result = await registerPulseDeviceByPairingCode(pairingCode.trim());
       if (result.success && result.deviceId) {
         // Create device data object for WiFi setup
@@ -118,10 +141,12 @@ const TrackPage: React.FC = () => {
         setCurrentStep('wifi-connect');
         console.log('Device registered successfully via pairing code. Ready for WiFi setup.');
       } else {
+        console.error('Registration failed:', result.error);
         setRegistrationError(result.error || 'Registration failed');
         setCurrentStep('scan');
       }
     } catch (error) {
+      console.error('Registration error:', error);
       setRegistrationError('Failed to register device');
       setCurrentStep('scan');
     }
@@ -292,17 +317,14 @@ const TrackPage: React.FC = () => {
                   type="text"
                   placeholder="Enter 9-character code (e.g., ABC123DEF)"
                   value={pairingCode}
-                  onChange={(e) => {
-                    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 9);
-                    setPairingCode(value);
-                    setPairingError(null);
-                  }}
+                  onChange={handlePairingCodeChange}
                   className="text-center text-lg font-mono tracking-wider"
                   maxLength={9}
                   autoComplete="off"
                   autoCorrect="off"
                   autoCapitalize="characters"
                   spellCheck="false"
+                  ref={pairingInputRef}
                 />
                 {pairingError && (
                   <p className="text-red-600 text-sm mt-1">{pairingError}</p>
@@ -351,6 +373,11 @@ const TrackPage: React.FC = () => {
                   <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
                   <span className="text-red-700">{registrationError}</span>
                 </div>
+                {registrationError.includes('Unauthorized') && (
+                  <div className="mt-2 text-sm text-red-600">
+                    Please make sure you are logged in and try again.
+                  </div>
+                )}
                 <Button 
                   onClick={resetWizard}
                   variant="outline"
