@@ -97,8 +97,8 @@ const TrackPage: React.FC = () => {
     setPairingError(null);
     setRegistrationError(null);
     
-    if (!pairingCode || pairingCode.trim().length !== 6) {
-      setPairingError('Please enter a 6-character pairing code');
+    if (!pairingCode || pairingCode.trim().length !== 9) {
+      setPairingError('Please enter a 9-character pairing code');
       return;
     }
 
@@ -212,26 +212,6 @@ const TrackPage: React.FC = () => {
     </div>
   );
 
-  const getStepIcon = (step: WizardStep) => {
-    switch (step) {
-      case 'scan': return <Hash className="w-5 h-5" />;
-      case 'register': return <CheckCircle className="w-5 h-5" />;
-      case 'wifi-connect': return <Wifi className="w-5 h-5" />;
-      case 'wifi-config': return <ExternalLink className="w-5 h-5" />;
-      case 'complete': return <CheckCircle className="w-5 h-5" />;
-    }
-  };
-
-  const getStepLabel = (step: WizardStep) => {
-    switch (step) {
-      case 'scan': return 'Enter Code';
-      case 'register': return 'Register';
-      case 'wifi-connect': return 'Connect WiFi';
-      case 'wifi-config': return 'Configure';
-      case 'complete': return 'Complete';
-    }
-  };
-
   const WizardStepIndicator = () => {
     const steps = [
       { id: 'scan', label: 'Enter Code', icon: Hash },
@@ -291,14 +271,14 @@ const TrackPage: React.FC = () => {
               Step 1: Enter Pairing Code
             </CardTitle>
             <CardDescription>
-              Enter the 6-character code displayed on your Pulse device
+              Enter the 9-character code displayed on your Pulse device
             </CardDescription>
           </CardHeader>
           <CardContent className="p-6">
             <div className="mb-6 text-center">
               <Hash className="w-16 h-16 mx-auto text-green-600 mb-4" />
               <p className="text-gray-700 mb-4">
-                Power on your Pulse device and enter the 6-character pairing code shown on its display.
+                Power on your Pulse device and enter the 9-character pairing code shown on its display.
               </p>
             </div>
             
@@ -310,15 +290,19 @@ const TrackPage: React.FC = () => {
                 <Input
                   id="pairingCode"
                   type="text"
-                  placeholder="Enter 6-character code (e.g., ABC123)"
+                  placeholder="Enter 9-character code (e.g., ABC123DEF)"
                   value={pairingCode}
                   onChange={(e) => {
-                    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+                    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 9);
                     setPairingCode(value);
                     setPairingError(null);
                   }}
                   className="text-center text-lg font-mono tracking-wider"
-                  maxLength={6}
+                  maxLength={9}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="characters"
+                  spellCheck="false"
                 />
                 {pairingError && (
                   <p className="text-red-600 text-sm mt-1">{pairingError}</p>
@@ -327,29 +311,13 @@ const TrackPage: React.FC = () => {
               
               <Button 
                 onClick={handlePairingCodeSubmit}
-                disabled={pairingCode.length !== 6}
+                disabled={pairingCode.length !== 9}
                 className="w-full bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-300"
                 size="lg"
               >
                 <Hash className="w-5 h-5 mr-2" />
                 Pair Device
               </Button>
-              
-              {/* Optional QR fallback */}
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <p className="text-sm text-gray-600 text-center mb-3">
-                  Or use QR code if available:
-                </p>
-                <Button 
-                  onClick={() => setShowQRScanner(true)}
-                  variant="outline"
-                  className="w-full"
-                  size="sm"
-                >
-                  <QrCode className="w-4 h-4 mr-2" />
-                  Scan QR Code
-                </Button>
-              </div>
             </div>
           </CardContent>
         </Card>

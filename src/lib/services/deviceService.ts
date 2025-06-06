@@ -32,9 +32,9 @@ export async function registerPulseDeviceByPairingCode(
       return { success: false, error: 'User not authenticated' };
     }
 
-    // Validate pairing code format (should be 6 characters, alphanumeric)
-    if (!pairingCode || pairingCode.length !== 6) {
-      return { success: false, error: 'Pairing code must be exactly 6 characters' };
+    // Validate pairing code format (should be 9 characters, alphanumeric)
+    if (!pairingCode || pairingCode.length !== 9) {
+      return { success: false, error: 'Pairing code must be exactly 9 characters' };
     }
 
     // Convert pairing code to uppercase for consistency
