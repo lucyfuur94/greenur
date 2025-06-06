@@ -1152,40 +1152,49 @@ void displayQRCodeAndSetupInfo() {
     return;
   }
   
-  display.clear();
-  display.setTextAlignment(TEXT_ALIGN_CENTER);
-  display.setFont(ArialMT_Plain_10);
-  
   if (!device_registered) {
-    // Show QR code for registration
-    String qrData = "{\"type\":\"greenur_device\",\"deviceId\":\"" + device_id + "\",\"setupWifi\":\"" + String(ap_ssid) + "-" + device_id.substring(6) + "\"}";
+    // Create shorter QR data for better scanning and smaller QR code size
+    String qrData = device_id + "," + String(ap_ssid) + "-" + device_id.substring(6);
     
-    // Temporarily invert display for better QR code visibility (white on black)
-    display.invertDisplay();
+    Serial.println("Generating QR Code with data: " + qrData);
     
-    // Generate QR code using QRcodeOled library
-    QRcodeOled qrcode(&display); // Only pass display object
+    // Clear display first
+    display.clear();
+    
+    // Initialize QR code generator with smaller version for better size
+    QRcodeOled qrcode(&display);
     qrcode.init();
     
-    // Create QR code - should now appear as white pixels on black background
+    // For better visibility, let's try setting display to inverse mode
+    display.invertDisplay();
+    
+    // Generate the QR code
     qrcode.create(qrData);
     
-    // Add text below QR code
+    // Add informational text at the bottom
+    display.setFont(ArialMT_Plain_10);
     display.setTextAlignment(TEXT_ALIGN_CENTER);
-    display.drawString(64, 50, "Scan QR to register");
-    display.drawString(64, 60, "& setup WiFi");
+    display.drawString(64, 54, "Scan to register");
     
-    Serial.println("QR Code displayed (inverted) with data: " + qrData);
+    Serial.println("QR Code generated successfully");
   } else {
-    // Device is registered, use normal display mode
-    display.normalDisplay(); // Ensure normal display mode
+    // Device is registered - show WiFi setup info in normal mode
+    display.clear();
+    display.normalDisplay(); // Make sure we're in normal mode
     
-    display.drawString(64, 10, "Device Registered!");
-    display.drawString(64, 25, "Connect to WiFi:");
-    display.drawString(64, 35, (String(ap_ssid) + "-" + device_id.substring(6)).substring(0, 20));
-    display.drawString(64, 50, "Go to 192.168.4.1");
+    display.setFont(ArialMT_Plain_10);
+    display.setTextAlignment(TEXT_ALIGN_CENTER);
+    
+    display.drawString(64, 8, "Device Registered!");
+    display.drawString(64, 20, "WiFi Setup:");
+    display.drawString(64, 32, (String(ap_ssid) + "-" + device_id.substring(6)).substring(0, 18));
+    display.drawString(64, 44, "Go to:");
+    display.drawString(64, 56, "192.168.4.1");
+    
+    Serial.println("Showing device registered message");
   }
   
+  // Update display
   safeDisplayUpdate();
 }
 
