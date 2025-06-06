@@ -18,6 +18,73 @@ interface DeviceData {
 const API_BASE_URL = '/.netlify/functions';
 
 /**
+ * Register a pulse device using a pairing code
+ * The pairing code is the last 6 characters of the device ID
+ */
+export async function registerPulseDeviceByPairingCode(
+  pairingCode: string, 
+  deviceName?: string
+): Promise<DeviceRegistrationResult> {
+  try {
+    // Get the current user's ID token for authentication
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    // Validate pairing code format (should be 6 characters, alphanumeric)
+    if (!pairingCode || pairingCode.length !== 6) {
+      return { success: false, error: 'Pairing code must be exactly 6 characters' };
+    }
+
+    // Convert pairing code to uppercase for consistency
+    const normalizedPairingCode = pairingCode.toUpperCase();
+    
+    // Construct device ID from pairing code
+    const deviceId = `ESP32-${normalizedPairingCode}`;
+
+    const idToken = await currentUser.getIdToken();
+    
+    const response = await fetch(`${API_BASE_URL}/register-pulse-device`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`
+      },
+      body: JSON.stringify({
+        deviceId,
+        deviceName,
+        pairingCode: normalizedPairingCode
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return { 
+        success: false, 
+        error: errorData.error || `Registration failed with status ${response.status}` 
+      };
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      deviceId: data.deviceId,
+      deviceName: data.deviceName,
+      registeredAt: data.registeredAt,
+      wifiSetupUrl: data.wifiSetupUrl
+    };
+
+  } catch (error) {
+    console.error('Error registering device with pairing code:', error);
+    return { 
+      success: false, 
+      error: 'Failed to register device. Please try again.' 
+    };
+  }
+}
+
+/**
  * Register a pulse device to the current user
  */
 export async function registerPulseDevice(

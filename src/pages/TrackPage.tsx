@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { QrCode, ExternalLink, CheckCircle, AlertCircle, Wifi, ArrowRight, ArrowLeft, Smartphone } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { QrCode, ExternalLink, CheckCircle, AlertCircle, Wifi, ArrowRight, ArrowLeft, Smartphone, Hash } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import FooterNavigation from '@/components/FooterNavigation';
-import { registerPulseDevice, openDeviceConfigPage } from '@/lib/services/deviceService';
+import { registerPulseDevice, registerPulseDeviceByPairingCode, openDeviceConfigPage } from '@/lib/services/deviceService';
 import QRCameraScanner from '@/components/QRCameraScanner';
 
 interface DeviceData {
@@ -43,6 +45,8 @@ const TrackPage: React.FC = () => {
   const [showQRScanner, setShowQRScanner] = useState<boolean>(false);
   const [currentStep, setCurrentStep] = useState<WizardStep>('scan');
   const [scannedDevice, setScannedDevice] = useState<DeviceData | null>(null);
+  const [pairingCode, setPairingCode] = useState<string>('');
+  const [pairingError, setPairingError] = useState<string | null>(null);
   const [registrationError, setRegistrationError] = useState<string | null>(null);
   const [wifiConnectionStatus, setWifiConnectionStatus] = useState<'idle' | 'connecting' | 'connected' | 'failed'>('idle');
   const navigate = useNavigate();
@@ -79,6 +83,40 @@ const TrackPage: React.FC = () => {
       if (result.success) {
         setCurrentStep('wifi-connect');
         console.log('Device registered successfully. Ready for WiFi setup.');
+      } else {
+        setRegistrationError(result.error || 'Registration failed');
+        setCurrentStep('scan');
+      }
+    } catch (error) {
+      setRegistrationError('Failed to register device');
+      setCurrentStep('scan');
+    }
+  };
+
+  const handlePairingCodeSubmit = async () => {
+    setPairingError(null);
+    setRegistrationError(null);
+    
+    if (!pairingCode || pairingCode.trim().length !== 6) {
+      setPairingError('Please enter a 6-character pairing code');
+      return;
+    }
+
+    setCurrentStep('register');
+
+    // Register device using pairing code
+    try {
+      const result = await registerPulseDeviceByPairingCode(pairingCode.trim());
+      if (result.success && result.deviceId) {
+        // Create device data object for WiFi setup
+        const deviceData: DeviceData = {
+          type: 'greenur_device',
+          deviceId: result.deviceId,
+          setupWifi: `Greenur-Device-Setup-${pairingCode.trim().toUpperCase()}`
+        };
+        setScannedDevice(deviceData);
+        setCurrentStep('wifi-connect');
+        console.log('Device registered successfully via pairing code. Ready for WiFi setup.');
       } else {
         setRegistrationError(result.error || 'Registration failed');
         setCurrentStep('scan');
@@ -158,6 +196,8 @@ const TrackPage: React.FC = () => {
   const resetWizard = () => {
     setCurrentStep('scan');
     setScannedDevice(null);
+    setPairingCode('');
+    setPairingError(null);
     setRegistrationError(null);
     setWifiConnectionStatus('idle');
   };
@@ -172,12 +212,32 @@ const TrackPage: React.FC = () => {
     </div>
   );
 
+  const getStepIcon = (step: WizardStep) => {
+    switch (step) {
+      case 'scan': return <Hash className="w-5 h-5" />;
+      case 'register': return <CheckCircle className="w-5 h-5" />;
+      case 'wifi-connect': return <Wifi className="w-5 h-5" />;
+      case 'wifi-config': return <ExternalLink className="w-5 h-5" />;
+      case 'complete': return <CheckCircle className="w-5 h-5" />;
+    }
+  };
+
+  const getStepLabel = (step: WizardStep) => {
+    switch (step) {
+      case 'scan': return 'Enter Code';
+      case 'register': return 'Register';
+      case 'wifi-connect': return 'Connect WiFi';
+      case 'wifi-config': return 'Configure';
+      case 'complete': return 'Complete';
+    }
+  };
+
   const WizardStepIndicator = () => {
     const steps = [
-      { id: 'scan', label: 'Scan QR', icon: QrCode },
+      { id: 'scan', label: 'Enter Code', icon: Hash },
       { id: 'register', label: 'Register', icon: CheckCircle },
       { id: 'wifi-connect', label: 'Connect WiFi', icon: Wifi },
-      { id: 'wifi-config', label: 'Configure', icon: Smartphone },
+      { id: 'wifi-config', label: 'Configure', icon: ExternalLink },
       { id: 'complete', label: 'Complete', icon: CheckCircle }
     ];
 
@@ -221,34 +281,76 @@ const TrackPage: React.FC = () => {
   };
 
   const DeviceSetupWizard = () => {
-    // Step 1: QR Code Scanning
+    // Step 1: Pairing Code Input
     if (currentStep === 'scan') {
       return (
         <Card className="bg-white shadow-md rounded-xl overflow-hidden">
           <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50 pb-3">
             <CardTitle className="text-lg text-green-800 flex items-center">
-              <QrCode className="w-5 h-5 mr-2" />
-              Step 1: Scan Device QR Code
+              <Hash className="w-5 h-5 mr-2" />
+              Step 1: Enter Pairing Code
             </CardTitle>
             <CardDescription>
-              Scan the QR code displayed on your Pulse device's OLED screen
+              Enter the 6-character code displayed on your Pulse device
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-6 text-center">
-            <div className="mb-6">
-              <QrCode className="w-16 h-16 mx-auto text-green-600 mb-4" />
+          <CardContent className="p-6">
+            <div className="mb-6 text-center">
+              <Hash className="w-16 h-16 mx-auto text-green-600 mb-4" />
               <p className="text-gray-700 mb-4">
-                Power on your Pulse device and scan the QR code shown on its display to register it to your account.
+                Power on your Pulse device and enter the 6-character pairing code shown on its display.
               </p>
             </div>
-            <Button 
-              onClick={() => setShowQRScanner(true)}
-              className="w-full bg-green-600 hover:bg-green-700 text-white"
-              size="lg"
-            >
-              <QrCode className="w-5 h-5 mr-2" />
-              Start QR Code Scan
-            </Button>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="pairingCode" className="text-sm font-medium text-gray-700">
+                  Pairing Code
+                </Label>
+                <Input
+                  id="pairingCode"
+                  type="text"
+                  placeholder="Enter 6-character code (e.g., ABC123)"
+                  value={pairingCode}
+                  onChange={(e) => {
+                    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+                    setPairingCode(value);
+                    setPairingError(null);
+                  }}
+                  className="text-center text-lg font-mono tracking-wider"
+                  maxLength={6}
+                />
+                {pairingError && (
+                  <p className="text-red-600 text-sm mt-1">{pairingError}</p>
+                )}
+              </div>
+              
+              <Button 
+                onClick={handlePairingCodeSubmit}
+                disabled={pairingCode.length !== 6}
+                className="w-full bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-300"
+                size="lg"
+              >
+                <Hash className="w-5 h-5 mr-2" />
+                Pair Device
+              </Button>
+              
+              {/* Optional QR fallback */}
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <p className="text-sm text-gray-600 text-center mb-3">
+                  Or use QR code if available:
+                </p>
+                <Button 
+                  onClick={() => setShowQRScanner(true)}
+                  variant="outline"
+                  className="w-full"
+                  size="sm"
+                >
+                  <QrCode className="w-4 h-4 mr-2" />
+                  Scan QR Code
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
       );

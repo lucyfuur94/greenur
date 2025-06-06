@@ -1148,7 +1148,7 @@ String getInternetStatusIcon() {
 
 void displayQRCodeAndSetupInfo() {
   if (!oled_available) {
-    Serial.println("displayQRCodeAndSetupInfo: OLED not available");
+    Serial.println("displayPairingCodeAndSetupInfo: OLED not available");
     return;
   }
   
@@ -1157,26 +1157,27 @@ void displayQRCodeAndSetupInfo() {
   display.clear();
   
   if (!device_registered) {
-    // Create simpler QR data format (URL format is more reliable)
-    String qrData = "https://legendary-naiad-02cf89.netlify.app/track?deviceId=" + device_id + "&setupWifi=" + String(ap_ssid) + "-" + device_id.substring(6);
+    // Show pairing code instead of QR code
+    String pairingCode = device_id.substring(6); // Get last 6 characters after "ESP32-"
     
-    Serial.println("QR Code data: " + qrData);
-    Serial.println("QR Code data length: " + String(qrData.length()));
+    Serial.println("Device ID: " + device_id);
+    Serial.println("Pairing Code: " + pairingCode);
     
-    // Generate QR code using QRcodeOled library with specific positioning
-    QRcodeOled qrcode(&display);
-    qrcode.init();
-    
-    // Create QR code - it should automatically position itself properly
-    qrcode.create(qrData);
-    
-    // Add text below QR code in normal mode
+    // Display pairing code prominently
     display.setTextAlignment(TEXT_ALIGN_CENTER);
     display.setFont(ArialMT_Plain_10);
-    display.drawString(64, 50, "Scan QR to register");
-    display.drawString(64, 60, "& setup WiFi");
+    display.drawString(64, 5, "Pairing Code:");
     
-    Serial.println("QR Code displayed (URL format, normal mode)");
+    // Large pairing code display
+    display.setFont(ArialMT_Plain_24);
+    display.drawString(64, 20, pairingCode);
+    
+    // Instructions
+    display.setFont(ArialMT_Plain_10);
+    display.drawString(64, 45, "Enter this code in");
+    display.drawString(64, 55, "Greenur app to pair");
+    
+    Serial.println("Pairing Code displayed: " + pairingCode);
   } else {
     // Device is registered, show WiFi setup info
     display.setTextAlignment(TEXT_ALIGN_CENTER);
