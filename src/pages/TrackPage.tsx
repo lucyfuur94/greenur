@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { QrCode, ExternalLink, CheckCircle, AlertCircle, Wifi, ArrowRight, ArrowLeft, Smartphone } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import FooterNavigation from '@/components/FooterNavigation';
-import { registerPulseDevice, connectToDeviceWifi, openDeviceConfigPage, parseDeviceQRCode } from '@/lib/services/deviceService';
+import { registerPulseDevice, openDeviceConfigPage } from '@/lib/services/deviceService';
 import QRCameraScanner from '@/components/QRCameraScanner';
 
 interface DeviceData {
@@ -25,11 +24,6 @@ interface PulseDeviceConfig {
   // friendlyName?: string;
 }
 
-interface UserData {
-  pulseDevice?: PulseDeviceConfig;
-  // other user fields
-}
-
 // Mock API call - replace with actual API calls to your Netlify functions
 const getUserPulseDeviceConfig = async (userId: string, token: string): Promise<PulseDeviceConfig | null> => {
   // TODO: API call to fetch from users collection in MongoDB via a new Netlify Function
@@ -37,14 +31,6 @@ const getUserPulseDeviceConfig = async (userId: string, token: string): Promise<
   // Simulate no device initially for testing the setup instructions
   return null; 
   // return { deviceId: 'test-esp32-device' }; 
-};
-
-// This function might still be relevant if you save a user-friendly name or the device ID after successful setup
-// but not for Wi-Fi credentials directly from this page anymore.
-const saveUserPulseDeviceConfig = async (userId: string, token: string, config: PulseDeviceConfig): Promise<boolean> => {
-  console.log('Saving basic device config (e.g., deviceId) for', userId, config, token);
-  // This would save the deviceId if the user confirms setup or if we get a signal from the device
-  return true;
 };
 
 type WizardStep = 'scan' | 'register' | 'wifi-connect' | 'wifi-config' | 'complete';

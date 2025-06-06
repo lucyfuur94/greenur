@@ -10,17 +10,21 @@ import ProfilePage from "./ProfilePage";
 import { useAuth } from "@/lib/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  Search, 
-  Plus, 
-  ClipboardList, 
-  BarChart3, 
+  Search,
+  Plus,
+  ClipboardList,
+  BarChart3,
+  CalendarDays, 
+  Droplets, 
   Camera, 
-  Droplet, 
-  Sun, 
+  Droplet,
+  Sun,
+  Lightbulb, 
+  CheckCircle2, 
+  Clock, 
+  TrendingUp, 
   Thermometer, 
-  Wind,
-  Home,
-  Bot
+  Wind
 } from "lucide-react";
 import FooterNavigation from '@/components/FooterNavigation';
 

@@ -21,7 +21,6 @@ const QRCameraScanner: React.FC<QRCameraScannerProps> = ({ onScanSuccess, onClos
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [qrScanner, setQrScanner] = useState<QrScanner | null>(null);
-  const [cameraPermission, setCameraPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt');
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualInput, setManualInput] = useState('');
   const [hasBackCamera, setHasBackCamera] = useState(true);
@@ -42,16 +41,6 @@ const QRCameraScanner: React.FC<QRCameraScannerProps> = ({ onScanSuccess, onClos
     try {
       setError(null);
       setIsScanning(true);
-
-      // Check camera permissions
-      const permissionStatus = await navigator.permissions.query({ name: 'camera' as PermissionName });
-      setCameraPermission(permissionStatus.state as 'granted' | 'denied' | 'prompt');
-
-      if (permissionStatus.state === 'denied') {
-        setError('Camera permission denied. Please enable camera access and reload the page.');
-        setShowManualInput(true);
-        return;
-      }
 
       // Create QR scanner instance
       const scanner = new QrScanner(
@@ -83,7 +72,6 @@ const QRCameraScanner: React.FC<QRCameraScannerProps> = ({ onScanSuccess, onClos
       if (err instanceof Error) {
         if (err.name === 'NotAllowedError') {
           errorMessage += 'Please grant camera permission and try again.';
-          setCameraPermission('denied');
         } else if (err.name === 'NotFoundError') {
           errorMessage += 'No camera found on this device.';
         } else if (err.name === 'NotSupportedError') {

@@ -9,11 +9,8 @@ const SplashLoader: React.FC<SplashLoaderProps> = ({
   onFinished, 
   minDisplayTime = 2000 
 }) => {
-  const [shouldExit, setShouldExit] = useState(false);
-
   useEffect(() => {
     const timer = setTimeout(() => {
-      setShouldExit(true);
       onFinished?.();
     }, minDisplayTime);
 
