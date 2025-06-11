@@ -17,7 +17,8 @@
 
 [build.environment]
   NODE_VERSION = "18.17.1"
-  NETLIFY_FUNCTION_TIMEOUT = "30"
+  NETLIFY_FUNCTION_TIMEOUT = "60"
+  NETLIFY_BUILD_TIMEOUT = "15"
 
 [[redirects]]
   from = "/api/functions/*"
@@ -52,7 +53,8 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
-  external_node_modules = ["firebase-admin", "firebase-admin/auth", "firebase-admin/storage", "openai", "busboy", "jimp", "sharp", "axios"]
+  external_node_modules = ["firebase-admin", "firebase-admin/auth", "firebase-admin/storage", "openai", "busboy", "jimp", "sharp", "axios", "mongodb", "node-fetch", "uuid"]
+  included_files = ["netlify/functions/**/*.ts", "netlify/functions/**/*.js"]
 
 [edge-functions]
   directory = "netlify/edge-functions" 
