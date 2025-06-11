@@ -53,8 +53,12 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
-  external_node_modules = ["firebase-admin", "firebase-admin/auth", "firebase-admin/storage", "openai", "busboy", "jimp", "sharp", "axios", "mongodb", "node-fetch", "uuid"]
+  external_node_modules = ["firebase-admin", "firebase-admin/auth", "firebase-admin/storage", "openai", "busboy", "jimp", "sharp", "axios", "mongodb", "node-fetch", "uuid", "chart.js", "react-chartjs-2"]
   included_files = ["netlify/functions/**/*.ts", "netlify/functions/**/*.js"]
+  
+  # Function-specific settings
+  [functions."*"]
+    timeout = 60
 
 [edge-functions]
   directory = "netlify/edge-functions" 
