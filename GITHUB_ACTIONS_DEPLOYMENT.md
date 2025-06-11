@@ -133,4 +133,5 @@ If you want to revert back to Netlify's Git integration:
 2. **Visibility**: Clear build logs in GitHub
 3. **Control**: Full control over the build process
 4. **Speed**: Often faster than Netlify's Git integration
-5. **Features**: Preview deployments and better CI/CD integration 
+5. **Features**: Preview deployments and better CI/CD integration # Test deployment with GitHub Actions
+# Test deployment with GitHub Actions 2

@@ -37,6 +37,3 @@ serviceAccountKey.json
 # Firebase Service Account Key
 serviceAccountKey.json
 netlify/functions/utils/serviceAccountKey.json
-
-# Backup directories
-netlify/functions-backup/

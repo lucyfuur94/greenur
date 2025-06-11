@@ -17,8 +17,7 @@
 
 [build.environment]
   NODE_VERSION = "18.17.1"
-  NETLIFY_FUNCTION_TIMEOUT = "60"
-  NETLIFY_BUILD_TIMEOUT = "15"
+  NETLIFY_FUNCTION_TIMEOUT = "30"
 
 [[redirects]]
   from = "/api/functions/*"
@@ -53,12 +52,7 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
-  external_node_modules = ["firebase-admin", "firebase-admin/auth", "firebase-admin/storage", "openai", "busboy", "jimp", "sharp", "axios", "mongodb", "node-fetch", "uuid", "chart.js", "react-chartjs-2"]
-  included_files = ["netlify/functions/**/*.ts", "netlify/functions/**/*.js"]
-  
-  # Function-specific settings
-  [functions."*"]
-    timeout = 60
+  external_node_modules = ["firebase-admin", "firebase-admin/auth", "firebase-admin/storage", "openai", "busboy", "jimp", "sharp", "axios"]
 
 [edge-functions]
   directory = "netlify/edge-functions" 
