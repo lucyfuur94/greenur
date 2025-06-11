@@ -10,12 +10,15 @@ const PULSE_DEVICE_API_KEY = process.env.PULSE_DEVICE_API_KEY; // New Env Variab
 
 interface PulseDataLog {
   deviceId: string;
-  timestamp: Date; // Will be sent as string, converted to Date
+  timestamp: Date; // Server timestamp when data was received
   temperature?: number;
   humidity?: number;
   soilMoisture?: number;
   lightLevel?: number; // Added for light sensor
+  isWaterOn?: number; // 1 for on, 0 for off
+  threshold?: number; // User-set threshold for watering
   sourceIp?: string; // Added for logging client IP
+  originalTimestamp?: string; // Original timestamp from ESP32 (for debugging)
   // Add other potential sensor readings here
 }
 
@@ -137,16 +140,23 @@ export const handler: Handler = async (event, context) => {
       };
     }
 
-    const sourceIp = event.headers['x-nf-client-connection-ip'] || event.headers['client-ip'];
+    const sourceIp = event.headers['x-forwarded-for'] || 
+                      event.headers['x-nf-client-connection-ip'] || 
+                      event.headers['client-ip'] ||
+                      event.headers['x-real-ip'];
 
     const dataToLog: PulseDataLog = {
       deviceId: body.deviceId,
-      timestamp: new Date(body.timestamp), // Ensure timestamp is a BSON Date
+      timestamp: new Date(), // Use server timestamp instead of trusting ESP32 timestamp
       temperature: body.temperature,
       humidity: body.humidity,
       soilMoisture: body.soilMoisture,
       lightLevel: body.lightLevel,
+      isWaterOn: body.isWaterOn,
+      threshold: body.threshold,
       sourceIp: sourceIp, // Store the captured IP
+      // Store original ESP32 timestamp for debugging purposes
+      originalTimestamp: body.timestamp,
     };
 
     // Connect to MongoDB

@@ -34,3 +34,6 @@ dist-ssr
 # Service account keys
 serviceAccountKey.json
 **/serviceAccountKey.json
+# Firebase Service Account Key
+serviceAccountKey.json
+netlify/functions/utils/serviceAccountKey.json

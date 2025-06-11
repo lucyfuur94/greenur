@@ -115,6 +115,10 @@ export const handler: Handler = async (event, context) => {
     };
   }
 
+  // Get optional date range parameters
+  const startDate = event.queryStringParameters?.startDate;
+  const endDate = event.queryStringParameters?.endDate;
+
   let client: MongoClient | null = null;
 
   try {
@@ -137,10 +141,28 @@ export const handler: Handler = async (event, context) => {
     const db = client.db(DB_NAME);
     const collection = db.collection('pulse_data_logs');
 
-    // Fetch data for the given deviceId, sorted by timestamp in descending order
-    // The TTL index automatically handles keeping only the last 3 days of data
+    // Build query filter
+    const filter: any = { deviceId: deviceId };
+    
+    // Add date range filtering if provided
+    if (startDate || endDate) {
+      filter.timestamp = {};
+      
+      if (startDate) {
+        filter.timestamp.$gte = new Date(startDate);
+      }
+      
+      if (endDate) {
+        // Set end date to end of day for inclusive filtering
+        const endOfDay = new Date(endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        filter.timestamp.$lte = endOfDay;
+      }
+    }
+
+    // Fetch data for the given deviceId with optional date filtering, sorted by timestamp in descending order
     const data = await collection
-      .find({ deviceId: deviceId })
+      .find(filter)
       .sort({ timestamp: -1 }) // -1 for descending, 1 for ascending
       .toArray();
     console.timeEnd('get-pulse-data: MongoDB query time');

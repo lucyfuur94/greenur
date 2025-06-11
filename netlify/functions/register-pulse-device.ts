@@ -192,24 +192,7 @@ export const handler: Handler = async (event, context) => {
       };
     }
 
-    // Send registration confirmation to device
-    console.time('register-pulse-device: Device confirmation');
-    try {
-      const deviceResponse = await fetch(`http://192.168.4.1/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId: authorizedUserId }),
-      });
-
-      if (!deviceResponse.ok) {
-        console.warn('Failed to confirm registration with device, but user registration successful');
-      }
-    } catch (error) {
-      console.warn('Could not reach device for confirmation, but user registration successful:', error);
-    }
-    console.timeEnd('register-pulse-device: Device confirmation');
+    console.log(`Device ${deviceId} successfully registered to user ${authorizedUserId}`);
 
     console.timeEnd('register-pulse-device: Total execution time');
     return {
@@ -220,6 +203,7 @@ export const handler: Handler = async (event, context) => {
         deviceId,
         deviceName: deviceData.deviceName,
         registeredAt: deviceData.registeredAt,
+        success: true
       }),
     };
 

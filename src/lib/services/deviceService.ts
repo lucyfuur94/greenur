@@ -177,6 +177,50 @@ export async function connectToDeviceWifi(setupWifiName: string): Promise<{ succ
 }
 
 /**
+ * Get user's registered pulse devices
+ */
+export async function getUserPulseDevices(): Promise<{ success: boolean; devices?: any[]; error?: string }> {
+  try {
+    // Get the current user's ID token for authentication
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    const idToken = await currentUser.getIdToken();
+    
+    const response = await fetch(`${API_BASE_URL}/get-user-devices`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return { 
+        success: false, 
+        error: errorData.error || `Failed to fetch devices with status ${response.status}` 
+      };
+    }
+
+    const data = await response.json();
+    return {
+      success: data.success,
+      devices: data.devices || []
+    };
+
+  } catch (error) {
+    console.error('Error fetching user devices:', error);
+    return { 
+      success: false, 
+      error: 'Failed to fetch devices. Please try again.' 
+    };
+  }
+}
+
+/**
  * Open device configuration page (now immediately available after registration)
  */
 export function openDeviceConfigPage(): void {

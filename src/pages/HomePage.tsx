@@ -56,7 +56,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const [plants, setPlants] = useState<TrackedPlant[]>([]);
   const [loading, setLoading] = useState(true);
   const [tasks, setTasks] = useState<CareTask[]>([]);
-  const [weatherData, setWeatherData] = useState({
+  const [weatherData] = useState({
     temperature: '--',
     humidity: '--',
     lightLevel: 'Good',
@@ -69,7 +69,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       if (!currentUser) return;
       
       try {
-        const response = await fetch(`/netlify/functions/tracked-plants`, {
+        const response = await fetch(`/netlify/functions/tracked-plants?userId=${currentUser.uid}`, {
           headers: {
             'Authorization': `Bearer ${await currentUser.getIdToken()}`
           }
@@ -116,38 +116,14 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       }
     };
     
-    // Fetch weather data
-    const fetchWeather = async () => {
-      if (!currentUser) return;
-      
-      try {
-        const response = await fetch(`/netlify/functions/get-weather`, {
-          headers: {
-            'Authorization': `Bearer ${await currentUser.getIdToken()}`
-          }
-        });
-        
-        if (!response.ok) {
-          console.warn('Weather service unavailable:', response.status);
-          return; // Silently fail without breaking the UI
-        }
-        
-        const data = await response.json();
-        
-        setWeatherData({
-          temperature: data.temperature ? `${Math.round(data.temperature)}°F` : '--',
-          humidity: data.humidity ? `${Math.round(data.humidity)}%` : '--',
-          lightLevel: data.lightLevel || 'Good',
-          wateringNeeded: data.plantsNeedingWater || 0
-        });
-      } catch (error) {
-        console.error('Error fetching weather:', error);
-        // Silent failure - don't break the UI for weather errors
-      }
-    };
+    // TODO: Fetch weather data when user location is available
+    // const fetchWeather = async () => {
+    //   // Skip weather for now - requires lat/lon coordinates
+    //   // Will implement when user location data is available
+    // };
     
     fetchPlants();
-    fetchWeather();
+    // fetchWeather(); // Disabled until location data is available
   }, [currentUser, toast]);
   
   // Generate care tasks based on plants

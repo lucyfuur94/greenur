@@ -90,6 +90,10 @@ void setup() {
   pinMode(LIGHT_SENSOR_PIN, INPUT);
   digitalWrite(LED_PIN, LOW);
   
+  // Configure ADC for light sensor
+  analogReadResolution(12); // Set ADC resolution to 12 bits (0-4095)
+  analogSetAttenuation(ADC_11db); // Set ADC attenuation for 0-3.3V range
+  
   // Initialize I2C for OLED with specific frequency
   Wire.begin(OLED_SDA_PIN, OLED_SCK_PIN);
   Wire.setClock(100000); // Set I2C clock to 100kHz (slower, more reliable)
@@ -207,12 +211,18 @@ void loop() {
   }
   
   // Check WiFi connection periodically (only if not in config mode)
-  if (!config_mode && !show_qr_code && WiFi.status() != WL_CONNECTED) {
-    wifi_connected = false;
-    internet_connected = false;
-    Serial.println("WiFi disconnected. Attempting reconnection...");
-    displayReconnectingMessage();
-    connectToWiFi();
+  // Add a delay to prevent false disconnection detection during WiFi setup transition
+  static unsigned long last_wifi_check = 0;
+  if (!config_mode && !show_qr_code && (millis() - last_wifi_check > 10000)) { // Check every 10 seconds
+    if (WiFi.status() != WL_CONNECTED && wifi_connected) {
+      // Only trigger reconnection if we were previously connected
+      wifi_connected = false;
+      internet_connected = false;
+      Serial.println("WiFi disconnected. Attempting reconnection...");
+      displayReconnectingMessage();
+      connectToWiFi();
+    }
+    last_wifi_check = millis();
   }
   
   delay(100);
@@ -515,14 +525,33 @@ void connectToWiFi() {
     Serial.println("IP address: " + WiFi.localIP().toString());
     Serial.println("Signal strength: " + String(wifi_signal_strength) + " dBm");
     
+    // Exit configuration mode and QR code display
+    config_mode = false;
+    show_qr_code = false;
+    
+    // Stop DNS server and access point
+    dnsServer.stop();
+    WiFi.mode(WIFI_STA); // Switch to station mode only
+    
     // Display connected message on OLED
     displayConnectedMessage();
+    
+    // Give some time for the connection to stabilize
+    delay(2000);
     
     // Check internet connectivity
     checkInternetConnectivity();
     
     // Send initial "device online" signal
     sendDeviceOnlineSignal();
+    
+    Serial.println("✅ Configuration complete - device now in normal operation mode");
+    
+    // Read initial sensor data
+    readSensors();
+    
+    // Start showing sensor data immediately
+    displaySensorData();
   } else {
     Serial.println("\nWiFi connection failed. Starting configuration mode...");
     startConfigMode();
@@ -947,6 +976,7 @@ void handleSaveConfig() {
   
   // Start WiFi connection in background
   delay(1000);
+  Serial.println("Starting WiFi connection after configuration save...");
   connectToWiFi();
 }
 
@@ -998,12 +1028,32 @@ void handleReset() {
 }
 
 void readSensors() {
-  // Read light sensor (0-4095 range)
-  latest_data.light_level = analogRead(LIGHT_SENSOR_PIN);
+  // Read light sensor with multiple samples for accuracy
+  int total = 0;
+  int samples = 10;
+  
+  // Take multiple readings and average them
+  for (int i = 0; i < samples; i++) {
+    int reading = analogRead(LIGHT_SENSOR_PIN);
+    total += reading;
+    delay(10); // Small delay between readings
+  }
+  
+  latest_data.light_level = total / samples;
   latest_data.timestamp = millis();
   
-  Serial.println("Sensor readings:");
-  Serial.println("Light Level: " + String(latest_data.light_level));
+  Serial.println("=== Sensor Debug Info ===");
+  Serial.println("Light Sensor Pin: " + String(LIGHT_SENSOR_PIN));
+  Serial.println("Raw ADC Value: " + String(latest_data.light_level));
+  Serial.println("ADC Range: 0-4095 (12-bit)");
+  Serial.println("Light Percentage: " + String(map(latest_data.light_level, 0, 4095, 0, 100)) + "%");
+  
+  // Additional debugging - test if pin is actually reading
+  Serial.println("Pin Mode Test:");
+  Serial.println("Pin 23 analogRead: " + String(analogRead(23)));
+  Serial.println("Pin 32 analogRead: " + String(analogRead(32))); // Test another ADC pin
+  Serial.println("Pin 33 analogRead: " + String(analogRead(33))); // Test another ADC pin
+  Serial.println("========================");
 }
 
 void sendSensorData() {

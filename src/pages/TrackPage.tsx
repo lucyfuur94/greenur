@@ -2,13 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+
 import { Label } from "@/components/ui/label";
 import { ExternalLink, CheckCircle, AlertCircle, Wifi, ArrowRight, ArrowLeft, Smartphone, Hash } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import FooterNavigation from '@/components/FooterNavigation';
-import { registerPulseDevice, registerPulseDeviceByPairingCode, openDeviceConfigPage } from '@/lib/services/deviceService';
+import { registerPulseDevice, registerPulseDeviceByPairingCode, openDeviceConfigPage, getUserPulseDevices } from '@/lib/services/deviceService';
 import QRCameraScanner from '@/components/QRCameraScanner';
+import { PulseDataDisplay } from '@/components/PulseDataDisplay';
+import { checkDeviceStatus, getStatusDisplay } from '@/lib/services/deviceStatusService';
 
 interface DeviceData {
   type: string;
@@ -16,29 +18,37 @@ interface DeviceData {
   setupWifi: string;
 }
 
-// Placeholder for API functions - you'll need to implement these
-// These would typically live in a service file e.g., src/lib/services/pulseDeviceService.ts
-
 interface PulseDeviceConfig {
   deviceId: string;
   wifiSsid?: string; // For storing/displaying, actual sending to device is complex
-  // Add a user-friendly name if desired
-  // friendlyName?: string;
+  deviceName?: string;
 }
 
-// Mock API call - replace with actual API calls to your Netlify functions
-const getUserPulseDeviceConfig = async (userId: string, token: string): Promise<PulseDeviceConfig | null> => {
-  // TODO: API call to fetch from users collection in MongoDB via a new Netlify Function
-  console.log('Fetching pulse device config for', userId, token);
-  // Simulate no device initially for testing the setup instructions
-  return null; 
-  // return { deviceId: 'test-esp32-device' }; 
+// Helper function to convert device service response to config
+const getFirstDeviceConfig = async (): Promise<PulseDeviceConfig | null> => {
+  try {
+    const result = await getUserPulseDevices();
+    
+    if (result.success && result.devices && result.devices.length > 0) {
+      const device = result.devices[0]; // Get the first device
+      return {
+        deviceId: device.deviceId,
+        wifiSsid: device.wifiSsid || undefined,
+        deviceName: device.deviceName || `Pulse Device ${device.deviceId}`
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error fetching device config:', error);
+    return null;
+  }
 };
 
 type WizardStep = 'scan' | 'register' | 'wifi-connect' | 'wifi-config' | 'complete';
 
 const TrackPage: React.FC = () => {
-  const { user, token } = useAuth();
+  const { user, token, isLoading: authLoading } = useAuth();
   const [deviceConfig, setDeviceConfig] = useState<PulseDeviceConfig | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [showSetupWizard, setShowSetupWizard] = useState<boolean>(false);
@@ -50,14 +60,19 @@ const TrackPage: React.FC = () => {
   const [registrationError, setRegistrationError] = useState<string | null>(null);
   const [wifiConnectionStatus, setWifiConnectionStatus] = useState<'idle' | 'connecting' | 'connected' | 'failed'>('idle');
   const navigate = useNavigate();
-  const pairingInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchConfig = async () => {
+      // Don't do anything while auth is loading
+      if (authLoading) {
+        return;
+      }
+      
       if (user && token) {
         setIsLoading(true);
         try {
-          const config = await getUserPulseDeviceConfig(user.uid, token);
+          const config = await getFirstDeviceConfig();
           setDeviceConfig(config);
           if (!config) {
             setShowSetupWizard(true); // If no config, show setup wizard
@@ -67,15 +82,17 @@ const TrackPage: React.FC = () => {
         } finally {
           setIsLoading(false);
         }
-      } else if (user === null) {
-        // User is explicitly null (not authenticated), redirect to login
+      } else if (user === null && !authLoading) {
+        // User is explicitly null and auth loading is complete (not authenticated), redirect to login
         console.log('User not authenticated, redirecting to login');
         navigate('/login');
       }
       // If user is undefined, we're still loading auth state
     };
     fetchConfig();
-  }, [user, token, navigate]);
+  }, [user, authLoading, navigate]);
+
+
 
   const handleQRScanSuccess = async (deviceData: DeviceData) => {
     setScannedDevice(deviceData);
@@ -99,13 +116,8 @@ const TrackPage: React.FC = () => {
     }
   };
 
-  const handlePairingCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 9);
-    setPairingCode(value);
-    if (pairingError) {
-      setPairingError(null);
-    }
-  };
+
+
 
   const handlePairingCodeSubmit = async () => {
     setPairingError(null);
@@ -203,18 +215,59 @@ const TrackPage: React.FC = () => {
     setCurrentStep('complete');
   };
 
-  const handleRefreshDeviceStatus = () => {
+  const handleRefreshDeviceStatus = async () => {
     setIsLoading(true);
-    if (user && token) {
-        getUserPulseDeviceConfig(user.uid, token)
-            .then(config => {
-                setDeviceConfig(config);
-                if (config) {
-                    setShowSetupWizard(false); // Hide wizard if device is found
-                }
-            })
-            .catch(error => console.error("Error refreshing device status:", error))
-            .finally(() => setIsLoading(false));
+    setRegistrationError(null);
+    
+    if (!user || !token) {
+      setRegistrationError('You must be logged in to check device status');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // Get device ID from the current setup wizard state
+      const deviceId = scannedDevice?.deviceId;
+      
+      if (!deviceId) {
+        setRegistrationError('No device found. Please complete device setup first.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Check if the device is actually online
+      console.log('Checking status for device:', deviceId);
+      const statusResponse = await checkDeviceStatus(deviceId);
+      
+      if (!statusResponse.success) {
+        setRegistrationError(statusResponse.error || 'Failed to check device status');
+        setIsLoading(false);
+        return;
+      }
+
+      // Check if device is online or has recent activity
+      if (statusResponse.online) {
+        // Device is online - show the dashboard
+        const config: PulseDeviceConfig = {
+          deviceId: deviceId,
+          // We don't need wifiSsid for the dashboard display
+        };
+        setDeviceConfig(config);
+        setShowSetupWizard(false);
+        setCurrentStep('scan'); // Reset wizard for next time
+        console.log('Device is online, showing dashboard');
+      } else {
+        // Device is offline - show error with helpful message
+        const statusDisplay = getStatusDisplay(statusResponse.status || 'offline');
+        setRegistrationError(
+          `Device appears to be ${statusDisplay.text.toLowerCase()}. ${statusResponse.message || statusDisplay.description}. Please ensure your device is powered on and connected to WiFi.`
+        );
+      }
+    } catch (error) {
+      console.error("Error checking device status:", error);
+      setRegistrationError('Failed to check device status. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -312,19 +365,39 @@ const TrackPage: React.FC = () => {
                 <Label htmlFor="pairingCode" className="text-sm font-medium text-gray-700">
                   Pairing Code
                 </Label>
-                <Input
+                <input
+                  ref={inputRef}
+                  key="pairing-code-input"
                   id="pairingCode"
                   type="text"
                   placeholder="Enter 9-character code (e.g., ABC123DEF)"
                   value={pairingCode}
-                  onChange={handlePairingCodeChange}
-                  className="text-center text-lg font-mono tracking-wider"
+                  onChange={(e) => {
+                    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 9);
+                    setPairingCode(value);
+                    if (pairingError) {
+                      setPairingError(null);
+                    }
+                    // Maintain focus after state update
+                    setTimeout(() => {
+                      if (inputRef.current && document.activeElement !== inputRef.current) {
+                        inputRef.current.focus();
+                      }
+                    }, 0);
+                  }}
+                  onKeyDown={(e) => {
+                    // Submit on Enter if all 9 characters entered
+                    if (e.key === 'Enter' && pairingCode.length === 9) {
+                      handlePairingCodeSubmit();
+                    }
+                    // Allow only alphanumeric characters and control keys
+                    if (!/[A-Za-z0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  className="w-full p-3 text-center text-lg font-mono tracking-wider border border-gray-200 rounded-xl focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100 bg-white shadow-sm transition-all duration-200"
                   maxLength={9}
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="characters"
-                  spellCheck="false"
-                  ref={pairingInputRef}
+                  autoComplete="one-time-code"
                 />
                 {pairingError && (
                   <p className="text-red-600 text-sm mt-1">{pairingError}</p>
@@ -594,10 +667,28 @@ const TrackPage: React.FC = () => {
                  onClick={handleRefreshDeviceStatus}
                  className="w-full bg-green-600 hover:bg-green-700 text-white"
                  size="lg"
+                 disabled={isLoading}
                >
                  <CheckCircle className="w-5 h-5 mr-2" />
-                 Check Device Status
+                 {isLoading ? 'Checking Status...' : 'Check Device Status'}
                </Button>
+               
+               {registrationError && (
+                 <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                   <div className="flex items-center">
+                     <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
+                     <span className="text-red-700">{registrationError}</span>
+                   </div>
+                   <Button 
+                     onClick={resetWizard}
+                     variant="outline"
+                     className="mt-3 w-full"
+                   >
+                     <ArrowLeft className="w-4 h-4 mr-2" />
+                     Back to Setup
+                   </Button>
+                 </div>
+               )}
             </div>
           </CardContent>
         </Card>
@@ -617,30 +708,21 @@ const TrackPage: React.FC = () => {
             <h1 className="text-lg font-semibold text-[#17A34A]">Track Your Devices</h1>
             {deviceConfig && (
                  <Button variant="outline" size="sm" onClick={() => setShowSetupWizard(true)} className="ml-auto">
-                    Setup New Device
+                    Edit Device
                  </Button>
             )}
           </div>
         </div>
 
-        {isLoading && !deviceConfig && !showSetupWizard ? (
+        {(authLoading || (isLoading && !deviceConfig && !showSetupWizard)) ? (
           renderSkeletonLoader()
         ) : (
           <div className="container mx-auto p-4 space-y-6">
             {deviceConfig && !showSetupWizard && (
-              <Card className="bg-white shadow-md rounded-xl overflow-hidden">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Pulse Device: {deviceConfig.deviceId}</CardTitle>
-                  {deviceConfig.wifiSsid && <CardDescription>Connected to Wi-Fi: {deviceConfig.wifiSsid}</CardDescription>}
-                </CardHeader>
-                <CardContent>
-                  <p className="mb-4 text-sm text-gray-600">Real-time data from your device will appear here.</p>
-                  {/* TODO: Implement PulseDataDisplay component here */}
-                  <div className="bg-gray-100 p-8 rounded-xl text-center shadow-inner">
-                    <p className="text-lg">Chart placeholder for {deviceConfig.deviceId}</p>
-                  </div>
-                </CardContent>
-              </Card>
+              <PulseDataDisplay 
+                deviceId={deviceConfig.deviceId}
+                deviceName={deviceConfig.deviceName || `Pulse Device ${deviceConfig.deviceId}`}
+              />
             )}
 
             {(showSetupWizard || (!isLoading && !deviceConfig)) && (
