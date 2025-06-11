@@ -1,7 +1,7 @@
 import { Handler } from '@netlify/functions'
 import { MongoClient } from 'mongodb'
 import dotenv from 'dotenv'
-import { extract_plant_info } from '../functions/analyze-plant/utils/plantUtils'
+import { extract_plant_info } from './utils/plant/plantUtils'
 
 dotenv.config()
 
@@ -65,11 +65,8 @@ const handler: Handler = async (event, context) => {
         // Extract plant information
         const plantInfo = await extract_plant_info(nextId, plantName)
         
-        // Convert numeric ID to string for MongoDB
-        const documentToInsert = {
-          ...plantInfo,
-          _id: nextId.toString()
-        }
+        // Remove the _id field and let MongoDB generate it
+        const { _id, ...documentToInsert } = plantInfo
         
         // Insert new plant
         await collection.insertOne(documentToInsert)

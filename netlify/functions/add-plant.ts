@@ -1,7 +1,7 @@
 import { Handler } from '@netlify/functions'
 import { MongoClient } from 'mongodb'
 import dotenv from 'dotenv'
-import { extract_plant_info } from '../functions/analyze-plant/utils/plantUtils'
+import { extract_plant_info } from './utils/plant/plantUtils'
 
 dotenv.config()
 
@@ -48,20 +48,18 @@ const handler: Handler = async (event, context) => {
       }
     }
 
-    // Get next available ID
-    const lastPlant = await collection
-      .find()
-      .sort({ _id: -1 })
-      .limit(1)
-      .toArray()
-    
-    const nextId = lastPlant.length > 0 ? lastPlant[0]._id + 1 : 1
+    // Get next available ID by counting documents
+    const totalDocs = await collection.countDocuments()
+    const nextId = totalDocs + 1
 
     // Extract plant information
     const plantInfo = await extract_plant_info(nextId, plantName)
 
+    // Remove the _id field and let MongoDB generate it
+    const { _id, ...documentToInsert } = plantInfo
+
     // Insert new plant
-    await collection.insertOne(plantInfo)
+    await collection.insertOne(documentToInsert)
 
     return {
       statusCode: 200,
@@ -71,7 +69,7 @@ const handler: Handler = async (event, context) => {
         'Access-Control-Allow-Headers': 'Content-Type',
         'Access-Control-Allow-Methods': 'POST',
       },
-      body: JSON.stringify(plantInfo),
+      body: JSON.stringify(documentToInsert),
     }
   } catch (error) {
     console.error('Error adding plant:', error)
