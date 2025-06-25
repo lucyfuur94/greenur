@@ -54,5 +54,22 @@
   node_bundler = "esbuild"
   external_node_modules = ["firebase-admin", "firebase-admin/auth", "firebase-admin/storage", "openai", "busboy", "jimp", "sharp", "axios"]
 
-[edge-functions]
-  directory = "netlify/edge-functions" 
+[[edge-functions]]
+  function = "edge-dispatcher"
+  path = "/api/edge/*"
+
+[[edge-functions]]
+  function = "botanist-chat"
+  path = "/botanist/chat"
+
+[[edge-functions]]
+  function = "botanist-chat-stream"
+  path = "/botanist/chat-stream"
+
+[[edge-functions]]
+  function = "botanist-chat-generic-stream"
+  path = "/botanist/chat-generic"
+
+[[edge-functions]]
+  function = "plant-details-stream"
+  path = "/plant/details" 

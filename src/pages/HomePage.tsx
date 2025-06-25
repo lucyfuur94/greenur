@@ -2,10 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import ProfilePage from "./ProfilePage";
 import { useAuth } from "@/lib/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -15,12 +12,13 @@ import {
   ClipboardList,
   BarChart3,
   Camera, 
-  Droplet,
-  Sun,
-  Thermometer, 
-  Wind
+  Leaf
 } from "lucide-react";
 import FooterNavigation from '@/components/FooterNavigation';
+import SearchOverlay from '@/components/SearchOverlay';
+import { WateringRecommendations } from '@/components/WateringRecommendations';
+import { LocationSelector } from '@/components/LocationSelector';
+import { weatherService, type WeatherData } from '@/lib/services/weatherService';
 
 interface HomePageProps {
   onNavigate?: (page: string) => void;
@@ -39,14 +37,14 @@ interface TrackedPlant {
   healthStatus?: 'healthy' | 'needs_attention' | 'unhealthy';
 }
 
-interface CareTask {
-  id: number | string;
-  plant: string;
-  plantId: string;
-  task: string;
-  completed: boolean;
+interface PlantSearchResult {
+  id: string;
+  name: string;
+  type: string;
+  scientificName: string;
   image: string;
-  dueDate: string;
+  displayName: string;
+  matchedTerm: string;
 }
 
 const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
@@ -55,13 +53,113 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const [showProfile, setShowProfile] = useState(false);
   const [plants, setPlants] = useState<TrackedPlant[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tasks, setTasks] = useState<CareTask[]>([]);
-  const [weatherData] = useState({
-    temperature: '--',
-    humidity: '--',
-    lightLevel: 'Good',
-    wateringNeeded: 4
-  });
+  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
+  const [currentLocation, setCurrentLocation] = useState('Asian Games Village');
+
+  // Search related state
+  const [showSearchOverlay, setShowSearchOverlay] = useState(false);
+
+  // Handle plant selection from search overlay
+  const handlePlantSelect = (plant: PlantSearchResult) => {
+    toast({
+      title: "Plant Selected",
+      description: `Selected ${plant.name}. Add this plant to your collection?`,
+    });
+    setShowSearchOverlay(false);
+  };
+
+  // Fetch weather data
+  const fetchWeatherData = async (location?: string, coordinates?: { lat: number; lng: number }) => {
+    if (!currentUser) return;
+    
+    try {
+      const userToken = await currentUser.getIdToken();
+      let weather;
+      
+      if (coordinates) {
+        // Fetch weather by coordinates for current location
+        weather = await weatherService.getWeatherByCoordinates(userToken, coordinates.lat, coordinates.lng);
+      } else if (location && location !== 'Current Location') {
+        // For city names, we'll use a simple geocoding approach
+        try {
+          // Try to geocode the city name using OpenWeatherMap's free geocoding service
+          const weatherApiKey = import.meta.env.VITE_WEATHER_API_KEY;
+          const geocodeResponse = await fetch(
+            `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(location)}&limit=1&appid=${weatherApiKey}`
+          );
+          const geocodeData = await geocodeResponse.json();
+          
+          if (geocodeData && geocodeData.length > 0) {
+            const { lat, lon } = geocodeData[0];
+            weather = await weatherService.getWeatherByCoordinates(userToken, lat, lon);
+          } else {
+            // Fallback to default weather
+            weather = await weatherService.getWeatherData(userToken);
+          }
+        } catch (geocodeError) {
+          console.error('Geocoding failed, using default location:', geocodeError);
+          weather = await weatherService.getWeatherData(userToken);
+        }
+      } else {
+        // Default weather fetch
+        weather = await weatherService.getWeatherData(userToken);
+      }
+      
+      setWeatherData(weather);
+    } catch (error) {
+      console.error('Error fetching weather data:', error);
+    }
+  };
+
+  // Handle location change
+  const handleLocationChange = async (location: string, coordinates?: { lat: number; lng: number }) => {
+    setCurrentLocation(location);
+    await fetchWeatherData(location, coordinates);
+  };
+
+  // Initialize with current location on component mount
+  useEffect(() => {
+    if (!currentUser) return;
+
+    // Get current location automatically when the page loads
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          
+          // Get location name from coordinates using OpenWeatherMap reverse geocoding
+          try {
+            const weatherApiKey = import.meta.env.VITE_WEATHER_API_KEY;
+            const response = await fetch(
+              `https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${weatherApiKey}`
+            );
+            const data = await response.json();
+            
+            const locationName = data && data.length > 0 
+              ? (data[0].name || data[0].local_names?.en || 'Current Location')
+              : 'Current Location';
+            
+            setCurrentLocation(locationName);
+            await fetchWeatherData(locationName, { lat: latitude, lng: longitude });
+          } catch (error) {
+            console.error('Error reverse geocoding:', error);
+            setCurrentLocation('Current Location');
+            await fetchWeatherData('Current Location', { lat: latitude, lng: longitude });
+          }
+        },
+        (error) => {
+          console.error('Error getting current location:', error);
+          // Fallback to default weather without location
+          setCurrentLocation('Unknown Location');
+          fetchWeatherData();
+        }
+      );
+    } else {
+      // Geolocation not supported
+      setCurrentLocation('Unknown Location');
+      fetchWeatherData();
+    }
+  }, [currentUser]);
 
   // Fetch user's tracked plants
   useEffect(() => {
@@ -69,18 +167,15 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       if (!currentUser) return;
       
       try {
-        const response = await fetch(`/netlify/functions/tracked-plants?userId=${currentUser.uid}`, {
+        const response = await fetch(`/.netlify/functions/tracked-plants?userId=${currentUser.uid}`, {
           headers: {
             'Authorization': `Bearer ${await currentUser.getIdToken()}`
           }
         });
         
-        // If we get a 404 response, it likely means no plants exist for this user yet
-        // Which is a normal condition for new users, not an error
         if (response.status === 404) {
           console.log("No plants found for user - normal for new users");
           setPlants([]);
-          setTasks([]);
           setLoading(false);
           return;
         }
@@ -88,111 +183,29 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         if (!response.ok) {
           console.warn('Plants service unavailable:', response.status);
           setPlants([]);
-          setTasks([]);
           setLoading(false);
-          return; // Silently fail without breaking the UI
+          return;
         }
         
         const data = await response.json();
         
-        // If we get an empty array, that's normal for new users
         if (Array.isArray(data) && data.length === 0) {
           console.log("User has no plants yet");
           setPlants([]);
-          setTasks([]);
         } else {
           setPlants(data);
-          // Generate care tasks based on plants
-          const plantTasks = generateTasksFromPlants(data);
-          setTasks(plantTasks);
         }
       } catch (error) {
         console.error('Error fetching plants:', error);
-        // Only show error toast for actual API or network failures
         setPlants([]);
-        setTasks([]);
       } finally {
         setLoading(false);
       }
     };
     
-    // TODO: Fetch weather data when user location is available
-    // const fetchWeather = async () => {
-    //   // Skip weather for now - requires lat/lon coordinates
-    //   // Will implement when user location data is available
-    // };
-    
     fetchPlants();
-    // fetchWeather(); // Disabled until location data is available
   }, [currentUser, toast]);
-  
-  // Generate care tasks based on plants
-  const generateTasksFromPlants = (plantData: TrackedPlant[]): CareTask[] => {
-    // If we don't have plant data from the API, use the local plants state as fallback
-    const plantsToUse = plantData.length > 0 ? plantData : plants;
-    
-    return plantsToUse.slice(0, 6).map((plant, index) => {
-      // Basic logic to determine task type (can be more sophisticated with real data)
-      const taskTypes = ['Water', 'Mist', 'Rotate', 'Fertilize', 'Prune'];
-      const taskType = taskTypes[index % taskTypes.length];
-      
-      return {
-        id: plant._id,
-        plant: plant.nickname || plant.plantDetails.common_name,
-        plantId: plant._id,
-        task: taskType,
-        completed: false,
-        image: plant.currentImage,
-        dueDate: new Date().toISOString().split('T')[0]
-      };
-    });
-  };
 
-  const handleTaskToggle = async (id: number | string) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id ? { ...task, completed: !task.completed } : task
-      )
-    );
-    
-    // Update task status in database
-    const task = tasks.find(t => t.id === id);
-    if (task && currentUser) {
-      try {
-        // Call to update-action-item function
-        await fetch(`/netlify/functions/update-action-item`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            userId: currentUser.uid,
-            plantId: task.plantId,
-            taskType: task.task.toLowerCase(),
-            completed: !task.completed,
-            date: new Date().toISOString()
-          })
-        });
-      } catch (error) {
-        console.error('Error updating task:', error);
-      }
-    }
-  };
-
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 18) return "Good afternoon";
-    return "Good evening";
-  };
-
-  // Get user display name or email for greeting
-  const getUserDisplayName = () => {
-    if (!currentUser) return "";
-    return currentUser.displayName || currentUser.email?.split('@')[0] || "User";
-  };
-
-  // Get user initials for avatar fallback
   const getUserInitials = () => {
     if (!currentUser) return "U";
     if (currentUser.displayName) {
@@ -206,201 +219,179 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   };
 
   const quickActions = [
-    { id: 1, name: "Add Plant", icon: <Plus className="w-6 h-6" /> },
-    { id: 2, name: "Log Care", icon: <ClipboardList className="w-6 h-6" /> },
-    { id: 3, name: "View Stats", icon: <BarChart3 className="w-6 h-6" /> },
-    { id: 4, name: "Scan Plant", icon: <Camera className="w-6 h-6" /> },
+    { id: 1, name: "Add Plant", iconType: "plus", action: () => toast({ title: "Add Plant", description: "Adding Plant feature coming soon!" }) },
+    { id: 2, name: "Log Care", iconType: "clipboard", action: () => toast({ title: "Log Care", description: "Care logging feature coming soon!" }) },
+    { id: 3, name: "View Stats", iconType: "chart", action: () => onNavigate && onNavigate("track") },
+    { id: 4, name: "Scan Plant", iconType: "camera", action: () => toast({ title: "Scan Plant", description: "AI plant scanning feature coming soon!" }) },
   ];
 
-  // Get current date in a readable format
-  const getCurrentDate = () => {
-    const options: Intl.DateTimeFormatOptions = { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    };
-    return new Date().toLocaleDateString('en-US', options);
+  const renderIcon = (iconType: string) => {
+    switch (iconType) {
+      case "plus":
+        return <Plus className="w-6 h-6 text-primary" />;
+      case "clipboard":
+        return <ClipboardList className="w-6 h-6 text-primary" />;
+      case "chart":
+        return <BarChart3 className="w-6 h-6 text-primary" />;
+      case "camera":
+        return <Camera className="w-6 h-6 text-primary" />;
+      default:
+        return <Plus className="w-6 h-6 text-primary" />;
+    }
   };
 
-  // Update Plant Health Summary section to use real data
-  const renderPlantHealthSummary = () => {
+  // Render weather widget
+
+
+  // Render quick actions
+  const renderQuickActions = () => {
+    return (
+      <div className="px-4 py-2">
+        <div className="grid grid-cols-4 gap-2">
+          {quickActions.map((action) => (
+            <div key={action.id} className="flex flex-col items-center cursor-pointer" onClick={action.action}>
+              <div className="w-16 h-16 rounded-xl bg-card shadow-lg flex items-center justify-center hover:shadow-xl transition-shadow">
+                {renderIcon(action.iconType)}
+              </div>
+              <span className="text-xs mt-2 text-center font-medium text-card-foreground">
+                {action.name}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Render my plants section
+  const renderMyPlants = () => {
     return (
       <div className="px-4 py-3">
-        <Card className="bg-white shadow-md rounded-xl overflow-hidden relative">
-          <div className="p-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-md font-medium">Plant Health Summary</h2>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-xs text-[#2E7D32] cursor-pointer !rounded-button bg-transparent hover:bg-[#E8F5E9]"
-              >
-                View All
-              </Button>
-            </div>
-            <div className="flex justify-between items-center">
-              <div className="flex flex-col items-center">
-                <div className="w-12 h-12 rounded-full bg-[#E8F5E9] flex items-center justify-center text-[#2E7D32] shadow-sm">
-                  <Droplet className="w-5 h-5" />
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="text-base font-semibold text-foreground">My Plants</h2>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-xs text-primary hover:bg-accent"
+            onClick={() => toast({ title: "My Plants", description: "Plants section coming soon!" })}
+          >
+            View All
+          </Button>
+        </div>
+        
+        <ScrollArea className="w-full">
+          <div className="flex space-x-4 pb-2">
+            {plants.length > 0 ? (
+              plants.slice(0, 6).map((plant) => (
+                <div key={plant._id} className="flex flex-col items-center min-w-[80px]">
+                  <div className="w-16 h-16 rounded-lg bg-muted border-2 border-border overflow-hidden">
+                    {plant.currentImage ? (
+                      <img 
+                        src={plant.currentImage} 
+                        alt={plant.nickname} 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Leaf className="w-6 h-6 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-xs mt-1 text-center font-medium text-foreground truncate max-w-[80px]">
+                    {plant.nickname || plant.plantDetails.common_name}
+                  </span>
                 </div>
-                <span className="text-xs mt-2 font-medium">Watering</span>
-                <span className="text-sm font-bold">{weatherData.wateringNeeded}</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <div className="w-12 h-12 rounded-full bg-[#E8F5E9] flex items-center justify-center text-[#2E7D32] shadow-sm">
-                  <Sun className="w-5 h-5" />
+              ))
+            ) : (
+              Array.from({ length: 4 }, (_, i) => (
+                <div key={i} className="flex flex-col items-center min-w-[80px]">
+                  <div className="w-16 h-16 rounded-lg bg-muted border-2 border-border flex items-center justify-center">
+                    <Plus className="w-6 h-6 text-muted-foreground" />
+                  </div>
+                  <span className="text-xs mt-1 text-center text-muted-foreground">
+                    Add Plant
+                  </span>
                 </div>
-                <span className="text-xs mt-2 font-medium">Light</span>
-                <span className="text-sm font-bold">{weatherData.lightLevel}</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <div className="w-12 h-12 rounded-full bg-[#E8F5E9] flex items-center justify-center text-[#2E7D32] shadow-sm">
-                  <Thermometer className="w-5 h-5" />
-                </div>
-                <span className="text-xs mt-2 font-medium">Temp</span>
-                <span className="text-sm font-bold">{weatherData.temperature}</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <div className="w-12 h-12 rounded-full bg-[#E8F5E9] flex items-center justify-center text-[#2E7D32] shadow-sm">
-                  <Wind className="w-5 h-5" />
-                </div>
-                <span className="text-xs mt-2 font-medium">Humidity</span>
-                <span className="text-sm font-bold">{weatherData.humidity}</span>
-              </div>
-            </div>
+              ))
+            )}
           </div>
-        </Card>
+        </ScrollArea>
       </div>
     );
   };
 
   return (
-    <div className="relative flex flex-col h-screen w-full bg-[#FFFFFF] text-[#333333] overflow-hidden">
+    <div className="relative flex flex-col h-screen w-full bg-background text-foreground overflow-hidden">
       {/* Main Content */}
-      <div className="flex-1 overflow-auto pb-16">
-        {/* Top Bar - Now part of the scrollable content */}
-        <div className="w-full bg-white shadow-sm">
-          <div className="flex items-center justify-between px-4 py-3">
-            <div>
-              <h1 className="text-lg font-semibold text-[#17A34A]">
-                {getGreeting()}, {getUserDisplayName()}
-              </h1>
-              <p className="text-xs text-gray-500">{getCurrentDate()}</p>
-            </div>
+      <div className="flex-1 overflow-auto pb-24">
+        {/* Header with location and profile */}
+        <div className="w-full bg-background">
+          <div className="flex items-start justify-between px-4 py-4">
+            <LocationSelector
+              currentLocation={currentLocation}
+              onLocationChange={handleLocationChange}
+              className="flex-1"
+            />
             <Avatar
-              className="h-10 w-10 cursor-pointer ring-2 ring-[#17A34A]/10"
-              id="avatar-button"
+              className="h-10 w-10 cursor-pointer ring-2 ring-border ml-3"
               onClick={() => onNavigate ? onNavigate("profile") : setShowProfile(true)}
             >
               <AvatarImage src={currentUser?.photoURL || ""} />
-              <AvatarFallback className="bg-[#8BC34A] text-white">{getUserInitials()}</AvatarFallback>
+              <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
+                {getUserInitials()}
+              </AvatarFallback>
             </Avatar>
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="px-4 py-3">
-          <div className="relative">
-            <Input
-              className="pl-10 pr-4 py-3 w-full bg-[#F5F7F5] border-none rounded-xl focus:outline-none focus:ring-2 focus:ring-[#17A34A] focus:border-transparent text-base shadow-sm"
-              placeholder="Search plants..."
-              style={{
-                WebkitAppearance: "none",
-                fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-              }}
-            />
-            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
-              <Search className="w-4 h-4" />
-            </span>
+        {/* Weather & Watering Guide Combined */}
+        {weatherData && (
+          <div className="px-4 py-3">
+            <WateringRecommendations weatherData={weatherData} />
           </div>
-        </div>
+        )}
 
         {/* Quick Actions */}
-        <div className="px-4 py-2">
-          <div className="grid grid-cols-4 gap-4">
-            {quickActions.map((action) => (
-              <div key={action.id} className="flex flex-col items-center cursor-pointer">
-                <div className="w-14 h-14 rounded-xl bg-white shadow-lg flex items-center justify-center text-2xl hover:shadow-xl transition-shadow relative">
-                  {action.icon}
-                </div>
-                <span className="text-xs mt-2 text-center font-medium">
-                  {action.name}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+        {renderQuickActions()}
 
-        {/* Plant Health Summary */}
-        {renderPlantHealthSummary()}
+        {/* My Plants Overview */}
+        {renderMyPlants()}
 
-        {/* Daily Care Tasks */}
+        {/* Pending To-do List */}
         <div className="px-4 py-3">
           <div className="flex justify-between items-center mb-3">
-            <h2 className="text-lg font-semibold">Today's Plant Care</h2>
-            <Badge variant="outline" className="bg-[#E8F5E9] text-[#2E7D32] border-none px-3 py-1 text-sm font-medium">
-              {tasks.filter(t => !t.completed).length} remaining
-            </Badge>
+            <h2 className="text-base font-semibold text-foreground">Pending To-do</h2>
           </div>
+          
           {loading ? (
-            <div className="flex flex-col justify-center items-center h-40 space-y-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-600 border-t-transparent"></div>
-              <p className="text-green-700 text-sm">Looking for your green friends...</p>
+            <div className="space-y-3">
+              {Array.from({ length: 3 }, (_, i) => (
+                <Card key={i} className="p-3">
+                  <div className="animate-pulse">
+                    <div className="h-4 bg-muted rounded mb-2"></div>
+                    <div className="h-3 bg-muted rounded w-3/4"></div>
+                  </div>
+                </Card>
+              ))}
             </div>
           ) : (
-            <ScrollArea className="h-[320px] pr-2">
-              {tasks.length > 0 ? (
-                tasks.map((task) => (
-                  <Card
-                    key={task.id}
-                    className={`mb-3 p-3 flex items-center ${
-                      task.completed ? "bg-gray-50" : "bg-white"
-                    } shadow-md rounded-xl hover:shadow-lg transition-shadow`}
-                  >
-                    <div className="h-14 w-14 rounded-lg overflow-hidden mr-3 flex-shrink-0 shadow-sm">
-                      <img
-                        src={task.image}
-                        alt={task.plant}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className={`font-semibold ${task.completed ? "text-gray-400" : "text-gray-800"}`}>
-                        {task.plant}
-                      </h3>
-                      <div className="flex items-center">
-                        <Badge variant="outline" className={`mr-2 ${task.completed ? "bg-gray-100 text-gray-400" : "bg-[#E8F5E9] text-[#2E7D32]"} border-none`}>
-                          {task.task}
-                        </Badge>
-                        <span className="text-xs text-gray-500">Due today</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-center">
-                      <Checkbox
-                        id={`task-${task.id}`}
-                        checked={task.completed}
-                        onCheckedChange={() => handleTaskToggle(task.id)}
-                        className="h-5 w-5 cursor-pointer"
-                      />
-                    </div>
-                  </Card>
-                ))
-              ) : (
-                <div className="flex flex-col items-center justify-center h-40 text-gray-500">
-                  <p>No plants added yet.</p>
-                  <Button 
-                    onClick={() => onNavigate && onNavigate("add-plant")}
-                    variant="outline" 
-                    className="mt-2 bg-[#E8F5E9] text-[#2E7D32] hover:bg-[#C8E6C9]"
-                  >
-                    Add Your First Plant
-                  </Button>
-                </div>
-              )}
-            </ScrollArea>
+            <div className="text-center py-8 text-muted-foreground">
+              <p>To-do coming soon wrt your plants! 🌱</p>
+            </div>
           )}
         </div>
+      </div>
+
+      {/* Floating Search Bar */}
+      <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-10">
+        <Button
+          onClick={() => setShowSearchOverlay(true)}
+          className="bg-card border border-border text-muted-foreground hover:bg-accent rounded-full px-6 py-2 shadow-lg"
+          variant="outline"
+        >
+          <Search className="w-4 h-4 mr-2" />
+          search
+        </Button>
       </div>
 
       {/* Bottom Navigation */}
@@ -410,15 +401,23 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           if (page === 'track') {
             onNavigate ? onNavigate("track") : null;
           } else if (page === 'ai') {
-            // Navigate to AI chat when implemented
-            onNavigate ? onNavigate("ai-chat") : null;
+            toast({ title: "Arth AI", description: "Coming soon!" });
+          } else if (page === 'plants') {
+            toast({ title: "Plants", description: "Coming soon!" });
           }
-          // No need to navigate for 'home' as we're already here
         }}
       />
 
       {/* Profile Page */}
       {showProfile && !onNavigate && <ProfilePage onBack={() => setShowProfile(false)} />}
+
+      {/* Search Overlay */}
+      {showSearchOverlay && (
+        <SearchOverlay
+          onClose={() => setShowSearchOverlay(false)}
+          onSelectPlant={handlePlantSelect}
+        />
+      )}
     </div>
   );
 };
