@@ -471,10 +471,10 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
           </div>
           
           <h1 className="text-2xl font-bold text-green-700 mb-4">Welcome to Botanica</h1>
-          <p className="text-gray-600 mb-6">Let's set up your plant care assistant to help your green friends thrive. We'll need a few details to get started.</p>
+          <p className="text-muted-foreground mb-6">Let's set up your plant care assistant to help your green friends thrive. We'll need a few details to get started.</p>
           
           <div className="mb-6">
-            <Label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">What should we call you?</Label>
+            <Label htmlFor="name" className="block text-sm font-medium text-foreground mb-1">What should we call you?</Label>
             <Input 
               id="name" 
               type="text" 
@@ -486,30 +486,30 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
           </div>
           
           <div className="mb-6">
-            <Label className="block text-sm font-medium text-gray-700 mb-3">What's your gardening experience?</Label>
+            <Label className="block text-sm font-medium text-foreground mb-3">What's your gardening experience?</Label>
             <RadioGroup 
               value={formData.experience} 
               onValueChange={(value: 'beginner' | 'intermediate' | 'expert') => handleInputChange('experience', value)} 
               className="flex flex-col space-y-2"
             >
-              <div className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:border-green-500 cursor-pointer">
-                <RadioGroupItem value="beginner" id="beginner" className="text-green-600 bg-white" />
+              <div className="flex items-center space-x-3 p-3 rounded-lg border border-input hover:border-primary cursor-pointer">
+                <RadioGroupItem value="beginner" id="beginner" className="text-primary bg-background" />
                 <Label htmlFor="beginner" className="flex items-center cursor-pointer">
-                  <Leaf className="w-4 h-4 mr-2 text-green-600" />
+                  <Leaf className="w-4 h-4 mr-2 text-primary" />
                   <span>Beginner - Just getting started</span>
                 </Label>
               </div>
-              <div className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:border-green-500 cursor-pointer">
-                <RadioGroupItem value="intermediate" id="intermediate" className="text-green-600 bg-white" />
+              <div className="flex items-center space-x-3 p-3 rounded-lg border border-input hover:border-primary cursor-pointer">
+                <RadioGroupItem value="intermediate" id="intermediate" className="text-primary bg-background" />
                 <Label htmlFor="intermediate" className="flex items-center cursor-pointer">
-                  <Leaf className="w-4 h-4 mr-2 text-green-600" />
+                  <Leaf className="w-4 h-4 mr-2 text-primary" />
                   <span>Intermediate - Some experience</span>
                 </Label>
               </div>
-              <div className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:border-green-500 cursor-pointer">
-                <RadioGroupItem value="expert" id="expert" className="text-green-600 bg-white" />
+              <div className="flex items-center space-x-3 p-3 rounded-lg border border-input hover:border-primary cursor-pointer">
+                <RadioGroupItem value="expert" id="expert" className="text-primary bg-background" />
                 <Label htmlFor="expert" className="flex items-center cursor-pointer">
-                  <Leaf className="w-4 h-4 mr-2 text-green-600" />
+                  <Leaf className="w-4 h-4 mr-2 text-primary" />
                   <span>Expert - Green thumb certified</span>
                 </Label>
               </div>

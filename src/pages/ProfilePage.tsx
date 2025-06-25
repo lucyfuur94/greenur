@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useOnboarding } from "@/lib/OnboardingContext";
+import { useTheme } from "@/lib/ThemeContext";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -31,8 +32,8 @@ interface ProfilePageProps {
 const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
   const { currentUser } = useAuth();
   const { userPreferences, updateUserPreferences } = useOnboarding();
+  const { theme, setTheme } = useTheme();
   const { toast } = useToast();
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
   const [editing, setEditing] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [tempPreferences, setTempPreferences] = useState({
@@ -246,31 +247,31 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-white z-50 overflow-auto">
+    <div className="fixed inset-0 bg-background z-50 overflow-auto">
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="flex items-center px-4 py-3 border-b">
+        <div className="flex items-center px-4 py-3 border-b border-border bg-background">
           <Button
             variant="ghost"
-            className="rounded-full hover:bg-[#E8F5E9] hover:text-[#2E7D32]"
+            className="rounded-full hover:bg-accent hover:text-accent-foreground"
             onClick={onBack}
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-lg font-semibold ml-2">Profile</h1>
+          <h1 className="text-lg font-semibold ml-2 text-foreground">Profile</h1>
         </div>
         {/* Profile Content */}
         <div className="flex-1 p-4 space-y-4 overflow-auto">
           {/* User Info Card */}
-          <Card className="p-4 shadow-md">
+          <Card className="p-4 shadow-md bg-card border-border">
             <div className="flex items-center space-x-4">
               <div className="relative">
-                <Avatar className="h-16 w-16 ring-2 ring-[#17A34A]/10">
+                <Avatar className="h-16 w-16 ring-2 ring-primary/20">
                   <AvatarImage src={currentUser?.photoURL || ""} />
-                  <AvatarFallback className="bg-[#8BC34A] text-white">{getUserInitials()}</AvatarFallback>
+                  <AvatarFallback className="bg-primary text-primary-foreground">{getUserInitials()}</AvatarFallback>
                 </Avatar>
-                <label htmlFor="profile-image-upload" className="absolute -bottom-1 -right-1 bg-white p-1 rounded-full cursor-pointer shadow-md hover:bg-gray-100">
-                  <User className="w-4 h-4 text-[#2E7D32]" />
+                <label htmlFor="profile-image-upload" className="absolute -bottom-1 -right-1 bg-background border border-border p-1 rounded-full cursor-pointer shadow-md hover:bg-accent">
+                  <User className="w-4 h-4 text-primary" />
                   <input 
                     id="profile-image-upload" 
                     type="file" 
@@ -282,25 +283,25 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold">
+                  <h2 className="text-xl font-semibold text-card-foreground">
                     {userPreferences?.name || getUserDisplayName()}
                   </h2>
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="text-[#2E7D32] hover:bg-[#E8F5E9]"
+                    className="text-primary hover:bg-accent hover:text-accent-foreground"
                     onClick={() => startEditing('name')}
                   >
                     Edit
                   </Button>
                 </div>
-                <p className="text-gray-500">{getUserEmail()}</p>
+                <p className="text-muted-foreground">{getUserEmail()}</p>
                 
                 {profileImageFile && (
                   <div className="mt-2 flex items-center">
                     <Button 
                       size="sm" 
-                      className="mr-2 bg-green-600 hover:bg-green-700 text-white"
+                      className="mr-2 bg-primary hover:bg-primary/90 text-primary-foreground"
                       onClick={uploadProfileImage}
                       disabled={uploading}
                     >
@@ -322,7 +323,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
                   <Button 
                     size="sm" 
                     variant="outline" 
-                    className="mt-2 text-red-500 hover:text-red-600 hover:bg-red-50"
+                    className="mt-2 text-destructive hover:text-destructive hover:bg-destructive/10"
                     onClick={removeProfileImage}
                     disabled={uploading}
                   >
@@ -334,8 +335,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
             </div>
             
             {editing === 'name' && (
-              <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                <Label htmlFor="name" className="text-sm font-medium text-gray-700">Display Name</Label>
+              <div className="mt-4 p-3 bg-muted rounded-lg">
+                <Label htmlFor="name" className="text-sm font-medium text-muted-foreground">Display Name</Label>
                 <Input 
                   id="name"
                   value={tempPreferences.name} 
@@ -344,33 +345,33 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
                 />
                 <div className="flex justify-end space-x-2 mt-3">
                   <Button variant="outline" size="sm" onClick={cancelEditing}>Cancel</Button>
-                  <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => saveChanges('name')}>Save</Button>
+                  <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => saveChanges('name')}>Save</Button>
                 </div>
               </div>
             )}
           </Card>
 
           {/* Gardening Preferences */}
-          <Card className="shadow-md">
-            <div className="p-4 border-b">
-              <h3 className="text-md font-medium">Gardening Preferences</h3>
+          <Card className="shadow-md bg-card border-border">
+            <div className="p-4 border-b border-border">
+              <h3 className="text-md font-medium text-card-foreground">Gardening Preferences</h3>
             </div>
             <div className="p-4 space-y-4">
               {/* Experience Level */}
               <div className="flex justify-between items-center">
                 <div className="flex items-center">
-                  <div className="w-10 h-10 rounded-full bg-[#E8F5E9] flex items-center justify-center text-[#2E7D32] mr-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary mr-3">
                     <Leaf className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Experience Level</p>
-                    <p className="font-medium">{formatExperience(userPreferences?.experience)}</p>
+                    <p className="text-sm text-muted-foreground">Experience Level</p>
+                    <p className="font-medium text-card-foreground">{formatExperience(userPreferences?.experience)}</p>
                   </div>
                 </div>
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  className="text-[#2E7D32] hover:bg-[#E8F5E9]"
+                  className="text-primary hover:bg-accent hover:text-accent-foreground"
                   onClick={() => startEditing('experience')}
                 >
                   Change
@@ -380,18 +381,18 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
               {/* Garden Type */}
               <div className="flex justify-between items-center">
                 <div className="flex items-center">
-                  <div className="w-10 h-10 rounded-full bg-[#E8F5E9] flex items-center justify-center text-[#2E7D32] mr-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary mr-3">
                     <Home className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Garden Type</p>
-                    <p className="font-medium">{formatGardenType(userPreferences?.gardenType)}</p>
+                    <p className="text-sm text-muted-foreground">Garden Type</p>
+                    <p className="font-medium text-card-foreground">{formatGardenType(userPreferences?.gardenType)}</p>
                   </div>
                 </div>
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  className="text-[#2E7D32] hover:bg-[#E8F5E9]"
+                  className="text-primary hover:bg-accent hover:text-accent-foreground"
                   onClick={() => startEditing('gardenType')}
                 >
                   Change
@@ -399,8 +400,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
               </div>
 
               {editing === 'gardenType' && (
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <Label className="text-sm font-medium text-gray-700 mb-2 block">Garden Type</Label>
+                <div className="p-3 bg-muted rounded-lg">
+                  <Label className="text-sm font-medium text-muted-foreground mb-2 block">Garden Type</Label>
                   <Select 
                     value={tempPreferences.gardenType} 
                     onValueChange={(value) => setTempPreferences(prev => ({ ...prev, gardenType: value }))}
@@ -416,14 +417,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
                   </Select>
                   <div className="flex justify-end space-x-2 mt-3">
                     <Button variant="outline" size="sm" onClick={cancelEditing}>Cancel</Button>
-                    <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => saveChanges('gardenType')}>Save</Button>
+                    <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => saveChanges('gardenType')}>Save</Button>
                   </div>
                 </div>
               )}
               
               {editing === 'experience' && (
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <Label className="text-sm font-medium text-gray-700 mb-2 block">Experience Level</Label>
+                <div className="p-3 bg-muted rounded-lg">
+                  <Label className="text-sm font-medium text-muted-foreground mb-2 block">Experience Level</Label>
                   <Select 
                     value={userPreferences?.experience || 'beginner'} 
                     onValueChange={(value) => updateUserPreferences({ experience: value as 'beginner' | 'intermediate' | 'expert' })}
@@ -439,7 +440,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
                   </Select>
                   <div className="flex justify-end space-x-2 mt-3">
                     <Button variant="outline" size="sm" onClick={cancelEditing}>Cancel</Button>
-                    <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => setEditing(null)}>Save</Button>
+                    <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setEditing(null)}>Save</Button>
                   </div>
                 </div>
               )}
@@ -447,15 +448,15 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
           </Card>
 
           {/* Theme Selector */}
-          <Card className="p-4 shadow-md">
-            <h3 className="text-sm font-medium mb-3">Theme</h3>
+          <Card className="p-4 shadow-md bg-card border-border">
+            <h3 className="text-sm font-medium mb-3 text-card-foreground">Theme</h3>
             <div className="flex space-x-2">
               {(['light', 'dark', 'system'] as const).map((t) => (
                 <Button
                   key={t}
                   variant={theme === t ? "default" : "outline"}
                   className={`flex-1 capitalize rounded-xl ${
-                    theme === t ? 'bg-[#17A34A] text-white' : 'hover:bg-[#E8F5E9] hover:text-[#2E7D32]'
+                    theme === t ? 'bg-primary text-primary-foreground' : 'hover:bg-accent hover:text-accent-foreground'
                   }`}
                   onClick={() => setTheme(t)}
                 >
@@ -472,31 +473,31 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
           <div className="space-y-3">
             <Button
               variant="outline"
-              className="w-full justify-between rounded-xl shadow-sm hover:shadow-md transition-shadow"
+              className="w-full justify-between rounded-xl shadow-sm hover:shadow-md transition-shadow bg-card hover:bg-accent"
             >
               <div className="flex items-center">
-                <User className="w-5 h-5 mr-2 text-[#2E7D32]" />
-                <span>Account Settings</span>
+                <User className="w-5 h-5 mr-2 text-primary" />
+                <span className="text-card-foreground">Account Settings</span>
               </div>
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-5 h-5 text-muted-foreground" />
             </Button>
             <Button
               variant="outline"
-              className="w-full justify-between rounded-xl shadow-sm hover:shadow-md transition-shadow"
+              className="w-full justify-between rounded-xl shadow-sm hover:shadow-md transition-shadow bg-card hover:bg-accent"
               onClick={() => console.log('Notification preferences')}
             >
               <div className="flex items-center">
-                <Bell className="w-5 h-5 mr-2 text-[#2E7D32]" />
-                <span>Notification Preferences</span>
+                <Bell className="w-5 h-5 mr-2 text-primary" />
+                <span className="text-card-foreground">Notification Preferences</span>
               </div>
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-5 h-5 text-muted-foreground" />
             </Button>
           </div>
 
           {/* Sign Out Button */}
           <Button
             variant="outline"
-            className="w-full border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600"
+            className="w-full border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
             onClick={handleSignOut}
           >
             <LogOut className="w-4 h-4 mr-2" />

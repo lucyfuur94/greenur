@@ -282,11 +282,11 @@ const TrackPage: React.FC = () => {
 
   const renderSkeletonLoader = () => (
     <div className="container mx-auto p-4 space-y-6">
-      <div className="bg-white rounded-xl shadow-md p-6 animate-pulse">
-        <div className="h-4 bg-gray-300 rounded w-1/4 mb-2"></div>
-        <div className="h-6 bg-gray-300 rounded w-1/2 mb-4"></div>
-        <div className="h-32 bg-gray-300 rounded"></div>
-      </div>
+                  <div className="bg-card rounded-xl shadow-md p-6 animate-pulse border border-border">
+              <div className="h-4 bg-muted rounded w-1/4 mb-2"></div>
+              <div className="h-6 bg-muted rounded w-1/2 mb-4"></div>
+              <div className="h-32 bg-muted rounded"></div>
+            </div>
     </div>
   );
 
@@ -318,18 +318,18 @@ const TrackPage: React.FC = () => {
               <div className="flex flex-col items-center">
                 <div className={`
                   w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium
-                  ${isActive ? 'bg-green-600 text-white' : ''}
-                  ${isCompleted ? 'bg-green-500 text-white' : ''}
-                  ${isUpcoming ? 'bg-gray-200 text-gray-500' : ''}
+                  ${isActive ? 'bg-primary text-primary-foreground' : ''}
+                  ${isCompleted ? 'bg-primary/80 text-primary-foreground' : ''}
+                  ${isUpcoming ? 'bg-muted text-muted-foreground' : ''}
                 `}>
                   <Icon className="w-5 h-5" />
                 </div>
-                <span className={`text-xs mt-1 ${isActive ? 'text-green-600 font-medium' : 'text-gray-500'}`}>
+                <span className={`text-xs mt-1 ${isActive ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
                   {step.label}
                 </span>
               </div>
               {index < steps.length - 1 && (
-                <div className={`flex-1 h-0.5 mx-2 ${index < currentIndex ? 'bg-green-500' : 'bg-gray-200'}`} />
+                <div className={`flex-1 h-0.5 mx-2 ${index < currentIndex ? 'bg-primary' : 'bg-border'}`} />
               )}
             </React.Fragment>
           );
@@ -342,9 +342,9 @@ const TrackPage: React.FC = () => {
     // Step 1: Pairing Code Input
     if (currentStep === 'scan') {
       return (
-        <Card className="bg-white shadow-md rounded-xl overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50 pb-3">
-            <CardTitle className="text-lg text-green-800 flex items-center">
+        <Card className="bg-card shadow-md rounded-xl overflow-hidden border border-border">
+          <CardHeader className="bg-primary/5 pb-3">
+            <CardTitle className="text-lg text-primary flex items-center">
               <Hash className="w-5 h-5 mr-2" />
               Step 1: Enter Pairing Code
             </CardTitle>
@@ -354,15 +354,15 @@ const TrackPage: React.FC = () => {
           </CardHeader>
           <CardContent className="p-6">
             <div className="mb-6 text-center">
-              <Hash className="w-16 h-16 mx-auto text-green-600 mb-4" />
-              <p className="text-gray-700 mb-4">
+              <Hash className="w-16 h-16 mx-auto text-primary mb-4" />
+              <p className="text-card-foreground mb-4">
                 Power on your Pulse device and enter the 9-character pairing code shown on its display.
               </p>
             </div>
             
             <div className="space-y-4">
               <div>
-                <Label htmlFor="pairingCode" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="pairingCode" className="text-sm font-medium text-card-foreground">
                   Pairing Code
                 </Label>
                 <input
@@ -395,19 +395,19 @@ const TrackPage: React.FC = () => {
                       e.preventDefault();
                     }
                   }}
-                  className="w-full p-3 text-center text-lg font-mono tracking-wider border border-gray-200 rounded-xl focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100 bg-white shadow-sm transition-all duration-200"
+                  className="w-full p-3 text-center text-lg font-mono tracking-wider border border-input rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 bg-background shadow-sm transition-all duration-200 text-foreground"
                   maxLength={9}
                   autoComplete="one-time-code"
                 />
                 {pairingError && (
-                  <p className="text-red-600 text-sm mt-1">{pairingError}</p>
+                  <p className="text-destructive text-sm mt-1">{pairingError}</p>
                 )}
               </div>
               
               <Button 
                 onClick={handlePairingCodeSubmit}
                 disabled={pairingCode.length !== 9}
-                className="w-full bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-300"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground disabled:bg-muted disabled:text-muted-foreground"
                 size="lg"
               >
                 <Hash className="w-5 h-5 mr-2" />
@@ -422,9 +422,9 @@ const TrackPage: React.FC = () => {
     // Step 2: Device Registration
     if (currentStep === 'register') {
       return (
-        <Card className="bg-white shadow-md rounded-xl overflow-hidden">
-          <CardHeader className="bg-green-50 pb-3">
-            <CardTitle className="text-lg text-green-800 flex items-center">
+        <Card className="bg-card shadow-md rounded-xl overflow-hidden border border-border">
+          <CardHeader className="bg-primary/5 pb-3">
+            <CardTitle className="text-lg text-primary flex items-center">
               <CheckCircle className="w-5 h-5 mr-2" />
               Step 2: Registering Device
             </CardTitle>
@@ -433,21 +433,21 @@ const TrackPage: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="flex items-center justify-center p-6 bg-blue-50 rounded-lg">
+            <div className="flex items-center justify-center p-6 bg-blue-500/10 dark:bg-blue-500/20 rounded-lg border border-blue-500/30">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-4"></div>
               <div>
-                <p className="text-blue-700 font-medium">Registering device to your account...</p>
-                <p className="text-blue-600 text-sm mt-1">This will only take a moment</p>
+                <p className="text-blue-700 dark:text-blue-300 font-medium">Registering device to your account...</p>
+                <p className="text-blue-600 dark:text-blue-400 text-sm mt-1">This will only take a moment</p>
               </div>
             </div>
             {registrationError && (
-              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="mt-4 p-4 bg-red-500/10 dark:bg-red-500/20 border border-red-500/30 rounded-lg">
                 <div className="flex items-center">
                   <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
-                  <span className="text-red-700">{registrationError}</span>
+                  <span className="text-red-700 dark:text-red-300">{registrationError}</span>
                 </div>
                 {registrationError.includes('Unauthorized') && (
-                  <div className="mt-2 text-sm text-red-600">
+                  <div className="mt-2 text-sm text-red-600 dark:text-red-400">
                     Please make sure you are logged in and try again.
                   </div>
                 )}
@@ -469,9 +469,9 @@ const TrackPage: React.FC = () => {
     // Step 3: WiFi Connection
     if (currentStep === 'wifi-connect') {
       return (
-        <Card className="bg-white shadow-md rounded-xl overflow-hidden">
-          <CardHeader className="bg-blue-50 pb-3">
-            <CardTitle className="text-lg text-blue-800 flex items-center">
+        <Card className="bg-card shadow-md rounded-xl overflow-hidden border border-border">
+          <CardHeader className="bg-blue-500/5 pb-3">
+            <CardTitle className="text-lg text-blue-600 dark:text-blue-400 flex items-center">
               <Wifi className="w-5 h-5 mr-2" />
               Step 3: Connect to Device WiFi
             </CardTitle>
@@ -482,11 +482,11 @@ const TrackPage: React.FC = () => {
           <CardContent className="p-6 space-y-4">
             <div className="text-center">
               <Wifi className="w-16 h-16 mx-auto text-blue-600 mb-4" />
-              <p className="text-gray-700 mb-2">
+              <p className="text-foreground mb-2">
                 Your device is broadcasting a WiFi hotspot:
               </p>
-              <div className="bg-blue-50 p-3 rounded-lg mb-4">
-                <code className="text-blue-800 font-mono text-sm">
+              <div className="bg-blue-500/10 dark:bg-blue-500/20 p-3 rounded-lg mb-4 border border-blue-500/30">
+                <code className="text-blue-800 dark:text-blue-200 font-mono text-sm">
                   {scannedDevice?.setupWifi}
                 </code>
               </div>
@@ -513,7 +513,7 @@ const TrackPage: React.FC = () => {
               </Button>
 
               <div className="text-center">
-                <span className="text-gray-500 text-sm">or</span>
+                <span className="text-muted-foreground text-sm">or</span>
               </div>
 
               <Button 
@@ -526,13 +526,13 @@ const TrackPage: React.FC = () => {
               </Button>
             </div>
 
-                         {wifiConnectionStatus === 'failed' && (
-               <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                                    {wifiConnectionStatus === 'failed' && (
+               <div className="mt-4 p-4 bg-yellow-500/10 dark:bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
                  <div className="flex items-start">
                    <AlertCircle className="w-5 h-5 text-yellow-500 mr-2 mt-0.5" />
                    <div>
-                     <p className="text-yellow-800 font-medium">Automatic connection not available</p>
-                     <p className="text-yellow-700 text-sm mt-1">
+                     <p className="text-yellow-800 dark:text-yellow-200 font-medium">Automatic connection not available</p>
+                     <p className="text-yellow-700 dark:text-yellow-300 text-sm mt-1">
                        Please go to your phone's WiFi settings and connect to "{scannedDevice?.setupWifi}" manually, then click "I'll Connect Manually" above.
                      </p>
                    </div>
@@ -540,12 +540,12 @@ const TrackPage: React.FC = () => {
                </div>
              )}
 
-             <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+             <div className="mt-4 p-4 bg-blue-500/10 dark:bg-blue-500/20 border border-blue-500/30 rounded-lg">
                <div className="flex items-start">
                  <AlertCircle className="w-5 h-5 text-blue-500 mr-2 mt-0.5" />
                  <div>
-                   <p className="text-blue-800 font-medium">Important: Internet Access</p>
-                   <p className="text-blue-700 text-sm mt-1">
+                   <p className="text-blue-800 dark:text-blue-200 font-medium">Important: Internet Access</p>
+                   <p className="text-blue-700 dark:text-blue-300 text-sm mt-1">
                      Once connected to the device WiFi, you'll lose internet access temporarily. This is normal - the device WiFi is only for configuration.
                    </p>
                  </div>
@@ -559,9 +559,9 @@ const TrackPage: React.FC = () => {
     // Step 4: WiFi Configuration
     if (currentStep === 'wifi-config') {
       return (
-        <Card className="bg-white shadow-md rounded-xl overflow-hidden">
-          <CardHeader className="bg-purple-50 pb-3">
-            <CardTitle className="text-lg text-purple-800 flex items-center">
+        <Card className="bg-card shadow-md rounded-xl overflow-hidden border border-border">
+          <CardHeader className="bg-purple-500/5 pb-3">
+            <CardTitle className="text-lg text-purple-800 dark:text-purple-200 flex items-center">
               <Smartphone className="w-5 h-5 mr-2" />
               Step 4: Configure Home WiFi
             </CardTitle>
@@ -572,14 +572,14 @@ const TrackPage: React.FC = () => {
           <CardContent className="p-6 space-y-4">
             <div className="text-center mb-4">
               <Smartphone className="w-16 h-16 mx-auto text-purple-600 mb-4" />
-              <p className="text-gray-700 mb-4">
+              <p className="text-foreground mb-4">
                 Now configure your device to connect to your home WiFi network
               </p>
             </div>
 
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <h4 className="font-medium text-purple-800 mb-2">Configuration Steps:</h4>
-              <ol className="text-sm text-purple-700 space-y-1 list-decimal list-inside">
+            <div className="bg-purple-500/10 dark:bg-purple-500/20 p-4 rounded-lg border border-purple-500/30">
+              <h4 className="font-medium text-purple-800 dark:text-purple-200 mb-2">Configuration Steps:</h4>
+              <ol className="text-sm text-purple-700 dark:text-purple-300 space-y-1 list-decimal list-inside">
                 <li>Open the device configuration page</li>
                 <li>Click "Scan for Networks"</li>
                 <li>Select your home WiFi network</li>
@@ -597,12 +597,12 @@ const TrackPage: React.FC = () => {
               Open Device Config Page
             </Button>
 
-                         <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                         <div className="bg-orange-500/10 dark:bg-orange-500/20 p-4 rounded-lg border border-orange-500/30">
                <div className="flex items-start">
                  <AlertCircle className="w-5 h-5 text-orange-500 mr-2 mt-0.5" />
                  <div>
-                   <p className="text-orange-800 font-medium">No Internet While Connected</p>
-                   <p className="text-orange-700 text-sm mt-1">
+                   <p className="text-orange-800 dark:text-orange-200 font-medium">No Internet While Connected</p>
+                   <p className="text-orange-700 dark:text-orange-300 text-sm mt-1">
                      While connected to the device WiFi, you won't have internet access. This is normal - only the device configuration page (192.168.4.1) will work.
                    </p>
                  </div>
@@ -610,8 +610,8 @@ const TrackPage: React.FC = () => {
              </div>
 
              <div className="text-center">
-               <p className="text-xs text-gray-500 mb-3">
-                 Or go to: <code className="bg-gray-100 px-1 rounded">http://192.168.4.1</code>
+               <p className="text-xs text-muted-foreground mb-3">
+                 Or go to: <code className="bg-muted px-1 rounded">http://192.168.4.1</code>
                </p>
                <Button 
                  onClick={handleWifiConfigComplete}
@@ -630,9 +630,9 @@ const TrackPage: React.FC = () => {
     // Step 5: Setup Complete
     if (currentStep === 'complete') {
       return (
-        <Card className="bg-white shadow-md rounded-xl overflow-hidden">
-          <CardHeader className="bg-green-50 pb-3">
-            <CardTitle className="text-lg text-green-800 flex items-center">
+        <Card className="bg-card shadow-md rounded-xl overflow-hidden border border-border">
+          <CardHeader className="bg-green-500/5 pb-3">
+            <CardTitle className="text-lg text-green-800 dark:text-green-200 flex items-center">
               <CheckCircle className="w-5 h-5 mr-2" />
               Setup Complete!
             </CardTitle>
@@ -643,21 +643,21 @@ const TrackPage: React.FC = () => {
           <CardContent className="p-6">
             <div className="text-center space-y-4">
               <CheckCircle className="w-16 h-16 mx-auto text-green-600 mb-4" />
-              <div className="bg-green-50 p-4 rounded-lg">
-                <p className="text-green-800 font-medium mb-2">
+              <div className="bg-green-500/10 dark:bg-green-500/20 p-4 rounded-lg border border-green-500/30">
+                <p className="text-green-800 dark:text-green-200 font-medium mb-2">
                   🎉 Congratulations!
                 </p>
-                <p className="text-green-700 text-sm">
+                <p className="text-green-700 dark:text-green-300 text-sm">
                   Your Pulse device is now registered and should start sending data within a few minutes. 
                   The device will automatically connect to your home WiFi and begin monitoring your plant.
                 </p>
               </div>
-                             <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200 mb-4">
+                             <div className="bg-yellow-500/10 dark:bg-yellow-500/20 p-4 rounded-lg border border-yellow-500/30 mb-4">
                  <div className="flex items-start">
                    <AlertCircle className="w-5 h-5 text-yellow-500 mr-2 mt-0.5" />
                    <div>
-                     <p className="text-yellow-800 font-medium">Reconnect to Your Home WiFi</p>
-                     <p className="text-yellow-700 text-sm mt-1">
+                     <p className="text-yellow-800 dark:text-yellow-200 font-medium">Reconnect to Your Home WiFi</p>
+                     <p className="text-yellow-700 dark:text-yellow-300 text-sm mt-1">
                        Make sure to reconnect your phone to your home WiFi network before checking device status, as you'll need internet access.
                      </p>
                    </div>
@@ -665,7 +665,7 @@ const TrackPage: React.FC = () => {
                </div>
                <Button 
                  onClick={handleRefreshDeviceStatus}
-                 className="w-full bg-green-600 hover:bg-green-700 text-white"
+                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                  size="lg"
                  disabled={isLoading}
                >
@@ -674,10 +674,10 @@ const TrackPage: React.FC = () => {
                </Button>
                
                {registrationError && (
-                 <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                 <div className="mt-4 p-4 bg-red-500/10 dark:bg-red-500/20 border border-red-500/30 rounded-lg">
                    <div className="flex items-center">
                      <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
-                     <span className="text-red-700">{registrationError}</span>
+                     <span className="text-red-700 dark:text-red-300">{registrationError}</span>
                    </div>
                    <Button 
                      onClick={resetWizard}
@@ -699,13 +699,13 @@ const TrackPage: React.FC = () => {
   };
 
   return (
-    <div className="relative flex flex-col h-screen w-full bg-[#F5F7F5] text-[#333333] overflow-hidden">
+    <div className="relative flex flex-col h-screen w-full bg-background text-foreground overflow-hidden">
       {/* Main Content */}
       <div className="flex-1 overflow-auto pb-16">
         {/* Top Bar */}
-        <div className="w-full bg-white shadow-sm sticky top-0 z-10">
+        <div className="w-full bg-background shadow-sm sticky top-0 z-10 border-b border-border">
           <div className="flex items-center justify-between px-4 py-3">
-            <h1 className="text-lg font-semibold text-[#17A34A]">Track Your Devices</h1>
+            <h1 className="text-lg font-semibold text-primary">Track Your Devices</h1>
             {deviceConfig && (
                  <Button variant="outline" size="sm" onClick={() => setShowSetupWizard(true)} className="ml-auto">
                     Edit Device

@@ -6,6 +6,7 @@ export interface UserPreferences {
   interests: string[];
   checkupFrequency: string;
   checkupDays: string[];
+  theme?: 'light' | 'dark' | 'system';
   firstPlant?: {
     plantName: string;
     plantId?: string;

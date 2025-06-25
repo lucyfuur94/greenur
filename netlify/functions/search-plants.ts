@@ -12,6 +12,12 @@ const handler: Handler = async (event, context) => {
   if (event.httpMethod !== 'GET') {
     return {
       statusCode: 405,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'GET',
+      },
       body: JSON.stringify({ error: 'Method not allowed' }),
     }
   }
@@ -24,12 +30,32 @@ const handler: Handler = async (event, context) => {
     if (!query.trim()) {
       return {
         statusCode: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Allow-Methods': 'GET',
+        },
         body: JSON.stringify({ error: 'Search query is required' }),
       }
     }
 
+    if (!MONGO_URI) {
+      console.error('MONGO_URI not found in environment variables')
+      return {
+        statusCode: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Allow-Methods': 'GET',
+        },
+        body: JSON.stringify({ error: 'Database configuration error' }),
+      }
+    }
+
     // Connect to MongoDB
-    client = new MongoClient(MONGO_URI!)
+    client = new MongoClient(MONGO_URI)
     await client.connect()
 
     const db = client.db(DB_NAME)
@@ -91,6 +117,13 @@ const handler: Handler = async (event, context) => {
       }]
     }))
 
+    const response = {
+      total,
+      page: pageNum,
+      limit: limitNum,
+      results,
+    }
+
     return {
       statusCode: 200,
       headers: {
@@ -99,17 +132,18 @@ const handler: Handler = async (event, context) => {
         'Access-Control-Allow-Headers': 'Content-Type',
         'Access-Control-Allow-Methods': 'GET',
       },
-      body: JSON.stringify({
-        total,
-        page: pageNum,
-        limit: limitNum,
-        results,
-      }),
+      body: JSON.stringify(response),
     }
   } catch (error) {
     console.error('Error searching plants:', error)
     return {
       statusCode: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'GET',
+      },
       body: JSON.stringify({ error: 'Failed to search plants' }),
     }
   } finally {

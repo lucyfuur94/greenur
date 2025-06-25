@@ -5,6 +5,7 @@ import App from './App'
 import './index.css'
 import { AuthProvider } from './lib/AuthContext'
 import { OnboardingProvider } from './lib/OnboardingContext'
+import { ThemeProvider } from './lib/ThemeContext'
 import { Toaster } from '@/components/ui/toaster'
 import SplashLoader from '@/components/ui/SplashLoader'
 
@@ -33,8 +34,10 @@ const Root = () => {
     <BrowserRouter>
       <AuthProvider>
         <OnboardingProvider>
-          <App />
-          <Toaster />
+          <ThemeProvider>
+            <App />
+            <Toaster />
+          </ThemeProvider>
         </OnboardingProvider>
       </AuthProvider>
     </BrowserRouter>

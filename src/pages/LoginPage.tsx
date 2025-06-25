@@ -97,14 +97,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onNavigate, onBack }) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#17A34A] text-white">
+    <div className="min-h-screen flex flex-col bg-primary text-primary-foreground">
       {/* Header Section with Back Button */}
       <div className="relative w-full pt-4">
         {/* Back Button */}
         <Button
           variant="ghost"
           size="icon"
-          className="absolute top-4 left-4 z-20 bg-white/30 hover:bg-white/50 rounded-full text-green-900"
+          className="absolute top-4 left-4 z-20 bg-white/30 hover:bg-white/50 rounded-full text-primary"
           aria-label="Go back"
           onClick={() => onBack ? onBack() : onNavigate && onNavigate("auth")}
         >
@@ -127,27 +127,27 @@ const LoginPage: React.FC<LoginPageProps> = ({ onNavigate, onBack }) => {
         {/* Input Fields - Improved background and focus states */}
         <form onSubmit={handleEmailAuth} className="w-full max-w-sm space-y-5">
           {/* Email */}
-          <div className="flex items-center bg-white/90 rounded-lg p-3 shadow-md">
-            <User className="h-5 w-5 text-green-700 mr-3 flex-shrink-0" />
+          <div className="flex items-center bg-background/90 rounded-lg p-3 shadow-md">
+            <User className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
             <Input
               type="email"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-transparent border-none focus:ring-2 focus:ring-green-600 focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-0 text-green-900 placeholder-green-700/70 text-base"
+              className="w-full bg-transparent border-none focus:ring-2 focus:ring-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 text-foreground placeholder-muted-foreground text-base"
               required
             />
           </div>
 
           {/* Password */}
-          <div className="flex items-center bg-white/90 rounded-lg p-3 shadow-md">
-            <Lock className="h-5 w-5 text-green-700 mr-3 flex-shrink-0" />
+          <div className="flex items-center bg-background/90 rounded-lg p-3 shadow-md">
+            <Lock className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
             <Input
               type="password"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-transparent border-none focus:ring-2 focus:ring-green-600 focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-0 text-green-900 placeholder-green-700/70 text-base"
+              className="w-full bg-transparent border-none focus:ring-2 focus:ring-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 text-foreground placeholder-muted-foreground text-base"
               required
             />
           </div>
@@ -192,7 +192,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onNavigate, onBack }) => {
           disabled={loading}
           variant="outline"
           size="lg"
-          className="w-full max-w-sm bg-white border-green-300/50 hover:bg-green-100 text-gray-800 font-semibold rounded-full mb-6 text-base"
+                      className="w-full max-w-sm bg-background border-primary/50 hover:bg-primary/10 text-foreground font-semibold rounded-full mb-6 text-base"
         >
           <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
             <path

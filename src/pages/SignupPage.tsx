@@ -60,13 +60,13 @@ const SignupPage: React.FC<SignupPageProps> = ({ onNavigate, onBack }) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#17A34A] text-white relative overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-primary text-primary-foreground relative overflow-hidden">
       {/* Back Button */}
       <div className="absolute top-4 left-4 z-20">
         <Button
           variant="ghost"
           size="icon"
-          className="bg-white/30 hover:bg-white/50 rounded-full text-green-900"
+          className="bg-white/30 hover:bg-white/50 rounded-full text-primary"
           aria-label="Go back"
           onClick={() => onBack ? onBack() : onNavigate && onNavigate("auth")}
         >
@@ -89,55 +89,55 @@ const SignupPage: React.FC<SignupPageProps> = ({ onNavigate, onBack }) => {
         {/* Input Fields */}
         <form onSubmit={handleSignup} className="w-full max-w-sm space-y-4">
           {/* Username Input */}
-          <div className="flex items-center bg-white/90 rounded-lg p-3 shadow-sm">
-            <User className="h-5 w-5 text-green-700 mr-3 flex-shrink-0" />
+          <div className="flex items-center bg-background/90 rounded-lg p-3 shadow-sm">
+            <User className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
             <Input
               type="text"
               placeholder="Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full bg-transparent border-none focus:ring-2 focus:ring-green-600 focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-0 text-green-900 placeholder-green-700/70 text-base"
+              className="w-full bg-transparent border-none focus:ring-2 focus:ring-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 text-foreground placeholder-muted-foreground text-base"
               autoComplete="username"
             />
           </div>
 
           {/* Email Input */}
-          <div className="flex items-center bg-white/90 rounded-lg p-3 shadow-sm">
-            <Mail className="h-5 w-5 text-green-700 mr-3 flex-shrink-0" />
+          <div className="flex items-center bg-background/90 rounded-lg p-3 shadow-sm">
+            <Mail className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
             <Input
               type="email"
               placeholder="Email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-transparent border-none focus:ring-2 focus:ring-green-600 focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-0 text-green-900 placeholder-green-700/70 text-base"
+              className="w-full bg-transparent border-none focus:ring-2 focus:ring-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 text-foreground placeholder-muted-foreground text-base"
               autoComplete="email"
               required
             />
           </div>
 
           {/* Password Input */}
-          <div className="flex items-center bg-white/90 rounded-lg p-3 shadow-sm">
-            <Lock className="h-5 w-5 text-green-700 mr-3 flex-shrink-0" />
+          <div className="flex items-center bg-background/90 rounded-lg p-3 shadow-sm">
+            <Lock className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
             <Input
               type="password"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-transparent border-none focus:ring-2 focus:ring-green-600 focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-0 text-green-900 placeholder-green-700/70 text-base"
+              className="w-full bg-transparent border-none focus:ring-2 focus:ring-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 text-foreground placeholder-muted-foreground text-base"
               autoComplete="new-password"
               required
             />
           </div>
 
           {/* Confirm Password Input */}
-          <div className="flex items-center bg-white/90 rounded-lg p-3 shadow-sm">
-            <Lock className="h-5 w-5 text-green-700 mr-3 flex-shrink-0" />
+          <div className="flex items-center bg-background/90 rounded-lg p-3 shadow-sm">
+            <Lock className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
             <Input
               type="password"
               placeholder="Confirm password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full bg-transparent border-none focus:ring-2 focus:ring-green-600 focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-0 text-green-900 placeholder-green-700/70 text-base"
+              className="w-full bg-transparent border-none focus:ring-2 focus:ring-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 text-foreground placeholder-muted-foreground text-base"
               autoComplete="new-password"
               required
             />

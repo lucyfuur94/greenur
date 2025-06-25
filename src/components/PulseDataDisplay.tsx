@@ -391,7 +391,7 @@ export const PulseDataDisplay: React.FC<PulseDataDisplayProps> = ({ deviceId, de
     }
     
     return (
-      <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white border border-gray-200 rounded-lg shadow-xl z-[9999] min-w-[480px] max-h-[500px] overflow-hidden">
+                          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-background border border-border rounded-lg shadow-xl z-[9999] min-w-[480px] max-h-[500px] overflow-hidden">
         <div className="flex">
           {/* Quick selection sidebar */}
           <div className="w-32 border-r border-gray-200 p-2">
@@ -483,7 +483,7 @@ export const PulseDataDisplay: React.FC<PulseDataDisplayProps> = ({ deviceId, de
               size="sm"
               onClick={handleApplyDateRange}
               disabled={selectedQuickOption === 'custom' && !selectedStartDate}
-              className="bg-[#17A34A] hover:bg-[#15803d] text-white text-xs px-3 py-1 h-auto"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-3 py-1 h-auto"
             >
               Apply
             </Button>
@@ -641,7 +641,7 @@ export const PulseDataDisplay: React.FC<PulseDataDisplayProps> = ({ deviceId, de
     };
 
     return (
-      <div className="w-full h-80 bg-white rounded-lg p-4">
+      <div className="w-full h-80 bg-card rounded-lg p-4 border border-border">
         <Line data={chartConfig} options={options} />
       </div>
     );
@@ -725,18 +725,18 @@ export const PulseDataDisplay: React.FC<PulseDataDisplayProps> = ({ deviceId, de
 
   if (loading && !data.length) {
     return (
-      <Card className="bg-white shadow-md rounded-xl overflow-hidden">
+      <Card className="bg-card shadow-md rounded-xl overflow-hidden border border-border">
         <CardHeader>
-          <CardTitle className="flex items-center">
+          <CardTitle className="flex items-center text-card-foreground">
             <Activity className="w-5 h-5 mr-2" />
             Loading Device Data...
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-gray-300 rounded w-3/4"></div>
-            <div className="h-32 bg-gray-300 rounded"></div>
-            <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+            <div className="h-4 bg-muted rounded w-3/4"></div>
+            <div className="h-32 bg-muted rounded"></div>
+            <div className="h-4 bg-muted rounded w-1/2"></div>
           </div>
         </CardContent>
       </Card>
@@ -746,16 +746,16 @@ export const PulseDataDisplay: React.FC<PulseDataDisplayProps> = ({ deviceId, de
   return (
     <div className="space-y-4">
       {/* Device Status Card */}
-      <Card className="bg-white shadow-md rounded-xl overflow-hidden">
+      <Card className="bg-card shadow-md rounded-xl overflow-hidden border border-border">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center">
+          <CardTitle className="flex items-center text-card-foreground">
             <button
               onClick={() => setShowDeviceInfo(true)}
-              className="flex items-center mr-2 p-1 rounded-full hover:bg-gray-100 transition-colors"
+              className="flex items-center mr-2 p-1 rounded-full hover:bg-accent transition-colors"
             >
               <Wifi 
                 className={`w-5 h-5 ${
-                  deviceStatus?.online ? 'text-green-500' : 'text-gray-400'
+                  deviceStatus?.online ? 'text-green-500' : 'text-muted-foreground'
                 }`} 
               />
             </button>
@@ -808,15 +808,15 @@ export const PulseDataDisplay: React.FC<PulseDataDisplayProps> = ({ deviceId, de
             
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">Auto-refresh</label>
+                <label className="text-sm text-muted-foreground">Auto-refresh</label>
                 <button
                   onClick={() => setAutoRefresh(!autoRefresh)}
                   className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                    autoRefresh ? 'bg-green-500' : 'bg-gray-300'
+                    autoRefresh ? 'bg-green-500' : 'bg-muted'
                   }`}
                 >
                   <span
-                    className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                    className={`inline-block h-3 w-3 transform rounded-full bg-background transition-transform ${
                       autoRefresh ? 'translate-x-5' : 'translate-x-1'
                     }`}
                   />
@@ -904,18 +904,18 @@ export const PulseDataDisplay: React.FC<PulseDataDisplayProps> = ({ deviceId, de
           {data.length > 0 ? (
             renderChart()
           ) : (
-            <div className="text-center py-8 bg-gray-50 rounded-lg">
-              <Activity className="w-12 h-12 mx-auto text-gray-400 mb-3" />
-              <p className="text-gray-600">No data available</p>
-              <p className="text-sm text-gray-500 mt-1">
+            <div className="text-center py-8 bg-muted rounded-lg">
+              <Activity className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+              <p className="text-foreground">No data available</p>
+              <p className="text-sm text-muted-foreground mt-1">
                 No data found for the selected date range
               </p>
             </div>
           )}
 
           {/* Last Update Info */}
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <p className="text-xs text-gray-500 text-center">
+          <div className="mt-4 pt-4 border-t border-border">
+            <p className="text-xs text-muted-foreground text-center">
               Last refreshed: {lastRefresh.toLocaleTimeString()}
             </p>
           </div>
@@ -932,17 +932,17 @@ export const PulseDataDisplay: React.FC<PulseDataDisplayProps> = ({ deviceId, de
           ></div>
           
           {/* Modal */}
-          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-[10000] w-80 max-w-[90vw] p-6">
+          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-background rounded-lg shadow-xl z-[10000] w-80 max-w-[90vw] p-6 border border-border">
             <div className="text-center">
               {/* Device Icon */}
               <div className="flex justify-center mb-4">
-                <div className={`p-4 rounded-full ${deviceStatus?.online ? 'bg-green-100' : 'bg-gray-100'}`}>
-                  <Wifi className={`w-8 h-8 ${deviceStatus?.online ? 'text-green-500' : 'text-gray-400'}`} />
+                <div className={`p-4 rounded-full ${deviceStatus?.online ? 'bg-green-500/10 dark:bg-green-500/20' : 'bg-muted'}`}>
+                  <Wifi className={`w-8 h-8 ${deviceStatus?.online ? 'text-green-500' : 'text-muted-foreground'}`} />
                 </div>
               </div>
               
               {/* Device Name */}
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-foreground mb-2">
                 {deviceName || deviceId}
               </h3>
               
@@ -950,11 +950,11 @@ export const PulseDataDisplay: React.FC<PulseDataDisplayProps> = ({ deviceId, de
               <div className="mb-4">
                 <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                   deviceStatus?.online 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-gray-100 text-gray-800'
+                    ? 'bg-green-500/10 text-green-800 dark:bg-green-500/20 dark:text-green-200' 
+                    : 'bg-muted text-muted-foreground'
                 }`}>
                   <div className={`w-2 h-2 rounded-full mr-2 ${
-                    deviceStatus?.online ? 'bg-green-500' : 'bg-gray-400'
+                    deviceStatus?.online ? 'bg-green-500' : 'bg-muted-foreground'
                   }`}></div>
                   {statusDisplay.text}
                 </div>
@@ -962,50 +962,50 @@ export const PulseDataDisplay: React.FC<PulseDataDisplayProps> = ({ deviceId, de
               
               {/* Device Details */}
               <div className="space-y-3 text-left">
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-600">Last Seen</span>
-                  <span className="text-sm font-medium text-gray-900">
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-sm text-muted-foreground">Last Seen</span>
+                  <span className="text-sm font-medium text-foreground">
                     {deviceStatus?.lastSeen ? getRelativeTime(deviceStatus.lastSeen) : 'Unknown'}
                   </span>
                 </div>
                 
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-600">Device ID</span>
-                  <span className="text-sm font-mono text-gray-900 break-all">
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-sm text-muted-foreground">Device ID</span>
+                  <span className="text-sm font-mono text-foreground break-all">
                     {deviceId}
                   </span>
                 </div>
                 
                 {data.length > 0 && data[0].soilMoisture && (
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-sm text-gray-600">Latest Soil Moisture</span>
-                    <span className="text-sm font-medium text-gray-900">
+                  <div className="flex justify-between items-center py-2 border-b border-border">
+                    <span className="text-sm text-muted-foreground">Latest Soil Moisture</span>
+                    <span className="text-sm font-medium text-foreground">
                       {data[0].soilMoisture}%
                     </span>
                   </div>
                 )}
                 
                 {data.length > 0 && typeof data[0].isWaterOn === 'number' && (
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-sm text-gray-600">Water Status</span>
-                    <span className={`text-sm font-medium ${data[0].isWaterOn === 1 ? 'text-blue-600' : 'text-gray-600'}`}>
+                  <div className="flex justify-between items-center py-2 border-b border-border">
+                    <span className="text-sm text-muted-foreground">Water Status</span>
+                    <span className={`text-sm font-medium ${data[0].isWaterOn === 1 ? 'text-blue-600' : 'text-muted-foreground'}`}>
                       {data[0].isWaterOn === 1 ? 'ON' : 'OFF'}
                     </span>
                   </div>
                 )}
                 
                 {data.length > 0 && data[0].threshold && (
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-sm text-gray-600">Current Threshold</span>
-                    <span className="text-sm font-medium text-gray-900">
+                  <div className="flex justify-between items-center py-2 border-b border-border">
+                    <span className="text-sm text-muted-foreground">Current Threshold</span>
+                    <span className="text-sm font-medium text-foreground">
                       {data[0].threshold}%
                     </span>
                   </div>
                 )}
                 
                 <div className="flex justify-between items-center py-2">
-                  <span className="text-sm text-gray-600">Connection Status</span>
-                  <span className="text-sm text-gray-900">
+                  <span className="text-sm text-muted-foreground">Connection Status</span>
+                  <span className="text-sm text-foreground">
                     {deviceStatus?.online ? 'Connected' : statusDisplay.description || 'Disconnected'}
                   </span>
                 </div>
@@ -1014,7 +1014,7 @@ export const PulseDataDisplay: React.FC<PulseDataDisplayProps> = ({ deviceId, de
               {/* Close Button */}
               <button
                 onClick={() => setShowDeviceInfo(false)}
-                className="mt-6 w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+                className="mt-6 w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2 px-4 rounded-lg font-medium transition-colors"
               >
                 Close
               </button>
@@ -1033,21 +1033,21 @@ export const PulseDataDisplay: React.FC<PulseDataDisplayProps> = ({ deviceId, de
           ></div>
           
           {/* Modal */}
-          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-[10000] w-80 max-w-[90vw] p-6">
+          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-background rounded-lg shadow-xl z-[10000] w-80 max-w-[90vw] p-6 border border-border">
             <div className="text-center">
               {/* Modal Header */}
               <div className="flex justify-center mb-4">
-                <div className="p-4 rounded-full bg-amber-100">
+                <div className="p-4 rounded-full bg-amber-500/10 dark:bg-amber-500/20">
                   <Settings className="w-8 h-8 text-amber-600" />
                 </div>
               </div>
               
               {/* Modal Title */}
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-foreground mb-2">
                 Set Watering Threshold
               </h3>
               
-              <p className="text-sm text-gray-600 mb-6">
+              <p className="text-sm text-muted-foreground mb-6">
                 Water will turn on when soil moisture drops below this level
               </p>
               
@@ -1072,7 +1072,7 @@ export const PulseDataDisplay: React.FC<PulseDataDisplayProps> = ({ deviceId, de
                       onChange={(e) => setTempThreshold(Number(e.target.value))}
                       className="w-24 h-12 text-center text-xl font-bold pr-8"
                     />
-                    <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-lg font-medium text-gray-500">%</span>
+                    <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-lg font-medium text-muted-foreground">%</span>
                   </div>
                   
                   <Button

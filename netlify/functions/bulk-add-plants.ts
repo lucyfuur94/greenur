@@ -1,12 +1,18 @@
 import { Handler } from '@netlify/functions'
 import { MongoClient } from 'mongodb'
 import dotenv from 'dotenv'
-import { extract_plant_info } from '../functions/analyze-plant/utils/plantUtils'
 
 dotenv.config()
 
 const MONGO_URI = process.env.MONGO_URI
 const DB_NAME = process.env.MONGODB_DB || 'master'
+
+interface PlantData {
+  common_name: string
+  scientific_name: string
+  plant_type: string
+  names_in_languages: { [key: string]: string }
+}
 
 const handler: Handler = async (event, context) => {
   // Only allow POST requests
@@ -20,12 +26,12 @@ const handler: Handler = async (event, context) => {
   let client: MongoClient | null = null
 
   try {
-    const { plantNames } = JSON.parse(event.body || '{}')
+    const { plants } = JSON.parse(event.body || '{}')
     
-    if (!Array.isArray(plantNames) || plantNames.length === 0) {
+    if (!Array.isArray(plants) || plants.length === 0) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Plant names array is required' }),
+        body: JSON.stringify({ error: 'Plants array is required' }),
       }
     }
 
@@ -46,29 +52,40 @@ const handler: Handler = async (event, context) => {
       duplicates: [] as string[]
     }
 
-    // Process each plant name
-    for (const plantName of plantNames) {
+    // Process each plant
+    for (const plant of plants) {
       try {
-        // Skip empty names
-        if (!plantName.trim()) continue
-
-        // Check for duplicate
-        const existingPlant = await collection.findOne({
-          common_name: { $regex: new RegExp(`^${plantName}$`, 'i') }
-        })
-
-        if (existingPlant) {
-          results.duplicates.push(plantName)
+        // Validate required fields
+        if (!plant.common_name || !plant.scientific_name || !plant.plant_type) {
+          results.failed.push({
+            plant: plant.common_name || 'Unknown',
+            error: 'Missing required fields: common_name, scientific_name, or plant_type'
+          })
           continue
         }
 
-        // Extract plant information
-        const plantInfo = await extract_plant_info(nextId, plantName)
-        
-        // Convert numeric ID to string for MongoDB
+        // Check for duplicate
+        const existingPlant = await collection.findOne({
+          $or: [
+            { common_name: { $regex: new RegExp(`^${plant.common_name}$`, 'i') } },
+            { scientific_name: { $regex: new RegExp(`^${plant.scientific_name}$`, 'i') } }
+          ]
+        })
+
+        if (existingPlant) {
+          results.duplicates.push(plant.common_name)
+          continue
+        }
+
+        // Create plant document
         const documentToInsert = {
-          ...plantInfo,
-          _id: nextId.toString()
+          id: nextId,
+          common_name: plant.common_name,
+          scientific_name: plant.scientific_name,
+          plant_type: plant.plant_type,
+          names_in_languages: plant.names_in_languages || {},
+          default_image_url: '',
+          last_updated: new Date().toISOString()
         }
         
         // Insert new plant
@@ -77,9 +94,9 @@ const handler: Handler = async (event, context) => {
         nextId++
 
       } catch (error) {
-        console.error(`Error processing plant ${plantName}:`, error)
+        console.error(`Error processing plant ${plant.common_name}:`, error)
         results.failed.push({
-          name: plantName,
+          plant: plant.common_name || 'Unknown',
           error: error instanceof Error ? error.message : 'Unknown error'
         })
       }
@@ -96,7 +113,7 @@ const handler: Handler = async (event, context) => {
       body: JSON.stringify({
         message: 'Bulk plant addition completed',
         results: {
-          totalProcessed: plantNames.length,
+          totalProcessed: plants.length,
           successCount: results.success.length,
           failedCount: results.failed.length,
           duplicateCount: results.duplicates.length,

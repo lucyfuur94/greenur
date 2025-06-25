@@ -50,14 +50,14 @@ const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ onNavigate, onB
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#17A34A] text-white">
+    <div className="min-h-screen flex flex-col bg-primary text-primary-foreground">
       {/* Header Section with Back Button */}
       <div className="relative w-full pt-4">
         {/* Back Button */}
         <Button
           variant="ghost"
           size="icon"
-          className="absolute top-4 left-4 z-20 bg-white/30 hover:bg-white/50 rounded-full text-green-900"
+          className="absolute top-4 left-4 z-20 bg-white/30 hover:bg-white/50 rounded-full text-primary"
           aria-label="Go back"
           onClick={() => onBack ? onBack() : onNavigate && onNavigate("login")}
         >
@@ -94,7 +94,7 @@ const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ onNavigate, onB
         ) : (
           <form onSubmit={handleResetPassword} className="w-full max-w-sm space-y-5">
             {/* Email */}
-            <div className="flex items-center bg-white/90 rounded-lg p-3 shadow-sm">
+            <div className="flex items-center bg-background/90 rounded-lg p-3 shadow-sm">
               <Mail className="h-5 w-5 text-green-700 mr-3 flex-shrink-0" />
               <Input
                 type="email"

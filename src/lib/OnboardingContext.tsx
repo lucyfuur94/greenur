@@ -11,6 +11,7 @@ const defaultPreferences: UserPreferences = {
   interests: [],
   checkupFrequency: '',
   checkupDays: [],
+  theme: 'system',
   completedOnboarding: false,
   onboardingStep: 1,
   onboardingProgress: 20

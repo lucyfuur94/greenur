@@ -102,23 +102,8 @@ export default async (request, context) => {
       return module.default(newRequest, context);
     } 
     else if (normalizedPath === '/plant/details') {
-      // Route to the plant-details function
-      const module = await import('./plant-details.js');
-      return module.default(request, context);
-    } 
-    else if (normalizedPath === '/plant/stage-details') {
-      // Route to the plant-stage-details function
-      const module = await import('./plant-stage-details.js');
-      return module.default(request, context);
-    }
-    else if (normalizedPath === '/plant/season-details') {
-      // Route to the plant-season-details function
-      const module = await import('./plant-season-details.js');
-      return module.default(request, context);
-    }
-    else if (normalizedPath === '/plant/care-instructions') {
-      // Route to the plant-care-instructions function
-      const module = await import('./plant-care-instructions.js');
+      // Route to the plant-details-stream function (existing)
+      const module = await import('./plant-details-stream.js');
       return module.default(request, context);
     }
     else {

@@ -159,11 +159,11 @@ const QRCameraScanner: React.FC<QRCameraScannerProps> = ({ onScanSuccess, onClos
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md bg-white">
+      <Card className="w-full max-w-md bg-card border border-border">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center">
-              <Camera className="w-5 h-5 mr-2 text-green-600" />
+            <CardTitle className="text-lg flex items-center text-card-foreground">
+              <Camera className="w-5 h-5 mr-2 text-primary" />
               Scan Device QR Code
             </CardTitle>
             <Button 
@@ -227,10 +227,10 @@ const QRCameraScanner: React.FC<QRCameraScannerProps> = ({ onScanSuccess, onClos
               </div>
               
               <div className="text-center">
-                <p className="text-sm text-gray-600 mb-3">
+                <p className="text-sm text-muted-foreground mb-3">
                   Position the QR code within the frame to scan
                 </p>
-                <p className="text-xs text-gray-500 mb-3">
+                <p className="text-xs text-muted-foreground mb-3">
                   The QR code should appear on your Pulse device's OLED display
                 </p>
                 
@@ -249,16 +249,16 @@ const QRCameraScanner: React.FC<QRCameraScannerProps> = ({ onScanSuccess, onClos
           {/* Manual Input Fallback */}
           {showManualInput && (
             <div className="space-y-4">
-              <div className="text-center p-6 bg-gray-50 rounded-lg">
-                <Camera className="w-12 h-12 mx-auto text-gray-400 mb-3" />
-                <p className="text-sm text-gray-600 mb-4">
+              <div className="text-center p-6 bg-muted rounded-lg">
+                <Camera className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+                <p className="text-sm text-muted-foreground mb-4">
                   Enter the QR code data manually:
                 </p>
                 <textarea
                   value={manualInput}
                   onChange={(e) => setManualInput(e.target.value)}
                   placeholder='{"type":"greenur_device","deviceId":"ESP32-XXXXXX","setupWifi":"Greenur-Device-Setup-XXXXXX"}'
-                  className="w-full h-24 p-3 border rounded-lg text-xs font-mono"
+                  className="w-full h-24 p-3 border border-input bg-background text-foreground rounded-lg text-xs font-mono"
                 />
               </div>
               
@@ -273,7 +273,7 @@ const QRCameraScanner: React.FC<QRCameraScannerProps> = ({ onScanSuccess, onClos
                 </Button>
                 <Button 
                   onClick={handleManualInput}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
                   disabled={!manualInput.trim()}
                 >
                   Continue
@@ -294,7 +294,7 @@ const QRCameraScanner: React.FC<QRCameraScannerProps> = ({ onScanSuccess, onClos
               </Button>
               <Button 
                 onClick={startScanning}
-                className="flex-1 bg-green-600 hover:bg-green-700"
+                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
                 disabled={isScanning}
               >
                 {isScanning ? 'Scanning...' : 'Retry'}

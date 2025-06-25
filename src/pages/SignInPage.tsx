@@ -50,13 +50,13 @@ export const SignInPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F5F7F5] p-4">
+            <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md p-6 shadow-lg">
         <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold text-green-700 mb-2">
+          <h1 className="text-2xl font-bold text-primary mb-2">
             {isSignUp ? "Create an Account" : "Welcome to Botanica"}
           </h1>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             {isSignUp 
               ? "Join our community of plant lovers" 
               : "Sign in to access your plant care assistant"}
@@ -65,7 +65,7 @@ export const SignInPage: React.FC = () => {
         
         <form onSubmit={handleAuth} className="space-y-4">
           <div>
-            <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
+            <Label htmlFor="email" className="text-sm font-medium text-foreground">Email</Label>
             <Input 
               id="email" 
               type="email" 
@@ -78,7 +78,7 @@ export const SignInPage: React.FC = () => {
           </div>
           
           <div>
-            <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password</Label>
+                            <Label htmlFor="password" className="text-sm font-medium text-foreground">Password</Label>
             <Input 
               id="password" 
               type="password" 
@@ -92,7 +92,7 @@ export const SignInPage: React.FC = () => {
 
           <Button 
             type="submit" 
-            className="w-full bg-green-600 hover:bg-green-700 text-white !rounded-button"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground !rounded-button"
             disabled={loading}
           >
             {loading 
@@ -104,13 +104,13 @@ export const SignInPage: React.FC = () => {
         </form>
         
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             {isSignUp 
               ? "Already have an account?" 
               : "Don't have an account?"}
             <Button 
               variant="link" 
-              className="p-0 h-auto text-green-600 font-medium"
+              className="p-0 h-auto text-primary font-medium"
               onClick={() => setIsSignUp(!isSignUp)}
             >
               {isSignUp ? " Sign in" : " Create one"}
