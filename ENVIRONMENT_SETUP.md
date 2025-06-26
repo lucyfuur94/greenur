@@ -14,7 +14,7 @@ For the location search functionality, you need to set the following environment
 4. Add the following variable:
 
 ```
-GOOGLE_API_KEY=AIzaSyB-T2Pempe_Myd-mhosTTX_PlTZ_PKFvRg
+GOOGLE_API_KEY=your-google-api-key-here
 ```
 
 ### Local Development
@@ -23,7 +23,7 @@ For local development with Netlify Dev, add the following to your existing `.env
 
 ```bash
 # .env (root directory - already exists)
-GOOGLE_API_KEY=AIzaSyB-T2Pempe_Myd-mhosTTX_PlTZ_PKFvRg
+GOOGLE_API_KEY=your-google-api-key-here
 ```
 
 ## Backend Environment Variables
@@ -35,6 +35,7 @@ The backend server (if used) requires different environment variables. See `back
 - Never commit `.env` files to version control
 - The `.env` file is already included in `.gitignore`
 - For production, always use the platform's environment variable system (Netlify Dashboard, Render Dashboard, etc.)
+- **NEVER include actual API keys or secrets in documentation files**
 
 ## Functions that use Environment Variables
 
