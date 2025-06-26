@@ -1,6 +1,8 @@
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
+import PlantDetailsPage from './pages/PlantDetailsPage';
+import PlantsPage from './pages/PlantsPage';
 import OnboardingFlow from './components/OnboardingFlow';
 import { useAuth } from './lib/AuthContext';
 import { useOnboarding } from './lib/OnboardingContext';
@@ -77,8 +79,10 @@ function App() {
     <Routes>
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="/home" element={<HomePage onNavigate={(page) => navigate(`/${page}`)} />} />
+      <Route path="/plants" element={<PlantsPage />} />
       <Route path="/profile" element={<ProfilePage onBack={() => navigate('/home')} />} />
       <Route path="/track" element={<TrackPage />} />
+      <Route path="/plant/:plantId" element={<PlantDetailsPage />} />
       <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>
   );

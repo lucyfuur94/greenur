@@ -35,11 +35,6 @@
   status = 200
 
 [[redirects]]
-  from = "/plant/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
-
-[[redirects]]
   from = "/api/edge/*"
   to = "/.netlify/edge-functions/:splat"
   status = 200

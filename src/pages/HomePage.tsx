@@ -12,7 +12,8 @@ import {
   ClipboardList,
   BarChart3,
   Camera, 
-  Leaf
+  Leaf,
+  Shield
 } from "lucide-react";
 import FooterNavigation from '@/components/FooterNavigation';
 import SearchOverlay from '@/components/SearchOverlay';
@@ -37,15 +38,7 @@ interface TrackedPlant {
   healthStatus?: 'healthy' | 'needs_attention' | 'unhealthy';
 }
 
-interface PlantSearchResult {
-  id: string;
-  name: string;
-  type: string;
-  scientificName: string;
-  image: string;
-  displayName: string;
-  matchedTerm: string;
-}
+
 
 const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const { currentUser } = useAuth();
@@ -59,14 +52,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   // Search related state
   const [showSearchOverlay, setShowSearchOverlay] = useState(false);
 
-  // Handle plant selection from search overlay
-  const handlePlantSelect = (plant: PlantSearchResult) => {
-    toast({
-      title: "Plant Selected",
-      description: `Selected ${plant.name}. Add this plant to your collection?`,
-    });
-    setShowSearchOverlay(false);
-  };
+
 
   // Fetch weather data
   const fetchWeatherData = async (location?: string, coordinates?: { lat: number; lng: number }) => {
@@ -219,10 +205,10 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   };
 
   const quickActions = [
-    { id: 1, name: "Add Plant", iconType: "plus", action: () => toast({ title: "Add Plant", description: "Adding Plant feature coming soon!" }) },
+    { id: 1, name: "Add Plant", iconType: "camera", action: () => toast({ title: "Add Plant", description: "Adding Plant feature coming soon!" }) },
     { id: 2, name: "Log Care", iconType: "clipboard", action: () => toast({ title: "Log Care", description: "Care logging feature coming soon!" }) },
     { id: 3, name: "View Stats", iconType: "chart", action: () => onNavigate && onNavigate("track") },
-    { id: 4, name: "Scan Plant", iconType: "camera", action: () => toast({ title: "Scan Plant", description: "AI plant scanning feature coming soon!" }) },
+    { id: 4, name: "Scan Disease", iconType: "shield", action: () => toast({ title: "Disease Scanner", description: "AI disease detection coming soon!" }) },
   ];
 
   const renderIcon = (iconType: string) => {
@@ -235,6 +221,8 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         return <BarChart3 className="w-6 h-6 text-primary" />;
       case "camera":
         return <Camera className="w-6 h-6 text-primary" />;
+      case "shield":
+        return <Shield className="w-6 h-6 text-primary" />;
       default:
         return <Plus className="w-6 h-6 text-primary" />;
     }
@@ -273,7 +261,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             variant="ghost" 
             size="sm" 
             className="text-xs text-primary hover:bg-accent"
-            onClick={() => toast({ title: "My Plants", description: "Plants section coming soon!" })}
+            onClick={() => onNavigate ? onNavigate("plants") : null}
           >
             View All
           </Button>
@@ -403,7 +391,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           } else if (page === 'ai') {
             toast({ title: "Arth AI", description: "Coming soon!" });
           } else if (page === 'plants') {
-            toast({ title: "Plants", description: "Coming soon!" });
+            onNavigate ? onNavigate("plants") : null;
           }
         }}
       />
@@ -415,7 +403,6 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       {showSearchOverlay && (
         <SearchOverlay
           onClose={() => setShowSearchOverlay(false)}
-          onSelectPlant={handlePlantSelect}
         />
       )}
     </div>

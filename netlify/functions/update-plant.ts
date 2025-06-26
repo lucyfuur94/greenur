@@ -15,6 +15,14 @@ interface Plant {
   default_image_url: string;
   names_in_languages: Record<string, string>;
   last_updated: string;
+  care?: {
+    light_requirement: string;
+    water_requirement: string;
+    soil_type: string;
+    suitable_temperature: string;
+    fertilizer: string;
+    common_diseases: string[];
+  };
 }
 
 interface PlantUpdate {

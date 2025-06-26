@@ -1,10 +1,19 @@
+import { Handler } from '@netlify/functions'
 import { MongoClient, ObjectId } from 'mongodb'
 import dotenv from 'dotenv'
+import { verifyAuthToken } from './utils/firebaseAdmin'
 
 dotenv.config()
 
 const MONGO_URI = process.env.MONGO_URI
 const DB_NAME = process.env.MONGODB_DB || 'master'
+
+const corsHeaders = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+}
 
 interface TrackedPlant {
   _id?: string | ObjectId;
@@ -28,10 +37,35 @@ interface TrackedPlant {
   growingSpaceId?: string | null;
 }
 
-export default async (request: Request) => {
+export const handler: Handler = async (event, context) => {
+  if (context) {
+    context.callbackWaitsForEmptyEventLoop = false;
+  }
+
   let client: MongoClient | null = null
 
   try {
+    // Handle CORS preflight
+    if (event.httpMethod === 'OPTIONS') {
+      return {
+        statusCode: 204,
+        headers: corsHeaders,
+        body: '',
+      }
+    }
+
+    // Verify authentication for all methods
+    const authHeader = event.headers.authorization
+    const authorizedUserId = await verifyAuthToken(authHeader)
+    
+    if (!authorizedUserId) {
+      return {
+        statusCode: 401,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Unauthorized: Invalid or missing authentication token' })
+      }
+    }
+
     // Connect to MongoDB
     client = new MongoClient(MONGO_URI!)
     await client.connect()
@@ -39,26 +73,30 @@ export default async (request: Request) => {
     const db = client.db(DB_NAME)
     const collection = db.collection<TrackedPlant>('user_plants')
 
-    const url = new URL(request.url)
-    const method = request.method
+    const method = event.httpMethod
 
     // Handle different HTTP methods
     switch (method) {
       case 'POST': {
         // Add a new tracked plant
-        const plantData: TrackedPlant = await request.json()
+        const plantData: TrackedPlant = JSON.parse(event.body || '{}')
+        
+        // Ensure the userId matches the authenticated user
+        if (plantData.userId !== authorizedUserId) {
+          return {
+            statusCode: 403,
+            headers: corsHeaders,
+            body: JSON.stringify({ error: 'Forbidden: userId mismatch' })
+          }
+        }
         
         // Validate required fields
         if (!plantData.userId || !plantData.nickname || !plantData.plantId || !plantData.currentImage) {
-          return new Response(JSON.stringify({ error: 'Missing required fields' }), {
-            status: 400,
-            headers: {
-              'Content-Type': 'application/json',
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Headers': 'Content-Type',
-              'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
-            }
-          })
+          return {
+            statusCode: 400,
+            headers: corsHeaders,
+            body: JSON.stringify({ error: 'Missing required fields' })
+          }
         }
 
         // Add dateAdded and initialize image history if not provided
@@ -75,46 +113,37 @@ export default async (request: Request) => {
         }
 
         const result = await collection.insertOne(plantToAdd)
-        return new Response(JSON.stringify({
-          message: 'Plant added successfully',
-          plantId: result.insertedId
-        }), {
-          status: 201,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'Content-Type',
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
-          }
-        })
+        return {
+          statusCode: 201,
+          headers: corsHeaders,
+          body: JSON.stringify({
+            message: 'Plant added successfully',
+            plantId: result.insertedId
+          })
+        }
       }
 
       case 'GET': {
-        const userId = url.searchParams.get('userId')
-        const id = url.searchParams.get('id')
+        const userId = event.queryStringParameters?.userId
+        const id = event.queryStringParameters?.id
         
         // If id is provided, fetch single plant
         if (id) {
           const plant = await collection.findOne({ _id: new ObjectId(id) })
           
           if (!plant) {
-            return new Response(JSON.stringify({ error: 'Plant not found' }), {
-              status: 404,
-              headers: {
-                'Content-Type': 'application/json'
-              }
-            })
+            return {
+              statusCode: 404,
+              headers: corsHeaders,
+              body: JSON.stringify({ error: 'Plant not found' })
+            }
           }
 
-          return new Response(JSON.stringify(plant), {
-            status: 200,
-            headers: {
-              'Content-Type': 'application/json',
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Headers': 'Content-Type',
-              'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
-            }
-          })
+          return {
+            statusCode: 200,
+            headers: corsHeaders,
+            body: JSON.stringify(plant)
+          }
         }
         
         // If userId is provided, fetch all plants for user
@@ -124,37 +153,49 @@ export default async (request: Request) => {
             .sort({ dateAdded: -1 })
             .toArray()
 
-          return new Response(JSON.stringify(plants), {
-            status: 200,
-            headers: {
-              'Content-Type': 'application/json',
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Headers': 'Content-Type',
-              'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
-            }
-          })
+          return {
+            statusCode: 200,
+            headers: corsHeaders,
+            body: JSON.stringify(plants)
+          }
         }
 
-        return new Response(JSON.stringify({ error: 'Either userId or id parameter is required' }), {
-          status: 400,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        })
+        return {
+          statusCode: 400,
+          headers: corsHeaders,
+          body: JSON.stringify({ error: 'Either userId or id parameter is required' })
+        }
       }
 
       case 'PUT': {
         // Update a tracked plant
-        const id = url.searchParams.get('id')
-        const updates = await request.json()
+        const id = event.queryStringParameters?.id
+        const updates = JSON.parse(event.body || '{}')
         
         if (!id) {
-          return new Response(JSON.stringify({ error: 'Plant ID is required' }), {
-            status: 400,
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          })
+          return {
+            statusCode: 400,
+            headers: corsHeaders,
+            body: JSON.stringify({ error: 'Plant ID is required' })
+          }
+        }
+
+        // Verify ownership before updating
+        const existingPlant = await collection.findOne({ _id: new ObjectId(id) })
+        if (!existingPlant) {
+          return {
+            statusCode: 404,
+            headers: corsHeaders,
+            body: JSON.stringify({ error: 'Plant not found' })
+          }
+        }
+
+        if (existingPlant.userId !== authorizedUserId) {
+          return {
+            statusCode: 403,
+            headers: corsHeaders,
+            body: JSON.stringify({ error: 'Forbidden: Cannot update another user\'s plant' })
+          }
         }
 
         console.log('Received update data:', JSON.stringify(updates))
@@ -190,47 +231,58 @@ export default async (request: Request) => {
           )
 
           if (result.matchedCount === 0) {
-            return new Response(JSON.stringify({ error: 'Plant not found' }), {
-              status: 404,
-              headers: {
-                'Content-Type': 'application/json'
-              }
-            })
+            return {
+              statusCode: 404,
+              headers: corsHeaders,
+              body: JSON.stringify({ error: 'Plant not found' })
+            }
           }
 
-          return new Response(JSON.stringify({
-            message: 'Plant updated successfully'
-          }), {
-            status: 200,
-            headers: {
-              'Content-Type': 'application/json',
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Headers': 'Content-Type',
-              'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
-            }
-          })
+          return {
+            statusCode: 200,
+            headers: corsHeaders,
+            body: JSON.stringify({
+              message: 'Plant updated successfully'
+            })
+          }
         } catch (error) {
           console.error('Error updating plant:', error)
-          return new Response(JSON.stringify({ error: `Error updating plant: ${error.message}` }), {
-            status: 500,
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          })
+          return {
+            statusCode: 500,
+            headers: corsHeaders,
+            body: JSON.stringify({ error: `Error updating plant: ${error.message}` })
+          }
         }
       }
 
       case 'DELETE': {
         // Delete a tracked plant and its checkup history
-        const id = url.searchParams.get('id')
+        const id = event.queryStringParameters?.id
         
         if (!id) {
-          return new Response(JSON.stringify({ error: 'Plant ID is required' }), {
-            status: 400,
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          })
+          return {
+            statusCode: 400,
+            headers: corsHeaders,
+            body: JSON.stringify({ error: 'Plant ID is required' })
+          }
+        }
+
+        // Verify ownership before deleting
+        const existingPlant = await collection.findOne({ _id: new ObjectId(id) })
+        if (!existingPlant) {
+          return {
+            statusCode: 404,
+            headers: corsHeaders,
+            body: JSON.stringify({ error: 'Plant not found' })
+          }
+        }
+
+        if (existingPlant.userId !== authorizedUserId) {
+          return {
+            statusCode: 403,
+            headers: corsHeaders,
+            body: JSON.stringify({ error: 'Forbidden: Cannot delete another user\'s plant' })
+          }
         }
 
         // Delete plant checkups first
@@ -242,43 +294,36 @@ export default async (request: Request) => {
         const result = await collection.deleteOne({ _id: new ObjectId(id) })
 
         if (result.deletedCount === 0) {
-          return new Response(JSON.stringify({ error: 'Plant not found' }), {
-            status: 404,
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          })
+          return {
+            statusCode: 404,
+            headers: corsHeaders,
+            body: JSON.stringify({ error: 'Plant not found' })
+          }
         }
 
-        return new Response(JSON.stringify({
-          message: 'Plant and its history deleted successfully'
-        }), {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'Content-Type',
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
-          }
-        })
+        return {
+          statusCode: 200,
+          headers: corsHeaders,
+          body: JSON.stringify({
+            message: 'Plant deleted successfully'
+          })
+        }
       }
 
       default:
-        return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-          status: 405,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        })
+        return {
+          statusCode: 405,
+          headers: corsHeaders,
+          body: JSON.stringify({ error: 'Method not allowed' })
+        }
     }
   } catch (error) {
-    console.error('Error handling tracked plants:', error)
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
+    console.error('Error in tracked-plants function:', error)
+    return {
+      statusCode: 500,
+      headers: corsHeaders,
+      body: JSON.stringify({ error: 'Internal server error' })
+    }
   } finally {
     if (client) {
       await client.close()

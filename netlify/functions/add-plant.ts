@@ -1,5 +1,5 @@
 import { Handler } from '@netlify/functions'
-import { MongoClient } from 'mongodb'
+import { MongoClient, ObjectId } from 'mongodb'
 import dotenv from 'dotenv'
 import { extract_plant_info } from '../functions/analyze-plant/utils/plantUtils'
 
@@ -20,7 +20,7 @@ const handler: Handler = async (event, context) => {
   let client: MongoClient | null = null
 
   try {
-    const { plantName } = JSON.parse(event.body || '{}')
+    const { plantName, scientific_name, plant_type } = JSON.parse(event.body || '{}')
     
     if (!plantName) {
       return {
@@ -48,17 +48,19 @@ const handler: Handler = async (event, context) => {
       }
     }
 
-    // Get next available ID
-    const lastPlant = await collection
-      .find()
-      .sort({ _id: -1 })
-      .limit(1)
-      .toArray()
-    
-    const nextId = lastPlant.length > 0 ? lastPlant[0]._id + 1 : 1
+    // Generate a new ObjectId for the plant
+    const plantId = new ObjectId()
 
-    // Extract plant information
-    const plantInfo = await extract_plant_info(nextId, plantName)
+    // Create plant information using the data from Gemini analysis
+    const plantInfo = {
+      _id: plantId,
+      common_name: plantName,
+      scientific_name: scientific_name || '',
+      plant_type: plant_type || '',
+      names_in_languages: {},
+      default_image_url: '',
+      last_updated: new Date().toISOString()
+    }
 
     // Insert new plant
     await collection.insertOne(plantInfo)

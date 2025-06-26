@@ -16,7 +16,15 @@ export async function extract_plant_info(plant_id: number, plant_name: string) {
     plant_type: '',
     names_in_languages: {},
     default_image_url: '',
-    last_updated: DateTime.now().toISO()
+    last_updated: DateTime.now().toISO(),
+    care: {
+      light_requirement: 'Full sun to partial shade',
+      water_requirement: 'Regular watering, well-draining',
+      soil_type: 'Well-draining, fertile soil (pH 6.0-7.0)',
+      suitable_temperature: '18-24°C (65-75°F)',
+      fertilizer: 'Balanced fertilizer as needed',
+      common_diseases: ['Fungal diseases', 'Aphids', 'Spider mites', 'Leaf spots']
+    }
   }
 
   try {

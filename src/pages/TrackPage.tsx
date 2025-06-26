@@ -746,6 +746,7 @@ const TrackPage: React.FC = () => {
         activeTab="track" 
         onNavigate={(page) => {
           if (page === 'home') navigate('/home');
+          else if (page === 'plants') navigate('/plants');
           else if (page === 'ai') navigate('/ai-chat');
           // No need to navigate for 'track' as we're already here
         }} 

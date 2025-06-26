@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,7 @@ interface SearchOverlayProps {
 
 const SearchOverlay: React.FC<SearchOverlayProps> = ({ onClose, onSelectPlant }) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<PlantSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -134,13 +136,13 @@ const SearchOverlay: React.FC<SearchOverlayProps> = ({ onClose, onSelectPlant })
   const handlePlantSelect = (plant: PlantSearchResult) => {
     if (onSelectPlant) {
       onSelectPlant(plant);
+      onClose();
     } else {
-      toast({
-        title: "Plant Selected",
-        description: `Selected ${plant.name}. Add this plant to your collection?`,
-      });
+      // Navigate to plant details page using plant ID
+      // Don't pass state data to ensure fresh fetch from MongoDB
+      navigate(`/plant/${plant.id}`);
+      onClose();
     }
-    onClose();
   };
 
   return (

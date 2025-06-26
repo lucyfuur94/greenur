@@ -1,5 +1,5 @@
 import { Handler } from '@netlify/functions'
-import { MongoClient } from 'mongodb'
+import { MongoClient, ObjectId } from 'mongodb'
 import dotenv from 'dotenv'
 
 dotenv.config()
@@ -8,13 +8,22 @@ const MONGO_URI = process.env.MONGO_URI
 const DB_NAME = process.env.MONGODB_DB || 'master'
 
 interface Plant {
-  _id: string | number;
+  _id: string | ObjectId; // MongoDB ObjectId
+  id?: number; // Optional numeric ID
   common_name: string;
   scientific_name: string;
   plant_type: string;
   default_image_url: string;
   names_in_languages: Record<string, string>;
   last_updated: string;
+  care?: {
+    light_requirement: string;
+    water_requirement: string;
+    soil_type: string;
+    suitable_temperature: string;
+    fertilizer: string;
+    common_diseases: string[];
+  };
 }
 
 const handler: Handler = async (event, context) => {
@@ -40,13 +49,29 @@ const handler: Handler = async (event, context) => {
     const { id } = event.queryStringParameters || {}
     
     if (id) {
-      // Try to find plant by id as either string or number
-      const plant = await collection.findOne({ 
-        $or: [
-          { _id: id }, // Try string ID first
-          { _id: parseInt(id) } // Then try numeric ID
-        ]
-      })
+      // Try to find plant by id in multiple formats: ObjectId, string, or number
+      let query;
+      
+      // Check if it's a valid ObjectId format
+      if (ObjectId.isValid(id)) {
+        query = {
+          $or: [
+            { _id: new ObjectId(id) }, // Try ObjectId in _id field
+            { _id: id }, // Try string ID in _id field
+            { id: parseInt(id) || 0 } // Try numeric ID in id field
+          ]
+        };
+      } else {
+        const numericId = parseInt(id);
+        query = {
+          $or: [
+            { _id: id }, // Try string ID in _id field
+            ...(numericId ? [{ id: numericId }] : []) // Try numeric ID in id field if valid
+          ]
+        };
+      }
+      
+      const plant = await collection.findOne(query)
       
       if (!plant) {
         return {
