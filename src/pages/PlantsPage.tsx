@@ -1382,61 +1382,61 @@ const PlantsPage: React.FC = () => {
             <h1 className="text-lg font-semibold text-primary">Plants</h1>
             
             {plants.length > 0 && (
-              <div className="flex items-center space-x-2">
-              {!isEditMode ? (
-                <>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleAddPlant}
+            <div className="flex items-center space-x-2">
+            {!isEditMode ? (
+              <>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleAddPlant}
+              >
+                <Plus className="w-4 h-4" />
+                <span className="text-sm">Add Plant</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleLogCare}
+              >
+                <ClipboardList className="w-4 h-4" />
+                <span className="text-sm">Log Care</span>
+              </Button>
+                {/* Edit Plants Button */}
+              <Button
+                  variant="outline"
+                size="sm"
+                  onClick={handleEditMode}
                 >
-                  <Plus className="w-4 h-4" />
-                  <span className="text-sm">Add Plant</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleLogCare}
-                >
-                  <ClipboardList className="w-4 h-4" />
-                  <span className="text-sm">Log Care</span>
-                </Button>
-                  {/* Edit Plants Button */}
-                <Button
-                    variant="outline"
-                  size="sm"
-                    onClick={handleEditMode}
-                  >
-                                      <Edit3 className="w-4 h-4" />
+                  <Edit3 className="w-4 h-4" />
                   <span className="text-sm">Edit</span>
                 </Button>
-                </>
-              ) : (
-                <>
-                  {/* Add Space Button in Edit Mode */}
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={handleAddSpace}
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span className="text-sm">Space</span>
-                  </Button>
-                  {/* Apply Button */}
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={handleApplyChanges}
-                    className="bg-primary text-primary-foreground"
-                  >
-                    <Check className="w-4 h-4" />
-                    <span className="text-sm">Apply</span>
-                  </Button>
-                </>
-              )}
-            </div>
+              </>
+            ) : (
+              <>
+                {/* Add Space Button in Edit Mode */}
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleAddSpace}
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="text-sm">Space</span>
+                </Button>
+                {/* Apply Button */}
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleApplyChanges}
+                  className="bg-primary text-primary-foreground"
+                >
+                  <Check className="w-4 h-4" />
+                  <span className="text-sm">Apply</span>
+                </Button>
+              </>
             )}
           </div>
+            )}
+        </div>
         
         {/* Edit Mode Banner */}
         {isEditMode && (
