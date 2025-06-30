@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence, MotionProps } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { MouseEvent } from 'react';
 
 interface BackdropProps {
@@ -15,7 +15,7 @@ export const Backdrop: React.FC<BackdropProps> = ({
   children, 
   className = '' 
 }) => {
-  const handleBackdropClick = (e: MouseEvent) => {
+  const handleBackdropClick = () => {
     onClose?.();
   };
 
