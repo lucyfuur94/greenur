@@ -404,6 +404,7 @@ export const handler: Handler = async (event, context) => {
 
           // Inside the background processing try block, update the messages array:
           const nextCheckupDate = await getNextCheckupDate(userId, db);
+          const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
 
           const messages = [
             {
@@ -411,7 +412,7 @@ export const handler: Handler = async (event, context) => {
               content: [
                 {
                   type: "text",
-                  text: `Analyze this plant image and provide ONLY valid JSON in this format. The next checkup date should be ${nextCheckupDate}.
+                  text: `Analyze this plant image and provide ONLY valid JSON in this format. Today's date is ${today}. The next checkup date should be ${nextCheckupDate}.
 
 {
   "stage": "Current growth stage",

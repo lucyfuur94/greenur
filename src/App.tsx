@@ -3,6 +3,7 @@ import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
 import PlantDetailsPage from './pages/PlantDetailsPage';
 import PlantsPage from './pages/PlantsPage';
+import PlantLogsPage from './pages/PlantLogsPage';
 import OnboardingFlow from './components/OnboardingFlow';
 import { useAuth } from './lib/AuthContext';
 import { useOnboarding } from './lib/OnboardingContext';
@@ -12,7 +13,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import AuthLandingPage from './pages/AuthLandingPage';
 import TrackPage from './pages/TrackPage';
 import { useEffect, useState } from 'react';
-import SplashLoader from './components/ui/SplashLoader';
+
 
 function App() {
   const { currentUser, loading: authLoading } = useAuth();
@@ -43,9 +44,13 @@ function App() {
     }, 300);
   }, [authLoading, currentUser, userPreferences, isOnboardingComplete]);
 
-  // If still loading auth or checking preferences, show loading screen
+  // If still loading auth or checking preferences, show a simple loading screen
   if (authLoading || (currentUser && checkingPreferences)) {
-    return <SplashLoader />;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
   }
 
   // If not authenticated, redirect to sign in
@@ -80,6 +85,7 @@ function App() {
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="/home" element={<HomePage onNavigate={(page) => navigate(`/${page}`)} />} />
       <Route path="/plants" element={<PlantsPage />} />
+      <Route path="/plant-logs/:plantId" element={<PlantLogsPage />} />
       <Route path="/profile" element={<ProfilePage onBack={() => navigate('/home')} />} />
       <Route path="/track" element={<TrackPage />} />
       <Route path="/plant/:plantId" element={<PlantDetailsPage />} />

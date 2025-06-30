@@ -80,7 +80,9 @@ const handler: Handler = async (event) => {
       },
       body: JSON.stringify({
         message: 'Plant added successfully',
-        plantId: result.insertedId,
+        plantId: result.insertedId.toString(), // Return the unique user plant instance ID
+        userPlantId: result.insertedId.toString(), // Also provide as userPlantId for clarity
+        plantTypeId: plantToAdd.plantId // And provide the plant type ID separately
       }),
     }
   } catch (error) {

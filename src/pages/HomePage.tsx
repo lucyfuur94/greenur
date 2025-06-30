@@ -267,17 +267,17 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           </Button>
         </div>
         
-        <ScrollArea className="w-full">
-          <div className="flex space-x-4 pb-2">
-            {plants.length > 0 ? (
-              plants.slice(0, 6).map((plant) => (
+        {plants.length > 0 ? (
+          <ScrollArea className="w-full">
+            <div className="flex space-x-4 pb-2">
+              {plants.slice(0, 6).map((plant) => (
                 <div key={plant._id} className="flex flex-col items-center min-w-[80px]">
                   <div className="w-16 h-16 rounded-lg bg-muted border-2 border-border overflow-hidden">
                     {plant.currentImage ? (
                       <img 
                         src={plant.currentImage} 
                         alt={plant.nickname} 
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover object-center scale-150"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -289,21 +289,17 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                     {plant.nickname || plant.plantDetails.common_name}
                   </span>
                 </div>
-              ))
-            ) : (
-              Array.from({ length: 4 }, (_, i) => (
-                <div key={i} className="flex flex-col items-center min-w-[80px]">
-                  <div className="w-16 h-16 rounded-lg bg-muted border-2 border-border flex items-center justify-center">
-                    <Plus className="w-6 h-6 text-muted-foreground" />
-                  </div>
-                  <span className="text-xs mt-1 text-center text-muted-foreground">
-                    Add Plant
-                  </span>
-                </div>
-              ))
-            )}
+              ))}
+            </div>
+          </ScrollArea>
+        ) : (
+          <div className="text-center py-8">
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+              <Leaf className="w-6 h-6 text-muted-foreground" />
+            </div>
+            <p className="text-sm text-muted-foreground">No plants added</p>
           </div>
-        </ScrollArea>
+        )}
       </div>
     );
   };
