@@ -118,7 +118,9 @@ export const handler: Handler = async (event, context) => {
           headers: corsHeaders,
           body: JSON.stringify({
             message: 'Plant added successfully',
-            plantId: result.insertedId
+            plantId: result.insertedId.toString(), // Return the unique user plant instance ID
+            userPlantId: result.insertedId.toString(), // Also provide as userPlantId for clarity
+            plantTypeId: plantToAdd.plantId // And provide the plant type ID separately
           })
         }
       }
@@ -129,13 +131,21 @@ export const handler: Handler = async (event, context) => {
         
         // If id is provided, fetch single plant
         if (id) {
-          const plant = await collection.findOne({ _id: new ObjectId(id) })
+          let plant;
+          
+          // Only look up by MongoDB ObjectId (user's plant instance)
+          if (ObjectId.isValid(id)) {
+            plant = await collection.findOne({ 
+              _id: new ObjectId(id),
+              userId: authorizedUserId // Ensure user owns the plant
+            });
+          }
           
           if (!plant) {
             return {
               statusCode: 404,
               headers: corsHeaders,
-              body: JSON.stringify({ error: 'Plant not found' })
+              body: JSON.stringify({ error: 'Plant not found or access denied' })
             }
           }
 

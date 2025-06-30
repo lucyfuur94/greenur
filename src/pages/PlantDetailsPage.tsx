@@ -439,6 +439,13 @@ const PlantDetailsPage: React.FC = () => {
     return string.charAt(0).toUpperCase() + string.slice(1).replace(/_/g, ' ');
   };
 
+  const formatPlantType = (type: string) => {
+    return type
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   const getPlantImageUrl = () => {
     // Prioritize Firebase growth stage images from the LAST stage instead of first
     if (growthStages.length > 0) {
@@ -530,7 +537,7 @@ const PlantDetailsPage: React.FC = () => {
             {/* Plant Details */}
             <div className="flex-1 space-y-2">
               <div>
-                <p className="text-sm font-medium text-gray-600">{plantData.type} | {plantData.scientificName}</p>
+                <p className="text-sm font-medium text-gray-600">{formatPlantType(plantData.type)} | {plantData.scientificName}</p>
               </div>
               
               {/* Care Requirements - New Compact/Detailed Format */}

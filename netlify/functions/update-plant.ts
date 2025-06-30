@@ -1,55 +1,87 @@
 import { Handler } from '@netlify/functions'
-import { MongoClient } from 'mongodb'
+import { MongoClient, ObjectId } from 'mongodb'
 import dotenv from 'dotenv'
+import { verifyAuthToken } from './utils/firebaseAdmin'
 
 dotenv.config()
 
 const MONGO_URI = process.env.MONGO_URI
 const DB_NAME = process.env.MONGODB_DB || 'master'
 
-interface Plant {
-  _id: number | string;
-  common_name: string;
-  scientific_name: string;
-  plant_type: string;
-  default_image_url: string;
-  names_in_languages: Record<string, string>;
-  last_updated: string;
-  care?: {
-    light_requirement: string;
-    water_requirement: string;
-    soil_type: string;
-    suitable_temperature: string;
-    fertilizer: string;
-    common_diseases: string[];
+const corsHeaders = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+}
+
+interface TrackedPlant {
+  _id?: string | ObjectId;
+  userId: string;
+  nickname: string;
+  plantId: string | number;
+  currentImage: string;
+  dateAdded: string;
+  lastWatered?: string;
+  notes?: string;
+  healthStatus?: 'healthy' | 'needs_attention' | 'unhealthy';
+  plantDetails: {
+    common_name: string;
+    scientific_name: string;
+    plant_type: string;
   };
+  imageHistory: Array<{
+    url: string;
+    timestamp: string;
+    analysis?: any;
+  }>;
+  growingSpaceId?: string | null;
 }
 
-interface PlantUpdate {
-  scientific_name?: string;
-  plant_type?: string;
-  default_image_url?: string;
-  names_in_languages?: Record<string, string>;
-}
-
-export const handler: Handler = async (event) => {
-  // Only allow PUT requests
-  if (event.httpMethod !== 'PUT') {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: 'Method not allowed' }),
-    }
+export const handler: Handler = async (event, context) => {
+  if (context) {
+    context.callbackWaitsForEmptyEventLoop = false;
   }
 
   let client: MongoClient | null = null
 
   try {
-    const { id } = event.queryStringParameters || {}
-    const updates: PlantUpdate = JSON.parse(event.body || '{}')
+    // Handle CORS preflight
+    if (event.httpMethod === 'OPTIONS') {
+      return {
+        statusCode: 204,
+        headers: corsHeaders,
+        body: '',
+      }
+    }
+
+    // Only allow POST requests for this function
+    if (event.httpMethod !== 'POST') {
+      return {
+        statusCode: 405,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Method not allowed' }),
+      }
+    }
+
+    // Verify authentication
+    const authHeader = event.headers.authorization
+    const authorizedUserId = await verifyAuthToken(authHeader)
     
-    if (!id) {
+    if (!authorizedUserId) {
+      return {
+        statusCode: 401,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Unauthorized: Invalid or missing authentication token' })
+      }
+    }
+
+    const { plantId, imageUrl, timestamp, action } = JSON.parse(event.body || '{}')
+    
+    if (!plantId) {
       return {
         statusCode: 400,
+        headers: corsHeaders,
         body: JSON.stringify({ error: 'Plant ID is required' }),
       }
     }
@@ -59,60 +91,119 @@ export const handler: Handler = async (event) => {
     await client.connect()
 
     const db = client.db(DB_NAME)
-    const collection = db.collection<Plant>('plant_basics')
+    const collection = db.collection<TrackedPlant>('user_plants')
 
-    // Add last_updated timestamp
-    const updateData = {
-      ...updates,
-      last_updated: new Date().toISOString()
-    }
-
-    // Try to find the plant first to determine the ID type
+    // Verify ownership
     const plant = await collection.findOne({ 
-      $or: [
-        { _id: id }, // Try string ID
-        { _id: parseInt(id, 10) } // Try numeric ID
-      ]
-    });
+      _id: new ObjectId(plantId),
+      userId: authorizedUserId 
+    })
 
     if (!plant) {
       return {
         statusCode: 404,
-        body: JSON.stringify({ error: 'Plant not found' })
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Plant not found or access denied' })
       }
     }
 
-    // Update using the correct ID type
+    let updateOperation;
+
+    switch (action) {
+      case 'add_image': {
+        if (!imageUrl) {
+          return {
+            statusCode: 400,
+            headers: corsHeaders,
+            body: JSON.stringify({ error: 'Image URL is required for add_image action' })
+          }
+        }
+
+        updateOperation = {
+          $set: { 
+            currentImage: imageUrl,
+            lastUpdated: new Date().toISOString()
+          },
+          $push: {
+            imageHistory: {
+              url: imageUrl,
+              timestamp: new Date().toISOString()
+            }
+          }
+        }
+        break;
+      }
+
+      case 'remove_image': {
+        if (!imageUrl || !timestamp) {
+          return {
+            statusCode: 400,
+            headers: corsHeaders,
+            body: JSON.stringify({ error: 'Image URL and timestamp are required for remove_image action' })
+          }
+        }
+
+        // Remove the specific image from history
+        updateOperation = {
+          $pull: {
+            imageHistory: {
+              url: imageUrl,
+              timestamp: timestamp
+            }
+          },
+          $set: {
+            lastUpdated: new Date().toISOString()
+          }
+        }
+
+        // After removing, check if we need to update currentImage
+        const updatedImageHistory = plant.imageHistory.filter(item => 
+          !(item.url === imageUrl && item.timestamp === timestamp)
+        )
+
+        // If the removed image was the current image, update to the latest remaining image
+        if (plant.currentImage === imageUrl && updatedImageHistory.length > 0) {
+          const latestImage = updatedImageHistory[updatedImageHistory.length - 1]
+          updateOperation.$set.currentImage = latestImage.url
+        }
+        break;
+      }
+
+      default: {
+        return {
+          statusCode: 400,
+          headers: corsHeaders,
+          body: JSON.stringify({ error: 'Invalid action. Supported actions: add_image, remove_image' })
+        }
+      }
+    }
+
     const result = await collection.updateOne(
-      { _id: plant._id },
-      { $set: updateData }
+      { _id: new ObjectId(plantId) },
+      updateOperation
     )
 
     if (result.matchedCount === 0) {
       return {
         statusCode: 404,
+        headers: corsHeaders,
         body: JSON.stringify({ error: 'Plant not found' }),
       }
     }
 
     return {
       statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'PUT',
-      },
+      headers: corsHeaders,
       body: JSON.stringify({
-        message: 'Plant updated successfully',
-        updates: updateData,
-        plantId: plant._id
+        message: `Image ${action === 'add_image' ? 'added' : 'removed'} successfully`,
+        action: action
       }),
     }
   } catch (error) {
     console.error('Error updating plant:', error)
     return {
       statusCode: 500,
+      headers: corsHeaders,
       body: JSON.stringify({ error: 'Failed to update plant' }),
     }
   } finally {

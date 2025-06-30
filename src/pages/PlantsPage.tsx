@@ -19,7 +19,8 @@ import {
   Minus,
   ArrowLeft,
   Upload,
-  Loader2
+  Loader2,
+  Edit
 } from "lucide-react";
 import FooterNavigation from '@/components/FooterNavigation';
 import { useNavigate } from 'react-router-dom';
@@ -57,13 +58,14 @@ interface PlantAnalysis {
   scientificName: string
   plantType?: string
   inDatabase?: boolean
+  catalogId?: string
 }
 
 interface AddPlantModalProps {
   isOpen: boolean
   onClose: () => void
   spaces: { id: string; name: string }[]
-  onPlantAdded: () => void
+  onPlantAdded: (plantId?: string) => void
 }
 
 const AddPlantModal: React.FC<AddPlantModalProps> = ({ isOpen, onClose, spaces, onPlantAdded }) => {
@@ -75,8 +77,51 @@ const AddPlantModal: React.FC<AddPlantModalProps> = ({ isOpen, onClose, spaces, 
   const [nickname, setNickname] = useState('')
   const [selectedSpace, setSelectedSpace] = useState<string>('unassigned')
   const [error, setError] = useState<string | null>(null)
+  const [existingPlants, setExistingPlants] = useState<TrackedPlant[]>([])
   const { currentUser } = useAuth()
   const { toast } = useToast()
+
+  // Fetch existing plants for duplicate checking
+  useEffect(() => {
+    const fetchExistingPlants = async () => {
+      if (!currentUser || !isOpen) return;
+      
+      try {
+        const token = await currentUser.getIdToken()
+        const response = await fetch(`/.netlify/functions/tracked-plants?userId=${currentUser.uid}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setExistingPlants(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error('Error fetching existing plants:', error);
+        setExistingPlants([]);
+      }
+    };
+
+    fetchExistingPlants();
+  }, [currentUser, isOpen]);
+
+  const generateUniqueNickname = (baseName: string) => {
+    const existingNicknames = existingPlants.map(plant => 
+      (plant.nickname || plant.plantDetails.common_name).toLowerCase()
+    );
+    
+    let newName = baseName;
+    let counter = 1;
+    
+    while (existingNicknames.includes(newName.toLowerCase())) {
+      counter++;
+      newName = `${baseName} ${counter}`;
+    }
+    
+    return newName;
+  };
 
   const resetModal = () => {
     setStep('capture')
@@ -299,7 +344,9 @@ const AddPlantModal: React.FC<AddPlantModalProps> = ({ isOpen, onClose, spaces, 
       
       if (data.analysis) {
         setAnalysis(data.analysis)
-        setNickname(data.analysis.commonName || 'My Plant')
+        // Generate unique nickname based on common name
+        const uniqueName = generateUniqueNickname(data.analysis.commonName || 'My Plant')
+        setNickname(uniqueName)
         setStep('confirm')
         console.log('analyzePlant: Analysis complete, moving to confirm step')
       } else {
@@ -340,15 +387,19 @@ const AddPlantModal: React.FC<AddPlantModalProps> = ({ isOpen, onClose, spaces, 
         throw new Error(errorData.error || 'Failed to add plant to database')
       }
 
+      const addedPlant = await response.json()
+      console.log('Plant added to catalog:', addedPlant)
+
       toast({
         title: "Plant Added to Database!",
         description: `${analysis.commonName} has been added to our plant database with care information.`
       })
 
-      // Update the analysis to reflect it's now in database
+      // Update the analysis to reflect it's now in database with the catalog ID
       setAnalysis({
         ...analysis,
-        inDatabase: true
+        inDatabase: true,
+        catalogId: addedPlant._id
       })
 
     } catch (error: any) {
@@ -364,6 +415,22 @@ const AddPlantModal: React.FC<AddPlantModalProps> = ({ isOpen, onClose, spaces, 
 
   const handleAddPlant = async () => {
     if (!imageFile || !analysis || !currentUser) return
+
+    // Final check for duplicate nickname before saving
+    const finalNickname = nickname.trim();
+    if (!finalNickname) {
+      setError('Please enter a plant nickname')
+      return
+    }
+
+    const existingNicknames = existingPlants.map(plant => 
+      (plant.nickname || plant.plantDetails.common_name).toLowerCase()
+    );
+    
+    if (existingNicknames.includes(finalNickname.toLowerCase())) {
+      setError('A plant with this name already exists. Please choose a different name.')
+      return
+    }
 
     try {
       setIsProcessing(true)
@@ -402,12 +469,14 @@ const AddPlantModal: React.FC<AddPlantModalProps> = ({ isOpen, onClose, spaces, 
       
       const plantData = {
         userId: currentUser.uid,
-        nickname: nickname || analysis.commonName,
-        plantId: `custom_${Date.now()}`,
+        nickname: finalNickname,
+        plantId: analysis.inDatabase && analysis.catalogId 
+          ? analysis.catalogId 
+          : `custom_${currentUser.uid.slice(-8)}_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
         currentImage: uploadData.url,
         plantDetails: {
           common_name: analysis.commonName,
-          scientific_name: analysis.scientificName,
+          scientificName: analysis.scientificName,
           plant_type: analysis.plantType || 'Unknown'
         },
         growingSpaceId: selectedSpace === 'unassigned' || !selectedSpace ? null : selectedSpace
@@ -440,7 +509,7 @@ const AddPlantModal: React.FC<AddPlantModalProps> = ({ isOpen, onClose, spaces, 
         description: `${nickname || analysis.commonName} has been added to your collection.`
       })
 
-      onPlantAdded()
+      onPlantAdded(result.plantId)
       handleClose()
       
     } catch (error: any) {
@@ -558,12 +627,14 @@ const AddPlantModal: React.FC<AddPlantModalProps> = ({ isOpen, onClose, spaces, 
             <div className="space-y-4">
               {/* Image Preview */}
               {imagePreview && (
-                <div className="text-center">
-                  <img 
-                    src={imagePreview} 
-                    alt="Plant preview" 
-                    className="w-32 h-32 object-cover rounded-lg mx-auto border"
-                  />
+                <div className="flex justify-center">
+                  <div className="w-32 h-32 rounded-xl bg-muted border-2 overflow-hidden transition-shadow border-border hover:shadow-md">
+                    <img 
+                      src={imagePreview} 
+                      alt="Plant preview" 
+                      className="w-full h-full object-cover object-center scale-150"
+                    />
+                  </div>
                 </div>
               )}
 
@@ -616,10 +687,29 @@ const AddPlantModal: React.FC<AddPlantModalProps> = ({ isOpen, onClose, spaces, 
                 <Input
                   id="nickname"
                   value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setNickname(value);
+                    // Clear error when user starts typing
+                    if (error && error.includes('name already exists')) {
+                      setError(null);
+                    }
+                  }}
                   placeholder="Give your plant a name"
-                  className="w-full"
+                  className={`w-full ${
+                    error && error.includes('name already exists') 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : ''
+                  }`}
                 />
+                {/* Show warning for duplicate names */}
+                {nickname.trim() && existingPlants.some(plant => 
+                  (plant.nickname || plant.plantDetails.common_name).toLowerCase() === nickname.trim().toLowerCase()
+                ) && (
+                  <p className="text-sm text-amber-600 mt-1">
+                    ⚠️ A plant with this name already exists
+                  </p>
+                )}
               </div>
 
               {/* Growing Space Selection */}
@@ -654,7 +744,14 @@ const AddPlantModal: React.FC<AddPlantModalProps> = ({ isOpen, onClose, spaces, 
                 </Button>
                 <Button 
                   onClick={handleAddPlant}
-                  disabled={isProcessing || !nickname.trim() || !analysis?.inDatabase}
+                  disabled={
+                    isProcessing || 
+                    !nickname.trim() || 
+                    !analysis?.inDatabase ||
+                    existingPlants.some(plant => 
+                      (plant.nickname || plant.plantDetails.common_name).toLowerCase() === nickname.trim().toLowerCase()
+                    )
+                  }
                   className="flex-1"
                 >
                   {isProcessing ? (
@@ -694,6 +791,9 @@ const PlantsPage: React.FC = () => {
   const [showDeleteSpaceModal, setShowDeleteSpaceModal] = useState(false);
   const [spaceToDelete, setSpaceToDelete] = useState<string | null>(null);
   const [showAddPlantModal, setShowAddPlantModal] = useState(false);
+  const [showRenameSpaceModal, setShowRenameSpaceModal] = useState(false);
+  const [spaceToRename, setSpaceToRename] = useState<string | null>(null);
+  const [renameSpaceName, setRenameSpaceName] = useState('');
 
   // Fetch user's tracked plants
   useEffect(() => {
@@ -958,6 +1058,57 @@ const PlantsPage: React.FC = () => {
     setShowDeleteSpaceModal(true);
   };
 
+  const handleRenameSpace = (spaceId: string) => {
+    const space = userPreferences?.growingSpaces?.find(s => s.id === spaceId);
+    if (space) {
+      setSpaceToRename(spaceId);
+      setRenameSpaceName(space.name || '');
+      setShowRenameSpaceModal(true);
+    }
+  };
+
+  const confirmRenameSpace = async () => {
+    if (!spaceToRename || !renameSpaceName.trim()) return;
+
+    try {
+      // Update space name in user preferences
+      const updatedSpaces = userPreferences?.growingSpaces?.map(space => 
+        space.id === spaceToRename 
+          ? { ...space, name: renameSpaceName.trim() }
+          : space
+      ) || [];
+      
+      if (updateUserPreferences) {
+        await updateUserPreferences({
+          ...userPreferences,
+          growingSpaces: updatedSpaces
+        });
+      }
+
+      toast({
+        title: "Space Renamed",
+        description: `Space renamed to "${renameSpaceName.trim()}" successfully.`
+      });
+    } catch (error) {
+      console.error('Error renaming space:', error);
+      toast({
+        title: "Error",
+        description: "Failed to rename space. Please try again.",
+        variant: "destructive"
+      });
+    }
+
+    setShowRenameSpaceModal(false);
+    setSpaceToRename(null);
+    setRenameSpaceName('');
+  };
+
+  const cancelRenameSpace = () => {
+    setShowRenameSpaceModal(false);
+    setSpaceToRename(null);
+    setRenameSpaceName('');
+  };
+
   const confirmDeleteSpace = async () => {
     if (!spaceToDelete || spaceToDelete === 'unassigned') return;
 
@@ -1084,7 +1235,7 @@ const PlantsPage: React.FC = () => {
   };
 
   const handleShowDetails = (plant: TrackedPlant) => {
-    navigate(`/plant/${plant.plantId}`);
+    navigate(`/plant-logs/${plant._id}`);  // Use the user's plant instance ID, not the plant type ID
     setSelectedPlantId(null);
   };
 
@@ -1183,9 +1334,9 @@ const PlantsPage: React.FC = () => {
               <div className="flex items-center justify-between px-4">
                 <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
                   {spaceId !== 'unassigned' && <Home className="w-4 h-4" />}
-                {getSpaceName(spaceId)}
+                  {getSpaceName(spaceId)}
                   <span className="text-sm text-muted-foreground">({spacePlants.length})</span>
-              </h2>
+                </h2>
                 <div className="flex items-center gap-2">
                   {isEditMode && (
                     <span className="text-xs text-muted-foreground">
@@ -1193,14 +1344,24 @@ const PlantsPage: React.FC = () => {
                     </span>
                   )}
                   {isEditMode && spaceId !== 'unassigned' && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteSpace(spaceId)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRenameSpace(spaceId)}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteSpace(spaceId)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
@@ -1244,7 +1405,7 @@ const PlantsPage: React.FC = () => {
                             <img 
                               src={plant.currentImage} 
                               alt={plant.nickname} 
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-cover object-center scale-150"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
@@ -1253,12 +1414,12 @@ const PlantsPage: React.FC = () => {
                           )}
                         </div>
                         <div className="mt-2 text-center w-20">
-                          <span className="text-sm font-medium text-foreground truncate block">
+                          <div className="text-xs font-medium text-foreground leading-tight">
                             {plant.nickname || plant.plantDetails.common_name}
-                          </span>
-                          <span className="text-xs text-muted-foreground truncate block">
+                          </div>
+                          <div className="text-xs text-muted-foreground leading-tight mt-0.5">
                             {plant.plantDetails.plant_type}
-                          </span>
+                          </div>
                         </div>
                         
                         {/* Dropdown Menu - only show when not in edit mode */}
@@ -1278,7 +1439,7 @@ const PlantsPage: React.FC = () => {
                               className="w-full px-3 py-2 text-sm text-foreground hover:bg-accent flex items-center gap-2"
                             >
                               <Eye className="w-4 h-4" />
-                              Show Details
+                              Open Details
                             </button>
                             <button
                               onClick={(e) => {
@@ -1377,269 +1538,327 @@ const PlantsPage: React.FC = () => {
   return (
     <div className="relative flex flex-col h-screen w-full bg-background text-foreground overflow-hidden">
       {/* Header */}
-              <div className="w-full bg-background shadow-sm sticky top-0 z-10 border-b border-border">
-          <div className="flex items-center justify-between px-4 py-3">
-            <h1 className="text-lg font-semibold text-primary">Plants</h1>
-            
-            {plants.length > 0 && (
-            <div className="flex items-center space-x-2">
-            {!isEditMode ? (
-              <>
+      <div className="w-full bg-background shadow-sm sticky top-0 z-10 border-b border-border">
+        <div className="flex items-center justify-between px-4 py-3">
+          <h1 className="text-lg font-semibold text-primary">Plants</h1>
+          
+          {plants.length > 0 && (
+          <div className="flex items-center space-x-2">
+          {!isEditMode ? (
+            <>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleAddPlant}
+            >
+              <Plus className="w-4 h-4" />
+              <span className="text-sm">Add Plant</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleLogCare}
+            >
+              <ClipboardList className="w-4 h-4" />
+              <span className="text-sm">Log Care</span>
+            </Button>
+              {/* Edit Plants Button */}
+            <Button
+                variant="outline"
+              size="sm"
+                onClick={handleEditMode}
+              >
+                <Edit3 className="w-4 h-4" />
+                <span className="text-sm">Edit</span>
+              </Button>
+            </>
+          ) : (
+            <>
+              {/* Add Space Button in Edit Mode */}
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={handleAddPlant}
+                onClick={handleAddSpace}
               >
                 <Plus className="w-4 h-4" />
-                <span className="text-sm">Add Plant</span>
+                <span className="text-sm">Space</span>
               </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleLogCare}
-              >
-                <ClipboardList className="w-4 h-4" />
-                <span className="text-sm">Log Care</span>
-              </Button>
-                {/* Edit Plants Button */}
+              {/* Apply Button */}
               <Button
-                  variant="outline"
+                variant="default"
                 size="sm"
-                  onClick={handleEditMode}
-                >
-                  <Edit3 className="w-4 h-4" />
-                  <span className="text-sm">Edit</span>
-                </Button>
-              </>
-            ) : (
-              <>
-                {/* Add Space Button in Edit Mode */}
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleAddSpace}
-                >
-                  <Plus className="w-4 h-4" />
-                  <span className="text-sm">Space</span>
-                </Button>
-                {/* Apply Button */}
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={handleApplyChanges}
-                  className="bg-primary text-primary-foreground"
-                >
-                  <Check className="w-4 h-4" />
-                  <span className="text-sm">Apply</span>
-                </Button>
-              </>
-            )}
-          </div>
-            )}
-        </div>
-        
-        {/* Edit Mode Banner */}
-        {isEditMode && (
-          <div className="bg-primary/10 border-b border-primary/20 px-4 py-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-primary font-medium">
-                {selectedPlantsForDeletion.size > 0 
-                  ? `${selectedPlantsForDeletion.size} plant(s) selected for deletion`
-                  : "Drag plants to move them between spaces or select plants to delete"
-                }
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsEditMode(false)}
-                className="text-primary hover:text-primary/80"
+                onClick={handleApplyChanges}
+                className="bg-primary text-primary-foreground"
               >
-                <X className="w-4 h-4" />
+                <Check className="w-4 h-4" />
+                <span className="text-sm">Apply</span>
               </Button>
-            </div>
-          </div>
-        )}
+            </>
+          )}
         </div>
-      
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto pb-24" style={{ overflowY: 'auto', overflowX: 'visible' }}>
-        <div className="py-4">
-          {renderPlantsLayout()}
-        </div>
+          )}
       </div>
       
-      {/* Add Space Modal */}
-      {showAddSpaceModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-background border border-border rounded-lg shadow-lg w-full max-w-md">
-            <div className="p-6">
-              <h2 className="text-lg font-semibold text-foreground mb-4">Add New Space</h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="spaceName" className="block text-sm font-medium text-foreground mb-2">
-                    Space Name
-                  </label>
-                  <input
-                    id="spaceName"
-                    type="text"
-                    value={newSpaceName}
-                    onChange={(e) => setNewSpaceName(e.target.value)}
-                    placeholder="e.g., Living Room, Balcony, Garden..."
-                    className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleCreateSpace();
-                      } else if (e.key === 'Escape') {
-                        handleCancelAddSpace();
-                      }
-                    }}
-                  />
-                </div>
-                
-                <div className="flex justify-end space-x-3 pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={handleCancelAddSpace}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleCreateSpace}
-                    disabled={!newSpaceName.trim()}
-                    className="bg-primary hover:bg-primary/90"
-                  >
-                    Add Space
-                  </Button>
-                </div>
-              </div>
-            </div>
+      {/* Edit Mode Banner */}
+      {isEditMode && (
+        <div className="bg-primary/10 border-b border-primary/20 px-4 py-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-primary font-medium">
+              {selectedPlantsForDeletion.size > 0 
+                ? `${selectedPlantsForDeletion.size} plant(s) selected for deletion`
+                : "Drag plants to move them between spaces or select plants to delete"
+              }
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsEditMode(false)}
+              className="text-primary hover:text-primary/80"
+            >
+              <X className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       )}
-
-      {/* Delete Space Confirmation Modal */}
-      {showDeleteSpaceModal && spaceToDelete && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-background border border-border rounded-lg shadow-lg w-full max-w-md">
-            <div className="p-6">
-              <h2 className="text-lg font-semibold text-foreground mb-4">Delete Space</h2>
-              
-              <div className="mb-4">
-                <p className="text-muted-foreground mb-2">
-                  Are you sure you want to delete this space?
-                </p>
-                <div className="bg-muted/30 rounded-lg p-3 border">
-                  <p className="font-medium text-foreground">
-                    {getSpaceName(spaceToDelete)}
-                  </p>
-                </div>
-                <p className="text-sm text-amber-600 mt-2">
-                  All plants in this space will be moved to "Unassigned Plants".
-                </p>
+    </div>
+    
+    {/* Main Content */}
+    <div className="flex-1 overflow-auto pb-24" style={{ overflowY: 'auto', overflowX: 'visible' }}>
+      <div className="py-4">
+        {renderPlantsLayout()}
+      </div>
+    </div>
+    
+    {/* Add Space Modal */}
+    {showAddSpaceModal && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
+        <div className="bg-background border border-border rounded-lg shadow-lg w-full max-w-md">
+          <div className="p-6">
+            <h2 className="text-lg font-semibold text-foreground mb-4">Add New Space</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="spaceName" className="block text-sm font-medium text-foreground mb-2">
+                  Space Name
+                </label>
+                <input
+                  id="spaceName"
+                  type="text"
+                  value={newSpaceName}
+                  onChange={(e) => setNewSpaceName(e.target.value)}
+                  placeholder="e.g., Living Room, Balcony, Garden..."
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleCreateSpace();
+                    } else if (e.key === 'Escape') {
+                      handleCancelAddSpace();
+                    }
+                  }}
+                />
               </div>
               
-              <div className="flex justify-end space-x-3">
+              <div className="flex justify-end space-x-3 pt-4">
                 <Button
                   variant="outline"
-                  onClick={cancelDeleteSpace}
+                  onClick={handleCancelAddSpace}
                 >
                   Cancel
                 </Button>
                 <Button
-                  onClick={confirmDeleteSpace}
-                  className="bg-red-600 hover:bg-red-700 text-white"
+                  onClick={handleCreateSpace}
+                  disabled={!newSpaceName.trim()}
+                  className="bg-primary hover:bg-primary/90"
                 >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Space
+                  Add Space
                 </Button>
               </div>
             </div>
           </div>
         </div>
-      )}
-      
-      {/* Delete Plant Confirmation Modal */}
-      {showDeleteConfirmModal && plantToDelete && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-background border border-border rounded-lg shadow-lg w-full max-w-md">
-            <div className="p-6">
-              <h2 className="text-lg font-semibold text-foreground mb-4">Delete Plant</h2>
+      </div>
+    )}
+
+    {/* Rename Space Modal */}
+    {showRenameSpaceModal && spaceToRename && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
+        <div className="bg-background border border-border rounded-lg shadow-lg w-full max-w-md">
+          <div className="p-6">
+            <h2 className="text-lg font-semibold text-foreground mb-4">Rename Space</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="renameSpaceName" className="block text-sm font-medium text-foreground mb-2">
+                  Space Name
+                </label>
+                <input
+                  id="renameSpaceName"
+                  type="text"
+                  value={renameSpaceName}
+                  onChange={(e) => setRenameSpaceName(e.target.value)}
+                  placeholder="Enter new space name..."
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      confirmRenameSpace();
+                    } else if (e.key === 'Escape') {
+                      cancelRenameSpace();
+                    }
+                  }}
+                />
+              </div>
               
-              <div className="mb-4">
-                <p className="text-muted-foreground mb-2">
-                  Are you sure you want to delete this plant?
+              <div className="flex justify-end space-x-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={cancelRenameSpace}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmRenameSpace}
+                  disabled={!renameSpaceName.trim()}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  Rename Space
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Delete Space Confirmation Modal */}
+    {showDeleteSpaceModal && spaceToDelete && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
+        <div className="bg-background border border-border rounded-lg shadow-lg w-full max-w-md">
+          <div className="p-6">
+            <h2 className="text-lg font-semibold text-foreground mb-4">Delete Space</h2>
+            
+            <div className="mb-4">
+              <p className="text-muted-foreground mb-2">
+                Are you sure you want to delete this space?
+              </p>
+              <div className="bg-muted/30 rounded-lg p-3 border">
+                <p className="font-medium text-foreground">
+                  {getSpaceName(spaceToDelete)}
                 </p>
-                <div className="bg-muted/30 rounded-lg p-3 border">
-                  <div className="flex items-center space-x-3">
-                    {plantToDelete.currentImage ? (
-                      <img 
-                        src={plantToDelete.currentImage} 
-                        alt={plantToDelete.nickname} 
-                        className="w-12 h-12 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
-                        <Leaf className="w-6 h-6 text-muted-foreground" />
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-medium text-foreground">
-                        {plantToDelete.nickname || plantToDelete.plantDetails.common_name}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {plantToDelete.plantDetails.plant_type}
-                      </p>
+              </div>
+              <p className="text-sm text-amber-600 mt-2">
+                All plants in this space will be moved to "Unassigned Plants".
+              </p>
+            </div>
+            
+            <div className="flex justify-end space-x-3">
+              <Button
+                variant="outline"
+                onClick={cancelDeleteSpace}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmDeleteSpace}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Space
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    
+    {/* Delete Plant Confirmation Modal */}
+    {showDeleteConfirmModal && plantToDelete && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
+        <div className="bg-background border border-border rounded-lg shadow-lg w-full max-w-md">
+          <div className="p-6">
+            <h2 className="text-lg font-semibold text-foreground mb-4">Delete Plant</h2>
+            
+            <div className="mb-4">
+              <p className="text-muted-foreground mb-2">
+                Are you sure you want to delete this plant?
+              </p>
+              <div className="bg-muted/30 rounded-lg p-3 border">
+                <div className="flex items-center space-x-3">
+                  {plantToDelete.currentImage ? (
+                    <img 
+                      src={plantToDelete.currentImage} 
+                      alt={plantToDelete.nickname} 
+                      className="w-12 h-12 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
+                      <Leaf className="w-6 h-6 text-muted-foreground" />
                     </div>
+                  )}
+                  <div>
+                    <p className="font-medium text-foreground">
+                      {plantToDelete.nickname || plantToDelete.plantDetails.common_name}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {plantToDelete.plantDetails.plant_type}
+                    </p>
                   </div>
                 </div>
-                <p className="text-sm text-red-600 mt-2">
-                  This action cannot be undone. All plant data and history will be permanently deleted.
-                </p>
               </div>
-              
-              <div className="flex justify-end space-x-3">
-                <Button
-                  variant="outline"
-                  onClick={cancelDeletePlant}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={confirmDeletePlant}
-                  className="bg-red-600 hover:bg-red-700 text-white"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Plant
-                </Button>
-              </div>
+              <p className="text-sm text-red-600 mt-2">
+                This action cannot be undone. All plant data and history will be permanently deleted.
+              </p>
+            </div>
+            
+            <div className="flex justify-end space-x-3">
+              <Button
+                variant="outline"
+                onClick={cancelDeletePlant}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmDeletePlant}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Plant
+              </Button>
             </div>
           </div>
         </div>
-      )}
-      
-      {/* Bottom Navigation */}
-      <FooterNavigation 
-        activeTab="plants"
-        onNavigate={(page) => {
-          if (page === 'home') navigate('/home');
-          else if (page === 'track') navigate('/track');
-          else if (page === 'ai') toast({ title: "Arth AI", description: "Coming soon!" });
-          // No need to navigate for 'plants' as we're already here
-        }}
-      />
+      </div>
+    )}
+    
+    {/* Bottom Navigation */}
+    <FooterNavigation 
+      activeTab="plants"
+      onNavigate={(page) => {
+        if (page === 'home') navigate('/home');
+        else if (page === 'track') navigate('/track');
+        else if (page === 'ai') toast({ title: "Arth AI", description: "Coming soon!" });
+        // No need to navigate for 'plants' as we're already here
+      }}
+    />
 
-      {/* Add Plant Modal */}
-      <AddPlantModal 
-        isOpen={showAddPlantModal}
-        onClose={() => setShowAddPlantModal(false)}
-        spaces={userPreferences?.growingSpaces?.map(space => ({ 
-          id: space.id, 
-          name: space.name || 'Unnamed Space'
-        })) || []}
-        onPlantAdded={() => {
-          // Refresh plants list by triggering a re-fetch
+    {/* Add Plant Modal */}
+    <AddPlantModal 
+      isOpen={showAddPlantModal}
+      onClose={() => setShowAddPlantModal(false)}
+      spaces={userPreferences?.growingSpaces?.map(space => ({ 
+        id: space.id, 
+        name: space.name || 'Unnamed Space'
+      })) || []}
+      onPlantAdded={(plantId) => {
+        setShowAddPlantModal(false);
+        
+        if (plantId) {
+          // Navigate to PlantLogs page for the newly added plant
+          console.log('Navigating to plant-logs with ID:', plantId);
+          navigate(`/plant-logs/${plantId}`);
+        } else {
+          // Fallback: refresh plants list if no plant ID provided
           const refreshPlants = async () => {
             if (!currentUser) return;
             
@@ -1668,11 +1887,11 @@ const PlantsPage: React.FC = () => {
           };
           
           refreshPlants();
-          setShowAddPlantModal(false);
-        }}
-      />
-    </div>
-  );
+        }
+      }}
+    />
+  </div>
+);
 };
 
 export default PlantsPage; 

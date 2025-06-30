@@ -38,6 +38,7 @@
     "dotenv": "^16.5.0",
     "firebase": "^10.14.0",
     "firebase-admin": "^13.4.0",
+    "framer-motion": "^12.20.0",
     "heic2any": "^0.0.4",
     "jsdom": "^26.1.0",
     "lucide-react": "^0.453.0",

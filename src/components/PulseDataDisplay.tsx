@@ -137,7 +137,7 @@ export const PulseDataDisplay: React.FC<PulseDataDisplayProps> = ({ deviceId, de
 
   // Separate useEffect for auto-refresh to honor current date range
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
+    let interval: ReturnType<typeof setInterval> | null = null;
     if (autoRefresh) {
       interval = setInterval(() => {
         // Use current date range for auto-refresh

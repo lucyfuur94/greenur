@@ -372,14 +372,16 @@ If not in list: {"plant": "name", "scientificName": "name", "plantType": "type",
           commonName: foundPlant.common_name,
           scientificName: foundPlant.scientific_name,
           plantType: foundPlant.plant_type,
-          inDatabase: true
+          inDatabase: true,
+          catalogId: foundPlant._id
         };
         console.log('[analyze-plant] Found exact plant in database:', {
           geminiReturned: geminiResult.plant,
           databaseValues: {
             commonName: foundPlant.common_name,
             scientificName: foundPlant.scientific_name,
-            plantType: foundPlant.plant_type
+            plantType: foundPlant.plant_type,
+            catalogId: foundPlant._id
           }
         });
       } else {
@@ -394,11 +396,13 @@ If not in list: {"plant": "name", "scientificName": "name", "plantType": "type",
             commonName: fuzzyMatch.common_name,
             scientificName: fuzzyMatch.scientific_name,
             plantType: fuzzyMatch.plant_type,
-            inDatabase: true
+            inDatabase: true,
+            catalogId: fuzzyMatch._id
           };
           console.log('[analyze-plant] Found fuzzy match in database:', {
             geminiReturned: geminiResult.plant,
-            databaseMatch: fuzzyMatch.common_name
+            databaseMatch: fuzzyMatch.common_name,
+            catalogId: fuzzyMatch._id
           });
         } else {
           // Really can't find it - treat as not in database
