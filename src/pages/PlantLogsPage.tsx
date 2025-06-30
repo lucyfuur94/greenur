@@ -182,6 +182,7 @@ const PlantLogsPage: React.FC = () => {
   const [showCommentsForItem, setShowCommentsForItem] = useState<string | null>(null);
   const [careInstructionsExpanded, setCareInstructionsExpanded] = useState(false);
   const [actionItemsExpanded, setActionItemsExpanded] = useState(false);
+  
 
   // Plant care quotes for loading animation
   const plantCareQuotes = [
@@ -928,6 +929,7 @@ const PlantLogsPage: React.FC = () => {
   };
 
 
+  
 
   if (loading) {
     return (
