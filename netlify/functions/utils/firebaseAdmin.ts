@@ -5,18 +5,24 @@ dotenv.config(); // Ensure environment variables are loaded
 
 if (!admin.apps.length) {
   try {
-    let serviceAccountInput: any;
-    if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-      try {
-        serviceAccountInput = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
-        console.log('Firebase Admin: Loaded service account from FIREBASE_SERVICE_ACCOUNT_JSON env var');
-      } catch (error) {
-        console.error('Firebase Admin: Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON:', error);
-        throw new Error('Invalid Firebase service account JSON in environment variable');
-      }
+    let serviceAccountInput;
+    if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+      // Environment variable is expected to be a JSON string
+      serviceAccountInput = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+      console.log('Firebase Admin: Loaded service account from FIREBASE_SERVICE_ACCOUNT_KEY env var');
+    } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+      // Support for GOOGLE_APPLICATION_CREDENTIALS pointing to a file path (common in some environments)
+      // Note: admin.credential.applicationDefault() handles this, but explicit loading can be clearer
+      // For Netlify, FIREBASE_SERVICE_ACCOUNT_KEY as JSON string is preferred.
+      // This branch is more for local dev or other environments if GOOGLE_APPLICATION_CREDENTIALS path is used.
+      serviceAccountInput = require(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+      console.log('Firebase Admin: Loaded service account from GOOGLE_APPLICATION_CREDENTIALS path');
     } else {
-      console.error('Firebase Admin: FIREBASE_SERVICE_ACCOUNT_JSON environment variable not found');
-      throw new Error('Firebase service account not configured');
+      // Fallback to requiring a local JSON file (ensure path is correct relative to built function)
+      // For Netlify, functions are often bundled, so relative paths can be tricky.
+      // It might be better to ensure FIREBASE_SERVICE_ACCOUNT_KEY is always set in Netlify.
+      serviceAccountInput = require('./serviceAccountKey.json'); // Assumes serviceAccountKey.json is in the same dir (e.g. utils)
+      console.log('Firebase Admin: Loaded service account from local ./serviceAccountKey.json (ensure it is bundled)');
     }
     
     admin.initializeApp({

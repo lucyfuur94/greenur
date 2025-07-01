@@ -2,7 +2,6 @@ import { Handler } from '@netlify/functions'
 import Busboy from 'busboy'
 import sharp from 'sharp'
 import { MongoClient } from 'mongodb'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const MONGO_URI = process.env.MONGO_URI
 const DB_NAME = process.env.MONGODB_DB || 'master'
@@ -129,13 +128,14 @@ export const handler: Handler = async (event, context) => {
     };
   }
   
-  const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
-  if (!apiKey) {
+  if (!process.env.GEMINI_API_KEY) {
     console.error('[analyze-plant] Gemini API key is not configured');
-    throw new Error('Gemini API key not found in environment variables (GEMINI_API_KEY)');
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: 'Gemini API key is not configured' })
+    }
   }
-
-  const genAI = new GoogleGenerativeAI(apiKey);
 
   if (event.httpMethod !== 'POST') {
     return {
