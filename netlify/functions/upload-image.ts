@@ -10,10 +10,32 @@ import { Readable } from 'stream';
 let bucket: any;
 if (!admin.apps.length) {
   try {
-    const serviceAccount = require('./utils/serviceAccountKey.json');
+    let serviceAccount;
+    
+    // Try to load from environment variable first
+    if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+      try {
+        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+        console.log('[upload-image] Loaded service account from environment variable');
+      } catch (parseError) {
+        console.error('[upload-image] Error parsing FIREBASE_SERVICE_ACCOUNT_JSON:', parseError);
+      }
+    }
+    
+    // If no environment variable, try loading from local file
+    if (!serviceAccount) {
+      try {
+        serviceAccount = require('./utils/serviceAccountKey.json');
+        console.log('[upload-image] Loaded service account from local file');
+      } catch (fileError) {
+        console.error('[upload-image] Error loading local service account:', fileError);
+        throw fileError;
+      }
+    }
+    
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
-      storageBucket: 'aegisg-494e1.firebasestorage.app'
+      storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || 'greenur-54e63.firebasestorage.app'
     });
     bucket = getStorage().bucket();
   } catch (error) {

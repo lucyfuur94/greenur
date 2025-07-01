@@ -21,39 +21,44 @@ const corsHeaders = {
 let firebaseInitialized = false
 try {
   if (!admin.apps.length) {
-    // Try to load service account from environment variable
-    let serviceAccount
+    let serviceAccount;
     
-    if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-      serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)
-    } else {
-      // Try to load from file as fallback
+    // Try to load from environment variable first
+    if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
       try {
-        const serviceAccountPath = path.join(__dirname, 'utils', 'serviceAccountKey.json')
-        if (fs.existsSync(serviceAccountPath)) {
-          serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'))
-        }
+        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+        console.log('[remove-profile-image] Loaded service account from environment variable');
+      } catch (parseError) {
+        console.error('[remove-profile-image] Error parsing FIREBASE_SERVICE_ACCOUNT_JSON:', parseError);
+      }
+    }
+    
+    // If no environment variable, try loading from local file
+    if (!serviceAccount) {
+      try {
+        serviceAccount = require('./utils/serviceAccountKey.json');
+        console.log('[remove-profile-image] Loaded service account from local file');
       } catch (fileError) {
-        console.error('Error loading service account from file:', fileError)
+        console.error('[remove-profile-image] Error loading local service account:', fileError);
       }
     }
     
     if (!serviceAccount) {
-      console.error('Firebase service account not found')
+      console.error('[remove-profile-image] Firebase service account not found');
     } else {
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
-        storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET
-      })
-      firebaseInitialized = true
-      console.log('Firebase Admin initialized successfully')
+        storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || 'greenur-54e63.firebasestorage.app'
+      });
+      firebaseInitialized = true;
+      console.log('[remove-profile-image] Firebase Admin initialized successfully');
     }
   } else {
-    firebaseInitialized = true
-    console.log('Firebase Admin already initialized')
+    firebaseInitialized = true;
+    console.log('[remove-profile-image] Firebase Admin already initialized');
   }
 } catch (error) {
-  console.error('Firebase admin initialization error:', error)
+  console.error('[remove-profile-image] Firebase admin initialization error:', error);
 }
 
 export const handler: Handler = async (event, context) => {

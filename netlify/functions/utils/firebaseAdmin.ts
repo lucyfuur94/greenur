@@ -6,17 +6,26 @@ dotenv.config(); // Ensure environment variables are loaded
 if (!admin.apps.length) {
   try {
     let serviceAccountInput: any;
+    
+    // Try to load from environment variable first
     if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
       try {
         serviceAccountInput = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
         console.log('Firebase Admin: Loaded service account from FIREBASE_SERVICE_ACCOUNT_JSON env var');
       } catch (error) {
         console.error('Firebase Admin: Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON:', error);
-        throw new Error('Invalid Firebase service account JSON in environment variable');
       }
-    } else {
-      console.error('Firebase Admin: FIREBASE_SERVICE_ACCOUNT_JSON environment variable not found');
-      throw new Error('Firebase service account not configured');
+    }
+    
+    // If no environment variable, try loading from local file
+    if (!serviceAccountInput) {
+      try {
+        serviceAccountInput = require('./serviceAccountKey.json');
+        console.log('Firebase Admin: Loaded service account from local file');
+      } catch (fileError) {
+        console.error('Firebase Admin: Error loading local service account:', fileError);
+        throw new Error('Firebase service account not configured');
+      }
     }
     
     admin.initializeApp({
