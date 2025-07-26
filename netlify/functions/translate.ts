@@ -1,6 +1,6 @@
 import { Handler } from '@netlify/functions'
 
-const GOOGLE_TRANSLATE_API_KEY = process.env.GOOGLE_TRANSLATE_API_KEY
+const GOOGLE_TRANSLATE_API_KEY = process.env.VITE_GOOGLE_API_KEY
 const GOOGLE_TRANSLATE_ENDPOINT = 'https://translation.googleapis.com/language/translate/v2'
 
 export const handler: Handler = async (event) => {

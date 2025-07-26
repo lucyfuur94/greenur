@@ -4,7 +4,7 @@ import sharp from 'sharp';
 
 // Initialize OpenAI API
 const openai = new OpenAI({
-  apiKey: process.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY
+  apiKey: process.env.VITE_OPENAI_API_KEY
 });
 
 /**

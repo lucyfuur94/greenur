@@ -44,7 +44,7 @@ export default async (request, context) => {
     
     // For Node.js environments
     if (!apiKey && typeof process !== 'undefined' && process.env) {
-      apiKey = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
+      apiKey = process.env.VITE_OPENAI_API_KEY;
     }
     
     if (!apiKey) {

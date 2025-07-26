@@ -578,10 +578,10 @@ const AddPlantModal: React.FC<AddPlantModalProps> = ({ isOpen, onClose, spaces, 
                 Take a photo or upload an image of your plant
               </p>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="flex gap-4">
                 {/* Camera Capture */}
-                <label className="cursor-pointer">
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-500 transition-colors">
+                <label className="cursor-pointer flex-1">
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-500 transition-colors h-full min-h-[120px] flex flex-col items-center justify-center">
                     <Camera className="w-8 h-8 mx-auto mb-2 text-gray-400" />
                     <span className="text-sm text-gray-600">Take Photo</span>
                   </div>
@@ -595,8 +595,8 @@ const AddPlantModal: React.FC<AddPlantModalProps> = ({ isOpen, onClose, spaces, 
                 </label>
 
                 {/* File Upload */}
-                <label className="cursor-pointer">
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-500 transition-colors">
+                <label className="cursor-pointer flex-1">
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-500 transition-colors h-full min-h-[120px] flex flex-col items-center justify-center">
                     <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
                     <span className="text-sm text-gray-600">Upload Image</span>
                   </div>
@@ -1480,13 +1480,13 @@ const PlantsPage: React.FC = () => {
         })}
         
         {plants.length === 0 && (
-          <div className="text-center py-12">
-            <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+          <div className="text-center py-12 px-6">
+            <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">
               <Leaf className="w-12 h-12 text-muted-foreground" />
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-2">No Plants Yet</h3>
-            <p className="text-muted-foreground mb-4">Start your garden journey by adding your first plant!</p>
-            <Button onClick={handleAddPlant} className="bg-primary hover:bg-primary/90">
+            <p className="text-muted-foreground mb-6 max-w-sm mx-auto">Start your garden journey by adding your first plant!</p>
+            <Button onClick={handleAddPlant} className="bg-primary hover:bg-primary/90 min-h-[44px] px-6">
               <Camera className="w-4 h-4 mr-2" />
               Add Your First Plant
             </Button>

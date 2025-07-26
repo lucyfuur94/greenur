@@ -1477,7 +1477,7 @@ const PlantLogsPage: React.FC = () => {
       </div>
 
       {/* Fixed Bottom Action Buttons - Reverted styling */}
-      <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 px-4 py-4">
+      <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 px-4 py-4 safe-bottom">
         <div className="flex gap-3">
           <Button 
             variant="outline"

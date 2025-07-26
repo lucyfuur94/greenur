@@ -470,7 +470,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
             />
           </div>
           
-          <h1 className="text-2xl font-bold text-green-700 mb-4">Welcome to Botanica</h1>
+          <h1 className="text-2xl font-bold text-primary mb-4">Welcome to Botanica</h1>
           <p className="text-muted-foreground mb-6">Let's set up your plant care assistant to help your green friends thrive. We'll need a few details to get started.</p>
           
           <div className="mb-6">
@@ -519,7 +519,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         
         <Button 
           onClick={nextStep} 
-          className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg !rounded-button mt-4"
+          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-lg !rounded-button mt-4"
           disabled={!formData.name || !formData.experience}
         >
           Next
@@ -532,31 +532,31 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
     return (
       <div className="flex flex-col h-full">
         <div className="flex-1 overflow-auto px-1">
-          <h1 className="text-2xl font-bold text-green-700 mb-4">Growing Spaces</h1>
-          <p className="text-gray-600 mb-6">Tell us about your growing environments so we can help you organize your plants.</p>
+          <h1 className="text-2xl font-bold text-primary mb-4">Growing Spaces</h1>
+          <p className="text-muted-foreground mb-6">Tell us about your growing environments so we can help you organize your plants.</p>
           
           <div className="mb-6">
-            <Label className="block text-sm font-medium text-gray-700 mb-3">Where do you grow your plants?</Label>
+            <Label className="block text-sm font-medium text-foreground mb-3">Where do you grow your plants?</Label>
             <div className="grid grid-cols-3 gap-3">
               <div 
-                className={`flex flex-col items-center p-4 rounded-lg border cursor-pointer ${formData.gardenType === 'indoor' ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}
+                className={`flex flex-col items-center p-4 rounded-lg border cursor-pointer ${formData.gardenType === 'indoor' ? 'border-primary bg-primary/10' : 'border-border'}`}
                 onClick={() => handleInputChange('gardenType', 'indoor')}
               >
-                <Home className="w-6 h-6 text-green-600 mb-2" />
+                <Home className="w-6 h-6 text-primary mb-2" />
                 <span className="text-sm font-medium">Indoor</span>
               </div>
               <div 
-                className={`flex flex-col items-center p-4 rounded-lg border cursor-pointer ${formData.gardenType === 'outdoor' ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}
+                className={`flex flex-col items-center p-4 rounded-lg border cursor-pointer ${formData.gardenType === 'outdoor' ? 'border-primary bg-primary/10' : 'border-border'}`}
                 onClick={() => handleInputChange('gardenType', 'outdoor')}
               >
-                <Sun className="w-6 h-6 text-green-600 mb-2" />
+                <Sun className="w-6 h-6 text-primary mb-2" />
                 <span className="text-sm font-medium">Outdoor</span>
               </div>
               <div 
-                className={`flex flex-col items-center p-4 rounded-lg border cursor-pointer ${formData.gardenType === 'both' ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}
+                className={`flex flex-col items-center p-4 rounded-lg border cursor-pointer ${formData.gardenType === 'both' ? 'border-primary bg-primary/10' : 'border-border'}`}
                 onClick={() => handleInputChange('gardenType', 'both')}
               >
-                <Leaf className="w-6 h-6 text-green-600 mb-2" />
+                <Leaf className="w-6 h-6 text-primary mb-2" />
                 <span className="text-sm font-medium">Both</span>
               </div>
             </div>
@@ -640,7 +640,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
             <Button
               onClick={addGrowingSpace}
               disabled={!newSpace.type}
-              className="w-full bg-green-600 hover:bg-green-700 text-white"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               size="sm"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -659,7 +659,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
           </Button>
           <Button 
             onClick={nextStep} 
-            className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 !rounded-button"
+            className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground py-3 !rounded-button"
             disabled={(formData.growingSpaces || []).length === 0}
           >
             Next
@@ -673,41 +673,41 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
     return (
       <div className="flex flex-col h-full">
         <div className="flex-1 overflow-auto px-1">
-          <h1 className="text-2xl font-bold text-green-700 mb-4">Plant Interests</h1>
-          <p className="text-gray-600 mb-4">Select at least 3 categories that interest you. We'll customize your experience based on your selections.</p>
+          <h1 className="text-2xl font-bold text-primary mb-4">Plant Interests</h1>
+          <p className="text-muted-foreground mb-4">Select at least 3 categories that interest you. We'll customize your experience based on your selections.</p>
           
           <div className="grid grid-cols-2 gap-3 mb-6">
             {[
-              { id: 'vegetables', label: 'Vegetables', icon: <Leaf className="text-green-600" /> },
-              { id: 'fruits', label: 'Fruits', icon: <Leaf className="text-green-600" /> },
-              { id: 'herbs', label: 'Herbs', icon: <Leaf className="text-green-600" /> },
-              { id: 'flowers', label: 'Flowers', icon: <Leaf className="text-green-600" /> },
-              { id: 'indoorPlants', label: 'Indoor Plants', icon: <Home className="text-green-600" /> },
-              { id: 'succulents', label: 'Succulents', icon: <Leaf className="text-green-600" /> },
-              { id: 'organicGardening', label: 'Organic Gardening', icon: <Leaf className="text-green-600" /> },
-              { id: 'hydroponics', label: 'Hydroponics', icon: <Droplet className="text-green-600" /> },
-              { id: 'permaculture', label: 'Permaculture', icon: <Leaf className="text-green-600" /> },
-              { id: 'composting', label: 'Composting', icon: <Leaf className="text-green-600" /> }
+              { id: 'vegetables', label: 'Vegetables', icon: <Leaf className="text-primary" /> },
+              { id: 'fruits', label: 'Fruits', icon: <Leaf className="text-primary" /> },
+              { id: 'herbs', label: 'Herbs', icon: <Leaf className="text-primary" /> },
+              { id: 'flowers', label: 'Flowers', icon: <Leaf className="text-primary" /> },
+              { id: 'indoorPlants', label: 'Indoor Plants', icon: <Home className="text-primary" /> },
+              { id: 'succulents', label: 'Succulents', icon: <Leaf className="text-primary" /> },
+              { id: 'organicGardening', label: 'Organic Gardening', icon: <Leaf className="text-primary" /> },
+              { id: 'hydroponics', label: 'Hydroponics', icon: <Droplet className="text-primary" /> },
+              { id: 'permaculture', label: 'Permaculture', icon: <Leaf className="text-primary" /> },
+              { id: 'composting', label: 'Composting', icon: <Leaf className="text-primary" /> }
             ].map((interest) => (
               <div 
                 key={interest.id}
-                className={`flex flex-col items-center p-3 rounded-lg border cursor-pointer relative ${(formData.interests || []).includes(interest.id) ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}
+                className={`flex flex-col items-center p-3 rounded-lg border cursor-pointer relative ${(formData.interests || []).includes(interest.id) ? 'border-primary bg-primary/10' : 'border-border'}`}
                 onClick={() => handleInterestToggle(interest.id)}
               >
-                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-2">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
                   {interest.icon}
                 </div>
                 <span className="text-sm font-medium text-center">{interest.label}</span>
                 {(formData.interests || []).includes(interest.id) && (
-                  <div className="absolute top-2 right-2 w-5 h-5 bg-green-600 rounded-full flex items-center justify-center">
-                    <Check className="text-white w-3 h-3" />
+                  <div className="absolute top-2 right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                    <Check className="text-primary-foreground w-3 h-3" />
                   </div>
                 )}
               </div>
             ))}
           </div>
           
-          <p className="text-sm text-gray-500 italic">
+          <p className="text-sm text-muted-foreground italic">
             {(formData.interests || []).length < 3 
               ? `Please select ${3 - (formData.interests || []).length} more categories` 
               : `${(formData.interests || []).length} categories selected`}
@@ -724,7 +724,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
           </Button>
           <Button 
             onClick={nextStep} 
-            className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 !rounded-button"
+            className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground py-3 !rounded-button"
             disabled={(formData.interests || []).length < 3}
           >
             Next
@@ -738,12 +738,12 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
     return (
       <div className="flex flex-col h-full">
         <div className="flex-1 overflow-auto px-1">
-          <h1 className="text-2xl font-bold text-green-700 mb-4">Add Your First Plant</h1>
-          <p className="text-gray-600 mb-6">Let's add your first plant to start tracking its care needs.</p>
+          <h1 className="text-2xl font-bold text-primary mb-4">Add Your First Plant</h1>
+          <p className="text-muted-foreground mb-6">Let's add your first plant to start tracking its care needs.</p>
           
           {/* Plant search section */}
           <div className="mb-6">
-            <Label className="block text-sm font-medium text-gray-700 mb-1">Search for a plant from our catalog</Label>
+            <Label className="block text-sm font-medium text-foreground mb-1">Search for a plant from our catalog</Label>
             <div className="relative">
               <Input 
                 type="text" 
@@ -755,11 +755,11 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                 }} 
                 className="w-full pl-10 px-3"
               />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               
               {/* Search results dropdown */}
               {showPlantSearchResults && plantSearchResults.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                <div className="absolute z-10 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto">
                   {plantSearchResults.map((plant) => (
                     <div 
                       key={plant.id}
@@ -1024,26 +1024,26 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-background">
       {renderLoadingOverlay()}
       {/* Fixed header */}
-      <div className="fixed top-0 left-0 right-0 bg-white z-10 shadow-sm">
+      <div className="fixed top-0 left-0 right-0 bg-background z-10 shadow-sm">
         <div className="flex items-center justify-center p-4 relative">
           {step < 6 && (
             <>
               {step > 1 && (
                 <button 
                   onClick={prevStep} 
-                  className="text-green-600 cursor-pointer absolute left-4"
+                  className="text-primary cursor-pointer absolute left-4"
                   disabled={isCompleting}
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </button>
               )}
-              <div className="text-sm text-gray-500">Step {step} of 5</div>
+              <div className="text-sm text-muted-foreground">Step {step} of 5</div>
               <Button 
                 variant="ghost"
-                className="text-green-600 hover:text-green-700 absolute right-4"
+                className="text-primary hover:text-primary/80 absolute right-4"
                 onClick={() => completeOnboarding(true)}
                 disabled={isCompleting}
               >
@@ -1054,7 +1054,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
           {step === 6 && <div className="w-full"></div>}
         </div>
         {step < 6 && (
-          <Progress value={(step / 5) * 100} className="h-1 bg-gray-200" />
+          <Progress value={(step / 5) * 100} className="h-1 bg-muted" />
         )}
       </div>
 

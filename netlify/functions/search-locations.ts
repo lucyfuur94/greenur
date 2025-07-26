@@ -10,7 +10,7 @@ export const handler: Handler = async (event, context) => {
   }
 
   // Get API key from environment variables
-  const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+  const GOOGLE_API_KEY = process.env.VITE_GOOGLE_API_KEY;
   
   if (!GOOGLE_API_KEY) {
     console.error('GOOGLE_API_KEY environment variable is not set');

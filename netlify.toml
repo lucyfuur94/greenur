@@ -16,7 +16,7 @@
     to = "http://localhost:5173/ws"
 
 [build.environment]
-  NODE_VERSION = "18.17.1"
+  NODE_VERSION = "22.1.0"
   NETLIFY_FUNCTION_TIMEOUT = "30"
 
 [[redirects]]

@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User } from 'firebase/auth';
 import { auth, db } from './firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { FirebaseError } from 'firebase/app';
 
 interface UserPreferences {
   name: string;
@@ -66,12 +67,39 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               preferences: null
             };
             
-            await setDoc(userRef, newUserData);
-            setOnboardingCompleted(false);
-            setUserPreferences(null);
+            try {
+              await setDoc(userRef, newUserData);
+              setOnboardingCompleted(false);
+              setUserPreferences(null);
+            } catch (setError: unknown) {
+              if (setError instanceof FirebaseError) {
+                console.error('Error creating user document:', {
+                  code: setError.code,
+                  message: setError.message,
+                  name: setError.name,
+                  stack: setError.stack
+                });
+              } else {
+                console.error('Unexpected error creating user document:', setError);
+              }
+              // Fallback to local state if document creation fails
+              setOnboardingCompleted(false);
+              setUserPreferences(null);
+            }
           }
-        } catch (error) {
-          console.error('Error fetching/creating user data:', error);
+        } catch (error: unknown) {
+          if (error instanceof FirebaseError) {
+            console.error('Detailed Firebase Error:', {
+              code: error.code,
+              message: error.message,
+              name: error.name,
+              stack: error.stack
+            });
+          } else {
+            console.error('Unexpected Firebase Error:', error);
+          }
+          
+          // Fallback to local state in case of any error
           setOnboardingCompleted(false);
           setUserPreferences(null);
         }

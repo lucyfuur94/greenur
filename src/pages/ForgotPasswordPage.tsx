@@ -72,20 +72,20 @@ const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ onNavigate, onB
           <h1 className="text-3xl sm:text-4xl font-bold mb-2">
             Forgot Password
           </h1>
-          <p className="text-sm sm:text-base text-green-200">
+          <p className="text-sm sm:text-base text-primary-foreground/80">
             {sent ? "Check your email for reset instructions" : "Enter your email to receive a reset link"}
           </p>
         </div>
 
         {sent ? (
           <div className="text-center">
-            <p className="text-green-200 mb-8">
+            <p className="text-primary-foreground/80 mb-8">
               We've sent you an email with instructions to reset your password.
               Please check your inbox and follow the link to create a new password.
             </p>
             <Button
               size="lg"
-              className="w-full max-w-sm bg-green-900 hover:bg-green-950 text-white font-semibold rounded-full shadow-md py-3 text-lg mb-4"
+              className="w-full max-w-sm bg-primary-foreground/90 hover:bg-primary-foreground text-primary font-semibold rounded-full shadow-md py-3 text-lg mb-4"
               onClick={() => onNavigate && onNavigate("login")}
             >
               Back to Login
@@ -95,13 +95,13 @@ const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ onNavigate, onB
           <form onSubmit={handleResetPassword} className="w-full max-w-sm space-y-5">
             {/* Email */}
             <div className="flex items-center bg-background/90 rounded-lg p-3 shadow-sm">
-              <Mail className="h-5 w-5 text-green-700 mr-3 flex-shrink-0" />
+              <Mail className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
               <Input
                 type="email"
                 placeholder="Your email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-transparent border-none focus:ring-2 focus:ring-green-600 focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-0 text-green-900 placeholder-green-700/70 text-base"
+                className="w-full bg-transparent border-none focus:ring-2 focus:ring-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 text-foreground placeholder-muted-foreground text-base"
               />
             </div>
 
@@ -110,7 +110,7 @@ const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ onNavigate, onB
               type="submit"
               size="lg"
               disabled={loading}
-              className="w-full bg-green-900 hover:bg-green-950 text-white font-semibold rounded-full shadow-md py-3 text-lg mb-4 mt-4"
+              className="w-full bg-primary-foreground/90 hover:bg-primary-foreground text-primary font-semibold rounded-full shadow-md py-3 text-lg mb-4 mt-4"
             >
               {loading ? "Sending..." : "Reset Password"}
             </Button>
@@ -118,11 +118,11 @@ const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ onNavigate, onB
         )}
 
         {/* Back to Login Link */}
-        <p className="text-sm text-green-200 mt-6">
+        <p className="text-sm text-primary-foreground/80 mt-6">
           Remember your password?{' '}
           <Button 
             variant="link" 
-            className="text-white font-semibold h-auto p-0 inline underline bg-transparent"
+            className="text-primary-foreground font-semibold h-auto p-0 inline underline bg-transparent"
             onClick={() => onNavigate && onNavigate("login")}
           >
             Login

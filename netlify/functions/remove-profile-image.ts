@@ -48,7 +48,7 @@ try {
     } else {
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
-        storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || 'greenur-54e63.firebasestorage.app'
+        storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET
       });
       firebaseInitialized = true;
       console.log('[remove-profile-image] Firebase Admin initialized successfully');

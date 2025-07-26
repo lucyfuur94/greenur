@@ -28,7 +28,7 @@ const handler: Handler = async (event, context) => {
     }
   }
   
-  if (!process.env.GEMINI_API_KEY) {
+  if (!process.env.VITE_GEMINI_API_KEY) {
     console.error('[analyze-plant-gemini] Gemini API key is not configured')
     return {
       statusCode: 500,
@@ -173,7 +173,7 @@ const handler: Handler = async (event, context) => {
 
     // Call Gemini API
     console.log('[analyze-plant-gemini] Calling Gemini API')
-    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.VITE_GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

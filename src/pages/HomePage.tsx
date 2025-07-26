@@ -66,18 +66,19 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         // Fetch weather by coordinates for current location
         weather = await weatherService.getWeatherByCoordinates(userToken, coordinates.lat, coordinates.lng);
       } else if (location && location !== 'Current Location') {
-        // For city names, we'll use a simple geocoding approach
+        // For city names, use the weather service's geocoding
         try {
-          // Try to geocode the city name using OpenWeatherMap's free geocoding service
-          const weatherApiKey = import.meta.env.VITE_WEATHER_API_KEY;
-          const geocodeResponse = await fetch(
-            `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(location)}&limit=1&appid=${weatherApiKey}`
+          const response = await fetch(
+            `/.netlify/functions/search-locations?query=${encodeURIComponent(location)}`,
+            {
+              method: 'GET',
+            }
           );
-          const geocodeData = await geocodeResponse.json();
+          const data = await response.json();
           
-          if (geocodeData && geocodeData.length > 0) {
-            const { lat, lon } = geocodeData[0];
-            weather = await weatherService.getWeatherByCoordinates(userToken, lat, lon);
+          if (data.predictions && data.predictions.length > 0) {
+            // Fetch weather for the city
+            weather = await weatherService.getWeatherData(userToken);
           } else {
             // Fallback to default weather
             weather = await weatherService.getWeatherData(userToken);
@@ -113,17 +114,17 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         async (position) => {
           const { latitude, longitude } = position.coords;
           
-          // Get location name from coordinates using OpenWeatherMap reverse geocoding
+          // Use new reverse geocoding function
           try {
-            const weatherApiKey = import.meta.env.VITE_WEATHER_API_KEY;
             const response = await fetch(
-              `https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${weatherApiKey}`
+              `/.netlify/functions/reverse-geocode?lat=${latitude}&lng=${longitude}`,
+              {
+                method: 'GET',
+              }
             );
             const data = await response.json();
             
-            const locationName = data && data.length > 0 
-              ? (data[0].name || data[0].local_names?.en || 'Current Location')
-              : 'Current Location';
+            const locationName = data.locationName || 'Current Location';
             
             setCurrentLocation(locationName);
             await fetchWeatherData(locationName, { lat: latitude, lng: longitude });
@@ -237,7 +238,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       <div className="px-4 py-2">
         <div className="grid grid-cols-4 gap-2">
           {quickActions.map((action) => (
-            <div key={action.id} className="flex flex-col items-center cursor-pointer" onClick={action.action}>
+            <div key={action.id} className="flex flex-col items-center cursor-pointer touch-manipulation" onClick={action.action}>
               <div className="w-16 h-16 rounded-xl bg-card shadow-lg flex items-center justify-center hover:shadow-xl transition-shadow">
                 {renderIcon(action.iconType)}
               </div>
@@ -367,14 +368,14 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       </div>
 
       {/* Floating Search Bar */}
-      <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-10">
+      <div className="absolute left-1/2 transform -translate-x-1/2 z-10" style={{ bottom: 'calc(114px + var(--safe-area-inset-bottom, 0px))' }}>
         <Button
           onClick={() => setShowSearchOverlay(true)}
-          className="bg-card border border-border text-muted-foreground hover:bg-accent rounded-full px-6 py-2 shadow-lg"
+          className="bg-card border border-border text-muted-foreground hover:bg-accent rounded-full px-6 py-2 shadow-lg touch-manipulation"
           variant="outline"
         >
           <Search className="w-4 h-4 mr-2" />
-          search
+          Search
         </Button>
       </div>
 

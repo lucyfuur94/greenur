@@ -704,12 +704,12 @@ const PlantDetailsPage: React.FC = () => {
       </div>
 
       {/* Fixed Bottom Action Buttons */}
-      <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 px-4 py-4">
+      <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 px-4 py-4 safe-bottom">
         <div className="flex gap-4">
           <Button 
             onClick={handleAddToMyPlants}
             variant="outline"
-            className="flex-1 border-gray-900 text-gray-900 hover:bg-gray-50 rounded-lg py-3 flex items-center justify-center gap-2"
+            className="flex-1 border-gray-900 text-gray-900 hover:bg-gray-50 rounded-lg py-3 flex items-center justify-center gap-2 touch-manipulation"
           >
             <Camera className="w-5 h-5" />
             Add Plant
@@ -717,7 +717,7 @@ const PlantDetailsPage: React.FC = () => {
           <Button 
             onClick={handleAskArth}
             variant="outline"
-            className="flex-1 border-gray-900 text-gray-900 hover:bg-gray-50 rounded-lg py-3 flex items-center justify-center gap-2"
+            className="flex-1 border-gray-900 text-gray-900 hover:bg-gray-50 rounded-lg py-3 flex items-center justify-center gap-2 touch-manipulation"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2C17.523 2 22 6.477 22 12C22 17.523 17.523 22 12 22C10.298 22 8.696 21.613 7.292 20.924L3 22L4.076 17.708C3.387 16.304 3 14.702 3 13C3 7.477 7.477 3 13 3H12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

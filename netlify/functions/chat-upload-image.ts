@@ -35,7 +35,7 @@ if (!admin.apps.length) {
     
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
-      storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || 'greenur-54e63.firebasestorage.app'
+      storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET
     });
     bucket = getStorage().bucket();
   } catch (error) {

@@ -29,42 +29,48 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+    
+    /* Safe area insets for mobile devices */
+    --safe-area-inset-top: env(safe-area-inset-top, 0px);
+    --safe-area-inset-right: env(safe-area-inset-right, 0px);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-inset-left: env(safe-area-inset-left, 0px);
   }
  
   .dark {
     /* Dark surface colors - following Material Design 3 principles */
-    --background: 220 13% 9%;     /* Dark surface (very dark blue-gray) */
-    --foreground: 210 11% 93%;    /* High contrast text on dark */
-    --card: 220 13% 11%;          /* Elevated surface */
-    --card-foreground: 210 11% 93%;
-    --popover: 220 13% 11%;
-    --popover-foreground: 210 11% 93%;
+    --background: 222.2 84% 4.9%;     /* Dark surface (very dark blue-gray) */
+    --foreground: 210 40% 98%;    /* High contrast text on dark */
+    --card: 222.2 84% 4.9%;          /* Elevated surface */
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
     
     /* Primary green colors adapted for dark mode */
-    --primary: 142.1 70.6% 55.3%; /* Slightly brighter green for contrast */
-    --primary-foreground: 144.9 80.4% 8%;
+    --primary: 142.1 76.2% 36.3%; /* Slightly brighter green for contrast */
+    --primary-foreground: 355.7 100% 97.3%;
     
     /* Secondary surfaces */
-    --secondary: 220 13% 15%;     /* Slightly elevated surface */
-    --secondary-foreground: 210 11% 93%;
-    --muted: 220 13% 15%;
-    --muted-foreground: 215 25% 70%; /* Better contrast for muted text */
-    --accent: 220 13% 15%;
-    --accent-foreground: 210 11% 93%;
+    --secondary: 217.2 32.6% 17.5%;     /* Slightly elevated surface */
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%; /* Better contrast for muted text */
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
     
     /* Interactive elements */
-    --destructive: 0 65% 58%;     /* Brighter red for better visibility */
-    --destructive-foreground: 210 11% 93%;
-    --border: 220 13% 20%;        /* Subtle borders */
-    --input: 220 13% 15%;         /* Input fields */
-    --ring: 142.1 70.6% 55.3%;    /* Focus rings match primary */
+    --destructive: 0 62.8% 30.6%;     /* Brighter red for better visibility */
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;        /* Subtle borders */
+    --input: 217.2 32.6% 17.5%;         /* Input fields */
+    --ring: 142.1 76.2% 36.3%;    /* Focus rings match primary */
     
     /* Chart colors optimized for dark backgrounds */
-    --chart-1: 220 70% 60%;
-    --chart-2: 160 60% 55%;
-    --chart-3: 30 80% 65%;
-    --chart-4: 280 65% 70%;
-    --chart-5: 340 75% 65%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
   }
 }
 
@@ -74,6 +80,71 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Use dynamic viewport height for better mobile experience */
+    min-height: 100dvh;
+  }
+  
+  /* Mobile-specific optimizations */
+  @media (max-width: 768px) {
+    /* Ensure touch targets are at least 44px */
+    button, 
+    .cursor-pointer,
+    [role="button"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+
+    /* Improve scrolling on iOS */
+    .overflow-auto,
+    .overflow-y-auto {
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Prevent zoom on input focus */
+    input,
+    textarea,
+    select {
+      font-size: 16px;
+    }
+  }
+
+  /* Safe area utility classes */
+  .safe-top {
+    padding-top: var(--safe-area-inset-top);
+  }
+  
+  .safe-bottom {
+    padding-bottom: var(--safe-area-inset-bottom);
+  }
+  
+  .safe-left {
+    padding-left: var(--safe-area-inset-left);
+  }
+  
+  .safe-right {
+    padding-right: var(--safe-area-inset-right);
+  }
+  
+  .safe-x {
+    padding-left: var(--safe-area-inset-left);
+    padding-right: var(--safe-area-inset-right);
+  }
+  
+  .safe-y {
+    padding-top: var(--safe-area-inset-top);
+    padding-bottom: var(--safe-area-inset-bottom);
+  }
+  
+  .safe-all {
+    padding-top: var(--safe-area-inset-top);
+    padding-right: var(--safe-area-inset-right);
+    padding-bottom: var(--safe-area-inset-bottom);
+    padding-left: var(--safe-area-inset-left);
+  }
+
+  /* Touch optimization */
+  .touch-manipulation {
+    touch-action: manipulation;
   }
 }
 
@@ -90,6 +161,23 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  
+  /* Disable zoom on double-tap for better mobile UX */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Re-enable text selection where needed */
+input, textarea, [contenteditable] {
+  -webkit-user-select: text;
+  -khtml-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
 }
 
 a {
@@ -101,63 +189,14 @@ a:hover {
   color: #535bf2;
 }
 
-body {
-  margin: 0;
-  display: flex;
-  width: 100%;
-  min-width: 100%;
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #1ca555;
-}
-
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+/* Mobile specific scroll improvements */
+@media (max-width: 768px) {
+  * {
+    -webkit-overflow-scrolling: touch;
   }
-  a:hover {
-    color: #747bff;
+  
+  /* Improve tap targets for mobile */
+  button, a, input, select, textarea {
+    min-height: 44px; /* Apple's recommended minimum tap target */
   }
-  button {
-    background-color: #f9f9f9;
-  }
-}
-
-#root {
-  width: 100%;
-  min-width: 100%;
-  height: 100%;
-}
-
-/* Hide scrollbars for the hourly timeline */
-.scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
-
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;  /* Chrome, Safari and Opera */
 }

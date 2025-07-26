@@ -81,7 +81,7 @@ const SignupPage: React.FC<SignupPageProps> = ({ onNavigate, onBack }) => {
           <h1 className="text-3xl sm:text-4xl font-bold mb-2">
             Register
           </h1>
-          <p className="text-sm sm:text-base text-green-200">
+          <p className="text-sm sm:text-base text-primary-foreground/80">
             Create your account
           </p>
         </div>
@@ -144,7 +144,7 @@ const SignupPage: React.FC<SignupPageProps> = ({ onNavigate, onBack }) => {
           </div>
 
           {/* Terms Text */}
-          <p className="text-xs text-green-200 text-center mt-6 mb-6 mx-auto w-full max-w-xs">
+          <p className="text-xs text-primary-foreground/70 text-center mt-6 mb-6 mx-auto w-full max-w-xs">
             By registering, you are agreeing to our Terms of use and Privacy Policy.
           </p>
 
@@ -153,18 +153,18 @@ const SignupPage: React.FC<SignupPageProps> = ({ onNavigate, onBack }) => {
             type="submit"
             size="lg"
             disabled={loading}
-            className="w-full bg-green-900 hover:bg-green-950 text-white font-semibold rounded-full shadow-md py-3 text-lg mb-6"
+            className="w-full bg-primary-foreground/90 hover:bg-primary-foreground text-primary font-semibold rounded-full shadow-md py-3 text-lg mb-6"
           >
             {loading ? "Creating account..." : "Register"}
           </Button>
         </form>
 
         {/* Login Link */}
-        <p className="text-sm text-green-200">
+        <p className="text-sm text-primary-foreground/80">
           Already have an account?{' '}
           <Button 
             variant="link" 
-            className="text-white font-semibold h-auto p-0 inline underline bg-transparent"
+            className="text-primary-foreground font-semibold h-auto p-0 inline underline bg-transparent"
             onClick={() => onNavigate && onNavigate("login")}
           >
             Login

@@ -1,6 +1,6 @@
 import { Handler } from '@netlify/functions'
 
-const NEWSAPI_KEY = process.env.NEWSAPI_KEY
+const NEWSAPI_KEY = process.env.VITE_NEWSAPI_KEY
 const NEWSAPI_ENDPOINT = 'https://newsapi.org/v2/everything'
 
 export const handler: Handler = async (event) => {

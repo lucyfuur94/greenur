@@ -119,7 +119,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onNavigate, onBack }) => {
           <h1 className="text-3xl sm:text-4xl font-bold mb-2">
             Welcome Back
           </h1>
-          <p className="text-sm sm:text-base text-green-200">
+          <p className="text-sm sm:text-base text-primary-foreground/80">
             Login to your account
           </p>
         </div>
@@ -156,7 +156,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onNavigate, onBack }) => {
           <div className="w-full flex justify-end items-center my-4">
             <Button 
               variant="link" 
-              className="text-sm text-green-100 hover:text-white h-auto p-0 bg-transparent"
+              className="text-sm text-primary-foreground/70 hover:text-primary-foreground h-auto p-0 bg-transparent"
               onClick={() => onNavigate && onNavigate("forgot-password")}
             >
               Forgot Password?
@@ -168,7 +168,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onNavigate, onBack }) => {
             type="submit"
             size="lg"
             disabled={loading}
-            className="w-full bg-green-900 hover:bg-green-950 text-white font-semibold rounded-full shadow-md py-3 text-base mb-4"
+            className="w-full bg-primary-foreground/90 hover:bg-primary-foreground text-primary font-semibold rounded-full shadow-md py-3 text-base mb-4"
           >
             {loading ? "Signing in..." : "Login"}
           </Button>
@@ -177,10 +177,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onNavigate, onBack }) => {
         {/* OR Divider */}
         <div className="relative w-full max-w-sm my-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-green-300/30" />
+            <div className="w-full border-t border-primary-foreground/30" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-[#17A34A] px-2 text-green-200">
+            <span className="bg-primary px-2 text-primary-foreground/80">
               Or continue with
             </span>
           </div>
@@ -216,11 +216,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onNavigate, onBack }) => {
         </Button>
 
         {/* Sign Up Link - Changed to camel case */}
-        <p className="text-sm text-green-200">
+        <p className="text-sm text-primary-foreground/80">
           Don't have an account?{' '}
           <Button 
             variant="link" 
-            className="text-white font-semibold h-auto p-0 inline underline bg-transparent"
+            className="text-primary-foreground font-semibold h-auto p-0 inline underline bg-transparent"
             onClick={() => onNavigate && onNavigate("signup")}
           >
             Sign up

@@ -1,6 +1,6 @@
 import { Handler } from '@netlify/functions'
 
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY
+const YOUTUBE_API_KEY = process.env.VITE_YOUTUBE_API_KEY
 const YOUTUBE_API_ENDPOINT = 'https://www.googleapis.com/youtube/v3/search'
 const YOUTUBE_VIDEOS_ENDPOINT = 'https://www.googleapis.com/youtube/v3/videos'
 

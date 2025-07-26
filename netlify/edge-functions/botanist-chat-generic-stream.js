@@ -23,7 +23,6 @@ export default async (request, context) => {
   
   if (typeof process !== 'undefined' && process.env) {
     console.log('Node environment:');
-    console.log('GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? 'Set' : 'Not set');
     console.log('VITE_GEMINI_API_KEY:', process.env.VITE_GEMINI_API_KEY ? 'Set' : 'Not set');
   }
 
@@ -89,7 +88,7 @@ export default async (request, context) => {
       
       // For Node.js environments
       if (!apiKey && typeof process !== 'undefined' && process.env) {
-        apiKey = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
+        apiKey = process.env.VITE_OPENAI_API_KEY;
       }
       
       if (!apiKey) {
@@ -117,7 +116,7 @@ export default async (request, context) => {
       
       // For Node.js environments
       if (!apiKey && typeof process !== 'undefined' && process.env) {
-        apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+        apiKey = process.env.VITE_GEMINI_API_KEY;
       }
       
       if (!apiKey) {

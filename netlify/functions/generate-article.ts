@@ -6,7 +6,7 @@ dotenv.config()
 
 const MONGO_URI = process.env.MONGO_URI
 const DB_NAME = process.env.MONGODB_DB || 'master'
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY
+const OPENAI_API_KEY = process.env.VITE_OPENAI_API_KEY
 
 interface ArticleGenerationRequest {
   userQueries: string[];
